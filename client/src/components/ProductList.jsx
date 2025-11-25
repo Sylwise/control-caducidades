@@ -313,7 +313,6 @@ const ProductList = () => {
 
   // Handlers para eventos
   const handleCatalogUpdate = useCallback((data) => {
-    console.log("SOCKET EVENT RECEIVED in ProductList:", data);
     if (data.type === "create") {
       addProductToState(data.productStatus || data.product);
     } else if (data.type === "update") {
@@ -324,7 +323,6 @@ const ProductList = () => {
   }, [addProductToState, updateProductInState, removeProductFromState]);
 
   const handleProductStatusUpdate = useCallback((data) => {
-    console.log("SOCKET STATUS EVENT RECEIVED in ProductList:", data);
     if (data.type === "update" || data.type === "create") {
       updateProductInState(data.productStatus);
     } else if (data.type === "delete") {
@@ -346,17 +344,12 @@ const ProductList = () => {
 
   // Efecto para eventos de socket
   useEffect(() => {
-    if (!socket) {
-        console.log("Socket not available in ProductList yet");
-        return;
-    }
+    if (!socket) return;
 
-    console.log("Attaching socket listeners in ProductList");
     socket.on("productStatusUpdate", handleProductStatusUpdate);
     socket.on("catalogUpdate", handleCatalogUpdate);
 
     return () => {
-      console.log("Detaching socket listeners in ProductList");
       socket.off("productStatusUpdate", handleProductStatusUpdate);
       socket.off("catalogUpdate", handleCatalogUpdate);
     };

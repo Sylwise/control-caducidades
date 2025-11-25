@@ -207,13 +207,4 @@ const PORT = process.env.PORT || 5000;
 
 server.listen(PORT, () => {
   logger.info(`Servidor corriendo en puerto ${PORT}`);
-  
-  // Debug: Log connected clients count
-  setInterval(() => {
-    const io = app.get('io');
-    if (io) {
-      const count = io.engine.clientsCount;
-      if (count > 0) logger.info(`[SOCKET DEBUG] Connected clients: ${count}`);
-    }
-  }, 10000);
 });

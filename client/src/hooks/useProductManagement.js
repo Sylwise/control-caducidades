@@ -186,11 +186,22 @@ export const useProductManagement = (addToast) => {
   }, []);
 
   const updateProductInState = useCallback((productData) => {
+    if (!productData) return;
+
+    // Normalizar datos: si viene del catálogo (update), puede no tener la estructura de status
+    // Si productData no tiene .producto, asumimos que es el producto en sí mismo
+    const productId = productData.producto?._id || productData._id;
+    
+    if (!productId) {
+        console.error("updateProductInState: No valid ID found in data", productData);
+        return;
+    }
+
     setProducts((prevProducts) => {
       const newProducts = Object.entries(prevProducts).reduce(
         (acc, [category, productList]) => {
           acc[category] = productList.filter(
-            (p) => p.producto._id !== productData.producto._id
+            (p) => (p.producto?._id || p.producto) !== productId
           );
           return acc;
         },
@@ -199,20 +210,30 @@ export const useProductManagement = (addToast) => {
 
       const category = productData.estado || "sin-clasificar";
       
+      // Si productData no es un status completo, intentamos reconstruirlo o lo usamos tal cual si es compatible
+      const productToSave = productData.producto ? productData : {
+          producto: productData,
+          estado: category,
+          // Mantener otros campos si existen
+          ...productData
+      };
+
       // Añadir el producto a su categoría
-      newProducts[category] = [...newProducts[category], productData];
+      newProducts[category] = [...newProducts[category], productToSave];
       
       // Ordenar alfabéticamente los productos sin clasificar
       if (category === "sin-clasificar") {
-        newProducts[category] = newProducts[category].sort((a, b) => 
-          a.producto.nombre.localeCompare(b.producto.nombre)
-        );
+        newProducts[category] = newProducts[category].sort((a, b) => {
+           const nameA = a.producto?.nombre || a.nombre || "";
+           const nameB = b.producto?.nombre || b.nombre || "";
+           return nameA.localeCompare(nameB);
+        });
       }
 
       return newProducts;
     });
 
-    setLastUpdatedProductId(productData.producto._id);
+    setLastUpdatedProductId(productId);
     setTimeout(() => setLastUpdatedProductId(null), 3000);
   }, []);
 

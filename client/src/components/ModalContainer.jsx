@@ -37,7 +37,7 @@ const ModalContainer = ({
         {showHeader && (
           <div className="flex-none sticky top-0 z-10 bg-white rounded-t-lg border-b border-gray-200">
             <div className="px-4 py-3 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-[#1d5030]">{title}</h2>
+              <h2 className="text-lg font-bold text-[#1d5030] select-none">{title}</h2>
               <button
                 onClick={onClose}
                 className="p-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-all duration-200"

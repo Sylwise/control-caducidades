@@ -45,7 +45,6 @@ export const SocketProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    console.log("[SOCKET PROVIDER] Checking token:", { hasToken: !!token });
     if (!token) {
       if (socket) {
         cleanupSocket(socket);
@@ -89,11 +88,6 @@ export const SocketProvider = ({ children }) => {
       setError("No se pudo restablecer la conexión");
     });
 
-    // Debug: Log all incoming events
-    socketInstance.onAny((eventName, ...args) => {
-      console.log(`[SOCKET DEBUG] Event received: ${eventName}`, args);
-    });
-
     setSocket(socketInstance);
 
     return () => cleanupSocket(socketInstance);
@@ -105,14 +99,6 @@ export const SocketProvider = ({ children }) => {
     error,
     reconnectAttempt,
   };
-
-  useEffect(() => {
-    console.log("[SOCKET PROVIDER] Context value updated:", { 
-        hasSocket: !!socket, 
-        isConnected, 
-        socketId: socket?.id 
-    });
-  }, [socket, isConnected]);
 
   return (
     <SocketContext.Provider value={value}>{children}</SocketContext.Provider>

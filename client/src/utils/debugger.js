@@ -1,5 +1,5 @@
 class OfflineDebugger {
-  static enabled = true;
+  static enabled = import.meta.env.DEV;
   static logHistory = [];
   static maxLogHistory = 1000;
 

@@ -69,13 +69,10 @@ exports.updateStatus = async (req, res) => {
 
     const io = req.app.get('io');
     if (io) {
-        logger.info(`Emitting productStatusUpdate event for product: ${populatedStatus.producto.nombre}`);
         io.emit("productStatusUpdate", {
             type: isNew ? "create" : "update",
             productStatus: populatedStatus,
         });
-    } else {
-        logger.error("Socket.io instance not found in request");
     }
 
     res.json(populatedStatus);
@@ -109,13 +106,10 @@ exports.deleteStatus = async (req, res) => {
       logger.info(`Estado del producto eliminado: ${productoId}`);
       const io = req.app.get('io');
       if (io) {
-          logger.info(`Emitting productStatusUpdate event (delete) for product: ${productoId}`);
           io.emit("productStatusUpdate", {
             type: "delete",
             productId: productoId,
           });
-      } else {
-          logger.error("Socket.io instance not found in request during deleteStatus");
       }
     }
 

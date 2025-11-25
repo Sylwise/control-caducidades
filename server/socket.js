@@ -33,7 +33,6 @@ function setupSocket(server, allowedOrigins) {
   });
 
   io.on("connection", (socket) => {
-    logger.info(`[SOCKET DEBUG] New connection attempt: ${socket.id}`);
     logger.info(`Cliente conectado y autenticado: ${socket.id}, usuario: ${socket.user.username}`);
 
     // Unir al usuario a una sala con su ID
@@ -44,7 +43,6 @@ function setupSocket(server, allowedOrigins) {
 
     socket.on("productStatusUpdate", (data) => {
       logger.info({ data }, "Actualización de estado recibida");
-      logger.info(`[SOCKET DEBUG] Broadcasting productStatusUpdate to all clients`);
       io.emit("productStatusUpdate", data);
     });
 
