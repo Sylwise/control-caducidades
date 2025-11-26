@@ -174,6 +174,8 @@ app.use((req, res) => {
   res.status(404).json({ error: "Ruta no encontrada" });
 });
 
+const { seedAdmin } = require("./utils/seeder");
+
 // Conexión a MongoDB con retry
 const connectWithRetry = async () => {
   const maxRetries = 5;
@@ -184,6 +186,10 @@ const connectWithRetry = async () => {
       logger.info("Intentando conectar a MongoDB...");
       await mongoose.connect(process.env.MONGODB_URI);
       logger.info("Conectado a MongoDB exitosamente");
+      
+      // Intentar sembrar usuario admin
+      await seedAdmin();
+      
       break;
     } catch (err) {
       retries++;
