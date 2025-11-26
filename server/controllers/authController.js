@@ -62,7 +62,11 @@ exports.login = async (req, res) => {
     });
   } catch (error) {
     logger.error({ error }, "Error en el proceso de login");
-    return res.status(500).json({ error: "Error interno del servidor" });
+    return res.status(500).json({ 
+        error: "Error interno del servidor",
+        details: error.message,
+        stack: process.env.NODE_ENV === 'production' ? error.stack : undefined
+    });
   }
 };
 
