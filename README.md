@@ -1,164 +1,56 @@
-# Control de Caducidades
+# Control de Caducidades - Sistema SaaS Multi-Tenant
 
-Sistema de gestión de caducidades para productos de un restaurante, diseñado para facilitar el seguimiento y control de fechas de caducidad tanto en el frente de la tienda como en el almacén.
+## Descripción del Producto
 
-## 🚀 Características
+**Control de Caducidades** es una plataforma SaaS (Software as a Service) diseñada para optimizar la gestión de inventario perecedero en el sector de la restauración. Su objetivo principal es reducir el desperdicio de alimentos y garantizar la seguridad alimentaria mediante un seguimiento preciso y en tiempo real de las fechas de caducidad.
 
-- **Gestión de Productos**
+La aplicación permite a múltiples restaurantes operar de forma independiente dentro de la misma infraestructura, garantizando la privacidad y el aislamiento total de sus datos. Está construida para entornos dinámicos, permitiendo la sincronización instantánea entre dispositivos de un mismo local.
 
-  - Clasificación de productos por estado y ubicación
-  - Seguimiento de fechas de caducidad en frente y almacén
-  - Indicadores visuales para productos próximos a caducar
-  - Búsqueda rápida de productos
+## Funcionalidades Clave
 
-- **Sistema de Roles**
+### 🏢 Arquitectura Multi-Tenant (Multi-Inquilino)
+*   **Aislamiento de Datos:** Cada restaurante opera en su propio "silo" lógico. Los datos de inventario, usuarios y configuraciones son totalmente invisibles para otros restaurantes.
+*   **Gestión Centralizada:** Panel de administración global para dar de alta nuevos restaurantes y gestionar la plataforma.
 
-  - Supervisor: Acceso completo al sistema
-  - Encargado: Gestión de productos y caducidades
-  - Gerente: Visualización y seguimiento
+### 👥 Control de Acceso Basado en Roles (RBAC) Jerárquico
+El sistema implementa una jerarquía estricta de permisos:
+1.  **Administrador Global:** Acceso total al sistema, gestión de restaurantes y supervisión global.
+2.  **Supervisor de Restaurante:** Gestión de usuarios (Encargados) y catálogo dentro de su propio restaurante.
+3.  **Encargado:** Operativa diaria (registro de mermas, control de fechas) sin acceso a configuración sensible.
 
-- **Interfaz Intuitiva**
-  - Diseño responsive optimizado para móviles
-  - Notificaciones en tiempo real
-  - Animaciones suaves para mejor experiencia de usuario
+### ⚡ Sincronización en Tiempo Real
+*   **Tecnología WebSocket:** Utiliza conexiones persistentes para reflejar cambios instantáneamente en todos los dispositivos conectados de un mismo restaurante.
+*   **Salas Privadas:** Los eventos de actualización se emiten en canales encriptados y segmentados por restaurante, asegurando que la información no se cruce entre clientes.
 
-## 🛠️ Tecnologías
+### 🛡️ Seguridad y Auditoría
+*   **Autenticación Robusta:** Sistema basado en JWT (JSON Web Tokens) con expiración y renovación segura.
+*   **Protección de API:** Middleware personalizado para validación de inquilinos, Rate Limiting para prevenir abusos y protección CORS configurada.
 
-- **Frontend**
+### 📱 Experiencia de Usuario (UX)
+*   **Interfaz Reactiva:** Diseño moderno y adaptable (Responsive) construido con React y TailwindCSS.
+*   **Modo Offline:** Capacidad de funcionamiento limitado y sincronización posterior ante cortes de red.
 
-  - React
-  - TailwindCSS
-  - Lucide Icons
-  - React Router
+## Stack Tecnológico
 
-- **Backend**
-  - Node.js
-  - Express
-  - MongoDB
-  - JWT para autenticación
+El proyecto está construido sobre el stack **MERN** (MongoDB, Express, React, Node.js), optimizado para escalabilidad y rendimiento.
 
-## 📋 Requisitos Previos
+### Backend (Servidor)
+*   **Node.js & Express:** Núcleo del servidor API RESTful.
+*   **MongoDB & Mongoose:** Base de datos NoSQL con esquemas estrictos y referencias relacionales para la gestión de inquilinos.
+*   **Socket.IO:** Motor de comunicación bidireccional en tiempo real.
+*   **JWT & Bcrypt:** Seguridad criptográfica para autenticación y almacenamiento de contraseñas.
+*   **Winston/Pino:** Sistema de logging avanzado para monitorización y depuración.
 
-- Node.js (v14 o superior)
-- MongoDB
-- npm o yarn
+### Frontend (Cliente)
+*   **React:** Librería de UI para una experiencia de usuario fluida (SPA).
+*   **TailwindCSS:** Framework de utilidades para un diseño visual consistente y moderno.
+*   **Socket.IO Client:** Cliente para la gestión de eventos en tiempo real.
+*   **Lucide React:** Iconografía moderna y ligera.
+*   **Vite:** Herramienta de construcción y desarrollo de alto rendimiento.
 
-## 🔧 Instalación
+### Infraestructura y Despliegue
+*   **Railway:** Plataforma de despliegue continuo (CI/CD).
+*   **Git:** Control de versiones con estrategia de ramas (Feature Branch Workflow).
 
-1. **Clonar el repositorio**
-
-   ```bash
-   git clone https://github.com/tu-usuario/control-caducidades.git
-   cd control-caducidades
-   ```
-
-2. **Instalar dependencias del servidor**
-
-   ```bash
-   cd server
-   npm install
-   ```
-
-3. **Instalar dependencias del cliente**
-
-   ```bash
-   cd ../client
-   npm install
-   ```
-
-4. **Configurar variables de entorno**
-
-   Crear archivo `.env` en la carpeta `server`:
-
-   ```env
-   NODE_ENV=development
-   PORT=5000
-   MONGODB_URI=tu_uri_de_mongodb
-   JWT_SECRET=tu_secreto_jwt
-   ```
-
-## 🚀 Ejecución
-
-1. **Iniciar el servidor**
-
-   ```bash
-   cd server
-   npm run dev
-   ```
-
-2. **Iniciar el cliente**
-   ```bash
-   cd client
-   npm run dev
-   ```
-
-La aplicación estará disponible en `http://localhost:5173`
-
-## 📱 Funcionalidades Principales
-
-### Gestión de Productos
-
-- Añadir nuevos productos al catálogo
-- Clasificar productos por estado
-- Actualizar fechas de caducidad
-- Marcar productos como agotados o con última caja
-
-### Sistema de Notificaciones
-
-- Alertas de productos próximos a caducar
-- Notificaciones de actualizaciones exitosas
-- Avisos de errores o problemas
-
-### Búsqueda y Filtrado
-
-- Búsqueda instantánea de productos
-- Filtrado por categorías
-- Vista de productos sin clasificar
-
-## 👥 Roles y Permisos
-
-### Supervisor
-
-- Gestión completa del catálogo
-- Administración de usuarios
-- Acceso a todas las funcionalidades
-
-### Encargado
-
-- Gestión de productos y caducidades
-- Actualización de estados
-- Vista de estadísticas
-
-### Gerente
-
-- Visualización de productos y estados
-- Seguimiento de caducidades
-- Acceso a reportes
-
-## 🔒 Seguridad
-
-- Autenticación mediante JWT
-- Protección de rutas por roles
-- Validación de datos en servidor
-- Sanitización de entradas
-
-## 🤝 Contribuir
-
-Las contribuciones son bienvenidas. Por favor, sigue estos pasos:
-
-1. Fork el proyecto
-2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
-
-## 📄 Licencia
-
-Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE.md](LICENSE.md) para más detalles.
-
-## ✨ Agradecimientos
-
-- [React](https://reactjs.org/)
-- [TailwindCSS](https://tailwindcss.com/)
-- [Express](https://expressjs.com/)
-- [MongoDB](https://www.mongodb.com/)
+---
+*Desarrollado con un enfoque en escalabilidad, seguridad y eficiencia operativa.*
