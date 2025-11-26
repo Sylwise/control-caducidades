@@ -33,8 +33,17 @@ logger.info("Variables de entorno cargadas correctamente");
 
 const catalogRoutes = require("./routes/catalogRoutes");
 const statusRoutes = require("./routes/statusRoutes");
-    ? process.env.RAILWAY_PUBLIC_DOMAIN
-    : null,
+// Configuración de CORS
+const allowedOrigins = [
+  "https://caducidades.up.railway.app",
+  "https://caducidades.es",
+  "https://www.caducidades.es",
+  "https://control-caducidades-caducidades.up.railway.app",
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "http://127.0.0.1:5173",
+  process.env.RAILWAY_STATIC_URL,
+  process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : null
 ].filter(Boolean);
 
 const corsOptions = {
