@@ -3,7 +3,7 @@ const logger = require("../logger");
 
 exports.getAllStatus = async (req, res) => {
   try {
-    const statuses = await ProductStatus.find().populate("producto", "nombre");
+    const statuses = await ProductStatus.find({ restaurante: req.user.restaurante }).populate("producto", "nombre");
     res.json(statuses);
   } catch (error) {
     logger.error({ error }, "Error al obtener todos los estados");
@@ -16,7 +16,7 @@ exports.getAllStatus = async (req, res) => {
 exports.getByStatus = async (req, res) => {
   try {
     const { estado } = req.params;
-    const statuses = await ProductStatus.find({ estado }).populate(
+    const statuses = await ProductStatus.find({ estado, restaurante: req.user.restaurante }).populate(
       "producto",
       "nombre"
     );
@@ -48,7 +48,7 @@ exports.updateStatus = async (req, res) => {
       hayUnicaCajaActual: Boolean(hayUnicaCajaActual),
     };
 
-    let productStatus = await ProductStatus.findOne({ producto: productoId });
+    let productStatus = await ProductStatus.findOne({ producto: productoId, restaurante: req.user.restaurante });
     const isNew = !productStatus;
 
     if (productStatus) {
@@ -56,6 +56,7 @@ exports.updateStatus = async (req, res) => {
     } else {
       productStatus = new ProductStatus({
         producto: productoId,
+        restaurante: req.user.restaurante,
         ...updateData,
       });
     }
@@ -69,7 +70,7 @@ exports.updateStatus = async (req, res) => {
 
     const io = req.app.get('io');
     if (io) {
-        io.emit("productStatusUpdate", {
+        io.to(req.user.restaurante).emit("productStatusUpdate", {
             type: isNew ? "create" : "update",
             productStatus: populatedStatus,
         });
@@ -100,13 +101,14 @@ exports.deleteStatus = async (req, res) => {
     const { productoId } = req.params;
     const deletedStatus = await ProductStatus.findOneAndDelete({
       producto: productoId,
+      restaurante: req.user.restaurante,
     });
 
     if (deletedStatus) {
       logger.info(`Estado del producto eliminado: ${productoId}`);
       const io = req.app.get('io');
       if (io) {
-          io.emit("productStatusUpdate", {
+          io.to(req.user.restaurante).emit("productStatusUpdate", {
             type: "delete",
             productId: productoId,
           });

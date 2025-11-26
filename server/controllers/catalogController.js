@@ -7,7 +7,8 @@ const { runInTransaction } = require("../utils/transaction");
 exports.getAllProducts = async (req, res) => {
   try {
     logger.info("Obteniendo todos los productos del catálogo");
-    const products = await CatalogProduct.find().sort({ nombre: 1 });
+    logger.info("Obteniendo todos los productos del catálogo");
+    const products = await CatalogProduct.find({ restaurante: req.user.restaurante }).sort({ nombre: 1 });
     logger.info(`Se encontraron ${products.length} productos`);
     res.json(products);
   } catch (error) {
@@ -23,11 +24,17 @@ exports.getAllProducts = async (req, res) => {
 exports.addProduct = async (req, res) => {
   try {
     const result = await runInTransaction(async (session) => {
-      const newProduct = new CatalogProduct(req.body);
+      const productData = {
+        ...req.body,
+        restaurante: req.user.restaurante
+      };
+      const newProduct = new CatalogProduct(productData);
       const savedProduct = await newProduct.save({ session });
 
       const newStatus = new ProductStatus({
         producto: savedProduct._id,
+        producto: savedProduct._id,
+        restaurante: req.user.restaurante,
         estado: "sin-clasificar",
       });
       const savedStatus = await newStatus.save({ session });
@@ -41,8 +48,8 @@ exports.addProduct = async (req, res) => {
 
     const io = req.app.get('io');
     if (io) {
-        logger.info(`Emitting catalogUpdate event for product: ${populatedStatus.producto.nombre}`);
-        io.emit("catalogUpdate", {
+        logger.info(`Emitting catalogUpdate event for product: ${populatedStatus.producto.nombre} to restaurant: ${req.user.restaurante}`);
+        io.to(req.user.restaurante).emit("catalogUpdate", {
             type: "create",
             productStatus: populatedStatus,
         });
@@ -67,7 +74,10 @@ exports.deleteProduct = async (req, res) => {
     const { id } = req.params;
 
     await runInTransaction(async (session) => {
-      const deletedProduct = await CatalogProduct.findByIdAndDelete(id, { session });
+      const deletedProduct = await CatalogProduct.findOneAndDelete(
+        { _id: id, restaurante: req.user.restaurante },
+        { session }
+      );
 
       if (!deletedProduct) {
         throw new Error("Producto no encontrado");
@@ -79,7 +89,7 @@ exports.deleteProduct = async (req, res) => {
     logger.info(`Producto eliminado del catálogo y estados asociados: ${id}`);
 
     const io = req.app.get('io');
-    io.emit("catalogUpdate", {
+    io.to(req.user.restaurante).emit("catalogUpdate", {
       type: "delete",
       productId: id,
     });
@@ -102,7 +112,7 @@ exports.deleteProduct = async (req, res) => {
 exports.toggleProductStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const product = await CatalogProduct.findById(id);
+    const product = await CatalogProduct.findOne({ _id: id, restaurante: req.user.restaurante });
 
     if (!product) {
       logger.warn(`Intento de activar/desactivar un producto no encontrado: ${id}`);
@@ -116,7 +126,7 @@ exports.toggleProductStatus = async (req, res) => {
     logger.info(`Estado del producto actualizado: ${updatedProduct.nombre}, activo: ${updatedProduct.activo}`);
 
     const io = req.app.get('io');
-    io.emit("catalogUpdate", {
+    io.to(req.user.restaurante).emit("catalogUpdate", {
       type: "update",
       product: updatedProduct,
     });
@@ -146,8 +156,8 @@ exports.updateProduct = async (req, res) => {
       }
     }
     
-    const updatedProduct = await CatalogProduct.findByIdAndUpdate(
-      id,
+    const updatedProduct = await CatalogProduct.findOneAndUpdate(
+      { _id: id, restaurante: req.user.restaurante },
       updates,
       { new: true, runValidators: true }
     );
@@ -160,7 +170,7 @@ exports.updateProduct = async (req, res) => {
     logger.info(`Producto actualizado en el catálogo: ${updatedProduct.nombre}`);
 
     const io = req.app.get('io');
-    io.emit("catalogUpdate", {
+    io.to(req.user.restaurante).emit("catalogUpdate", {
       type: "update",
       product: updatedProduct,
     });

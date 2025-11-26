@@ -37,6 +37,13 @@ function setupSocket(server, allowedOrigins) {
 
     // Unir al usuario a una sala con su ID
     socket.join(socket.user.id);
+    
+    // Unir al usuario a la sala de su restaurante
+    if (socket.user.restaurante) {
+      socket.join(socket.user.restaurante);
+      logger.info(`Socket ${socket.id} unido a sala de restaurante: ${socket.user.restaurante}`);
+    }
+
     if (socket.user.role === 'supervisor') {
       socket.join('supervisors');
     }

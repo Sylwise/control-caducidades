@@ -7,6 +7,11 @@ const productStatusSchema = new mongoose.Schema(
       ref: "CatalogProduct",
       required: true,
     },
+    restaurante: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Restaurant",
+      required: true,
+    },
     fechaFrente: {
       type: Date,
       required: false,

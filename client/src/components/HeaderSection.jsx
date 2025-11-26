@@ -1,4 +1,4 @@
-import { LogOut, Users, Package, CloudOff } from "lucide-react";
+import { LogOut, Users, Package, CloudOff, Store } from "lucide-react";
 import PropTypes from "prop-types";
 import { useSyncContext } from "../hooks/useSyncContext";
 
@@ -10,6 +10,7 @@ const HeaderSection = ({
   onUserManagementClick,
   onCatalogManagementClick,
   onExpiringClick,
+  onRestaurantManagementClick,
 }) => {
   const { pendingChanges } = useSyncContext();
 
@@ -20,7 +21,9 @@ const HeaderSection = ({
         <div className="flex items-center gap-2">
           <span className="select-none">
             {user?.username} ·{" "}
-            {user?.role === "supervisor"
+            {user?.role === "admin"
+              ? "Administrador"
+              : user?.role === "supervisor"
               ? "Supervisor"
               : user?.role === "encargado"
               ? "Encargado"
@@ -36,8 +39,18 @@ const HeaderSection = ({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {user?.role === "supervisor" && (
+          {(user?.role === "supervisor" || user?.role === "admin") && (
             <>
+              {user?.role === "admin" && (
+                <button
+                  onClick={onRestaurantManagementClick}
+                  className="p-2 text-gray-400 hover:text-[#1d5030]
+                    hover:bg-[#1d5030]/10 rounded-md transition-colors"
+                  title="Gestionar Restaurantes"
+                >
+                  <Store className="w-5 h-5" />
+                </button>
+              )}
               <button
                 onClick={onCatalogManagementClick}
                 className="p-2 text-gray-400 hover:text-[#1d5030]
@@ -102,7 +115,7 @@ const HeaderSection = ({
 HeaderSection.propTypes = {
   user: PropTypes.shape({
     username: PropTypes.string,
-    role: PropTypes.oneOf(["supervisor", "encargado", "gerente"]),
+    role: PropTypes.oneOf(["admin", "supervisor", "encargado", "gerente"]),
   }),
   expiringCount: PropTypes.number.isRequired,
   hasExpiredProducts: PropTypes.bool.isRequired,
@@ -110,6 +123,7 @@ HeaderSection.propTypes = {
   onUserManagementClick: PropTypes.func.isRequired,
   onCatalogManagementClick: PropTypes.func.isRequired,
   onExpiringClick: PropTypes.func.isRequired,
+  onRestaurantManagementClick: PropTypes.func,
 };
 
 export default HeaderSection;

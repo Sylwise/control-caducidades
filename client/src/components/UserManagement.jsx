@@ -25,6 +25,7 @@ const UserManagement = ({
     username: "",
     password: "",
     role: "encargado",
+    restaurante: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [formErrors, setFormErrors] = useState({});
@@ -34,10 +35,33 @@ const UserManagement = ({
   const [editFormData, setEditFormData] = useState({
     username: "",
     password: "",
-    role: ""
+    role: "",
+    restaurante: ""
   });
   const [isEditing, setIsEditing] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
+  const [restaurants, setRestaurants] = useState([]);
+
+  // Cargar restaurantes si es admin
+  useEffect(() => {
+    if (currentUser?.role === "admin" && isOpen) {
+      fetch(`${config.apiUrl}/restaurants`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token") || sessionStorage.getItem("token")}`,
+        },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && Array.isArray(data.data)) {
+            setRestaurants(data.data);
+          } else {
+            console.error("Error fetching restaurants:", data);
+            setRestaurants([]);
+          }
+        })
+        .catch((err) => console.error("Error cargando restaurantes:", err));
+    }
+  }, [currentUser, isOpen]);
 
   // Verificar estado offline al abrir el modal
   useEffect(() => {
@@ -222,6 +246,7 @@ const UserManagement = ({
         username: "",
         password: "",
         role: "encargado",
+        restaurante: "",
       });
       setError(null);
     } catch (err) {
@@ -267,13 +292,15 @@ const UserManagement = ({
       username: "",
       password: "",
       role: "encargado",
+      restaurante: "",
     });
     setFormErrors({});
     setEditingUser(null); // Limpiar usuario en edición
     setEditFormData({
       username: "",
       password: "",
-      role: ""
+      role: "",
+      restaurante: ""
     });
     onClose();
   };
@@ -284,7 +311,8 @@ const UserManagement = ({
     setEditFormData({
       username: user.username,
       password: "", // No rellenamos la contraseña por seguridad
-      role: user.role
+      role: user.role,
+      restaurante: user.restaurante?._id || user.restaurante
     });
     setSelectedUserId(null); // Deseleccionar usuario al iniciar edición
   };
@@ -338,7 +366,8 @@ const UserManagement = ({
       // Crear objeto con los datos a actualizar
       const updateData = {
         username: editFormData.username,
-        role: editFormData.role
+        role: editFormData.role,
+        restaurante: editFormData.restaurante
       };
       
       // Solo incluir contraseña si se ha proporcionado una nueva
@@ -529,38 +558,58 @@ const UserManagement = ({
               )}
             </div>
 
-            {/* Role field */}
-            <div className="mb-5">
-              <label
-                className="block text-sm font-medium text-gray-700 mb-2 select-none"
-              >
-                Rol
-              </label>
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setFormData({...formData, role: "encargado"})}
-                  className={`flex-1 min-h-[48px] py-3 px-4 rounded-md flex items-center justify-center font-medium transition-colors ${
-                    formData.role === "encargado"
-                      ? "bg-[#1d5030] text-white"
-                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                  } select-none`}
-                >
-                  Encargado
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFormData({...formData, role: "admin"})}
-                  className={`flex-1 min-h-[48px] py-3 px-4 rounded-md flex items-center justify-center font-medium transition-colors ${
-                    formData.role === "admin"
-                      ? "bg-[#1d5030] text-white"
-                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                  } select-none`}
-                >
-                  Supervisor
-                </button>
-              </div>
-            </div>
+            {/* Role field - Only show if current user is admin */
+            currentUser?.role === "admin" && (
+              <>
+                <div className="mb-5">
+                  <label className="block text-sm font-medium text-gray-700 mb-2 select-none">
+                    Rol
+                  </label>
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, role: "encargado" })}
+                      className={`flex-1 min-h-[48px] py-3 px-4 rounded-md flex items-center justify-center font-medium transition-colors ${
+                        formData.role === "encargado"
+                          ? "bg-[#1d5030] text-white"
+                          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                      } select-none`}
+                    >
+                      Encargado
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, role: "supervisor" })}
+                      className={`flex-1 min-h-[48px] py-3 px-4 rounded-md flex items-center justify-center font-medium transition-colors ${
+                        formData.role === "supervisor"
+                          ? "bg-[#1d5030] text-white"
+                          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                      } select-none`}
+                    >
+                      Supervisor
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mb-5">
+                  <label className="block text-sm font-medium text-gray-700 mb-2 select-none">
+                    Restaurante
+                  </label>
+                  <select
+                    value={formData.restaurante}
+                    onChange={(e) => setFormData({ ...formData, restaurante: e.target.value })}
+                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-[#1d5030] focus:border-[#1d5030]"
+                  >
+                    <option value="">Seleccionar Restaurante</option>
+                    {restaurants.map((r) => (
+                      <option key={r._id} value={r._id}>
+                        {r.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            )}
 
             {/* Form buttons */}
             <div className="flex justify-end gap-3">
@@ -624,7 +673,11 @@ const UserManagement = ({
                     {user.username}
                   </h4>
                   <p className="text-sm text-gray-500 select-none">
-                    {user.role === "admin" ? "Administrador" : "Encargado"}
+                    {user.role === "admin"
+                      ? "Administrador"
+                      : user.role === "supervisor"
+                      ? "Supervisor"
+                      : "Encargado"}
                   </p>
                 </div>
 
@@ -802,38 +855,62 @@ const UserManagement = ({
                   )}
                 </div>
 
-                {/* Role field */}
-                <div className="mb-5">
-                  <label
-                    className="block text-sm font-medium text-gray-700 mb-2 select-none"
-                  >
-                    Rol
-                  </label>
-                  <div className="flex gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setEditFormData({...editFormData, role: "encargado"})}
-                      className={`flex-1 min-h-[48px] py-3 px-4 rounded-md flex items-center justify-center font-medium transition-colors ${
-                        editFormData.role === "encargado"
-                          ? "bg-[#1d5030] text-white"
-                          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                      } select-none`}
-                    >
-                      Encargado
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditFormData({...editFormData, role: "admin"})}
-                      className={`flex-1 min-h-[48px] py-3 px-4 rounded-md flex items-center justify-center font-medium transition-colors ${
-                        editFormData.role === "admin"
-                          ? "bg-[#1d5030] text-white"
-                          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                      } select-none`}
-                    >
-                      Supervisor
-                    </button>
-                  </div>
-                </div>
+                {/* Role field - Only show if current user is admin */
+                currentUser?.role === "admin" && (
+                  <>
+                    <div className="mb-5">
+                      <label className="block text-sm font-medium text-gray-700 mb-2 select-none">
+                        Rol
+                      </label>
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setEditFormData({ ...editFormData, role: "encargado" })
+                          }
+                          className={`flex-1 min-h-[48px] py-3 px-4 rounded-md flex items-center justify-center font-medium transition-colors ${
+                            editFormData.role === "encargado"
+                              ? "bg-[#1d5030] text-white"
+                              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                          } select-none`}
+                        >
+                          Encargado
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setEditFormData({ ...editFormData, role: "supervisor" })
+                          }
+                          className={`flex-1 min-h-[48px] py-3 px-4 rounded-md flex items-center justify-center font-medium transition-colors ${
+                            editFormData.role === "supervisor"
+                              ? "bg-[#1d5030] text-white"
+                              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                          } select-none`}
+                        >
+                          Supervisor
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="mb-5">
+                      <label className="block text-sm font-medium text-gray-700 mb-2 select-none">
+                        Restaurante
+                      </label>
+                      <select
+                        value={editFormData.restaurante}
+                        onChange={(e) => setEditFormData({ ...editFormData, restaurante: e.target.value })}
+                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-[#1d5030] focus:border-[#1d5030]"
+                      >
+                        <option value="">Seleccionar Restaurante</option>
+                        {restaurants.map((r) => (
+                          <option key={r._id} value={r._id}>
+                            {r.nombre}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
+                )}
 
                 {/* Form buttons */}
                 <div className="flex justify-end gap-3">

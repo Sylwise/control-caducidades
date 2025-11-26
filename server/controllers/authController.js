@@ -46,6 +46,7 @@ exports.login = async (req, res) => {
         id: user._id,
         username: user.username,
         role: user.role,
+        restaurante: user.restaurante,
       },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
@@ -58,6 +59,7 @@ exports.login = async (req, res) => {
         id: user._id,
         username: user.username,
         role: user.role,
+        restaurante: user.restaurante,
       },
     });
   } catch (error) {
@@ -125,7 +127,16 @@ exports.changePassword = async (req, res) => {
 // Obtener todos los usuarios (solo supervisor)
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await User.find();
+    let query = {};
+    
+    // Si no es admin, solo ve usuarios de su restaurante
+    if (req.user.role !== "admin") {
+      // Necesitamos buscar el usuario actual para saber su restaurante
+      const currentUser = await User.findById(req.user.id);
+      query.restaurante = currentUser.restaurante;
+    }
+
+    const users = await User.find(query).populate("restaurante", "nombre");
     res.json(users);
   } catch (error) {
     logger.error({ error }, "Error al obtener todos los usuarios");
@@ -153,18 +164,41 @@ exports.createUser = async (req, res) => {
       });
     }
 
+    // Lógica de permisos
+    const currentUser = await User.findById(req.user.id);
+    
+    if (currentUser.role === "supervisor") {
+      // Supervisor solo puede crear encargados para su propio restaurante
+      if (role !== "encargado") {
+        return res.status(403).json({
+          error: "Los supervisores solo pueden crear encargados",
+        });
+      }
+      // Forzar el restaurante del supervisor
+      req.body.restaurante = currentUser.restaurante;
+    } else if (currentUser.role === "admin") {
+      // Admin puede crear cualquier cosa, pero debe especificar restaurante
+      if (!restaurante && role !== "admin") {
+         return res.status(400).json({
+          error: "El restaurante es obligatorio",
+        });
+      }
+    }
+
     const user = new User({
       username,
       password,
       role,
-      restaurante,
+      restaurante: req.body.restaurante || restaurante,
     });
 
     await user.save();
     logger.info(`Nuevo usuario creado: ${username}`);
 
     const io = req.app.get('io');
-    io.to("supervisors").emit("userUpdate", {
+    // Emitir solo a los usuarios del mismo restaurante
+    const targetRoom = req.body.restaurante || restaurante;
+    io.to(targetRoom).emit("userUpdate", {
       type: "create",
       user: user.toJSON(),
     });
@@ -212,7 +246,7 @@ exports.updateUser = async (req, res) => {
     logger.info(`Usuario actualizado: ${username}`);
 
     const io = req.app.get('io');
-    io.to("supervisors").emit("userUpdate", {
+    io.to(user.restaurante.toString()).emit("userUpdate", {
       type: "update",
       user: user.toJSON(),
     });
@@ -241,6 +275,19 @@ exports.deleteUser = async (req, res) => {
       });
     }
 
+    // Verificar permisos
+    const currentUser = await User.findById(req.user.id);
+    
+    if (currentUser.role !== "admin") {
+      // Si no es admin, debe ser del mismo restaurante
+      if (user.restaurante.toString() !== currentUser.restaurante.toString()) {
+        return res.status(403).json({
+          error: "No tienes permiso para eliminar este usuario",
+        });
+      }
+    }
+
+
     if (user.role === "supervisor") {
       const supervisorCount = await User.countDocuments({ role: "supervisor" });
       if (supervisorCount <= 1) {
@@ -254,7 +301,7 @@ exports.deleteUser = async (req, res) => {
     logger.info(`Usuario eliminado: ${user.username}`);
 
     const io = req.app.get('io');
-    io.to("supervisors").emit("userUpdate", {
+    io.to(user.restaurante.toString()).emit("userUpdate", {
       type: "delete",
       userId: userId,
     });

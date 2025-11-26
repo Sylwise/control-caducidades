@@ -34,9 +34,14 @@ logger.info("Variables de entorno cargadas correctamente");
 const catalogRoutes = require("./routes/catalogRoutes");
 const statusRoutes = require("./routes/statusRoutes");
 const authRoutes = require("./routes/authRoutes");
+const restaurantRoutes = require("./routes/restaurantRoutes");
 
 const app = express();
 const server = http.createServer(app);
+
+// ... (CORS config)
+
+
 
 // Configuración de CORS
 const allowedOrigins = [
@@ -135,6 +140,7 @@ app.use("/api/auth/login", authLimiter);
 app.use("/api/catalog", catalogRoutes);
 app.use("/api/status", statusRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/restaurants", restaurantRoutes);
 
 // En producción, todas las rutas no-API sirven el index.html
 if (process.env.NODE_ENV === "production") {

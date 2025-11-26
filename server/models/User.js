@@ -31,14 +31,15 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       enum: {
-        values: ["supervisor", "encargado"],
-        message: "El rol debe ser supervisor o encargado",
+        values: ["admin", "supervisor", "encargado"],
+        message: "El rol debe ser admin, supervisor o encargado",
       },
       required: [true, "El rol es obligatorio"],
     },
     restaurante: {
-      type: String,
-      trim: true,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Restaurant",
+      required: [true, "El restaurante es obligatorio"],
     },
   },
   {

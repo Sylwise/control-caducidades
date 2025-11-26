@@ -5,7 +5,11 @@ const catalogProductSchema = new mongoose.Schema(
     nombre: {
       type: String,
       required: true,
-      unique: true,
+    },
+    restaurante: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Restaurant",
+      required: true,
     },
     activo: {
       type: Boolean,

@@ -33,7 +33,7 @@ exports.verifyToken = async (req, res, next) => {
   }
 };
 
-// Middleware para verificar rol de supervisor
+// Middleware para verificar rol de supervisor (o admin)
 exports.isSupervisor = (req, res, next) => {
   if (!req.user) {
     logger.error("isSupervisor middleware llamado sin req.user");
@@ -42,10 +42,29 @@ exports.isSupervisor = (req, res, next) => {
     });
   }
 
-  if (req.user.role !== "supervisor") {
+  if (req.user.role !== "supervisor" && req.user.role !== "admin") {
     logger.warn(`Acceso denegado a usuario no supervisor: ${req.user.username}`);
     return res.status(403).json({
       error: "Acceso denegado - Se requiere rol de supervisor",
+    });
+  }
+
+  next();
+};
+
+// Middleware para verificar rol de admin
+exports.isAdmin = (req, res, next) => {
+  if (!req.user) {
+    logger.error("isAdmin middleware llamado sin req.user");
+    return res.status(401).json({
+      error: "No autorizado",
+    });
+  }
+
+  if (req.user.role !== "admin") {
+    logger.warn(`Acceso denegado a usuario no admin: ${req.user.username}`);
+    return res.status(403).json({
+      error: "Acceso denegado - Se requiere rol de administrador",
     });
   }
 

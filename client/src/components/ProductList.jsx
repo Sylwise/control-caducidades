@@ -4,6 +4,7 @@ import AuthContext from "../contexts/AuthContext";
 import ToastContainer from "./ToastContainer";
 import UserManagement from "./UserManagement";
 import CatalogManagement from "./CatalogManagement";
+import RestaurantManagement from "./RestaurantManagement";
 import { useSocket } from "../hooks/useSocket";
 import usePreventScroll from "../hooks/usePreventScroll";
 import useToasts from "../hooks/useToasts";
@@ -83,6 +84,8 @@ const ProductList = () => {
     handleCloseUpdateModal,
     handleCloseExpiringModal,
   } = useModalManagement();
+
+  const [isRestaurantManagementOpen, setIsRestaurantManagementOpen] = useState(false);
 
   const {
     calculateExpiringProducts,
@@ -379,6 +382,7 @@ const ProductList = () => {
           onUserManagementClick={() => setIsUserManagementOpen(true)}
           onCatalogManagementClick={() => setShowCatalogManagement(true)}
           onExpiringClick={() => setIsExpiringModalOpen(true)}
+          onRestaurantManagementClick={() => setIsRestaurantManagementOpen(true)}
         />
 
         <SearchBar
@@ -455,6 +459,11 @@ const ProductList = () => {
         <CatalogManagement
           isOpen={showCatalogManagement}
           onClose={() => setShowCatalogManagement(false)}
+        />
+
+        <RestaurantManagement
+          isOpen={isRestaurantManagementOpen}
+          onClose={() => setIsRestaurantManagementOpen(false)}
         />
       </div>
     </LoadingErrorContainer>
