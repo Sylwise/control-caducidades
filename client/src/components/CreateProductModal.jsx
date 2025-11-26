@@ -132,6 +132,7 @@ const CreateProductModal = ({ isOpen, onClose, onProductCreated }) => {
                 name="nombre"
                 value={formData.nombre}
                 onChange={handleInputChange}
+                autoComplete="off"
                 className={`w-full px-3 py-2 border rounded-md
                   ${formErrors.nombre ? "border-red-500" : "border-gray-300"}
                   focus:outline-none focus:ring-2 focus:ring-[#1d5030]/50`}

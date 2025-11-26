@@ -22,7 +22,7 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      console.log("Intentando iniciar sesión con:", credentials);
+
 
       const response = await fetch(`${config.apiUrl}/auth/login`, {
         method: "POST",
@@ -33,7 +33,7 @@ const Login = () => {
       });
 
       const data = await response.json();
-      console.log("Respuesta del servidor:", data);
+
 
       if (!response.ok) {
         throw new Error(data.error || "Error al iniciar sesión");

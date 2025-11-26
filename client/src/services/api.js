@@ -6,11 +6,7 @@ const API_BASE_URL = import.meta.env.PROD
   ? `${window.location.origin}/api` // URL de producción
   : "http://localhost:5000/api"; // URL de desarrollo
 
-console.log("Entorno actual:", {
-  VITE_PROD: import.meta.env.PROD,
-  API_BASE_URL,
-  ORIGIN: window.location.origin,
-});
+
 
 // Función auxiliar para obtener el token
 const getAuthToken = () => {
