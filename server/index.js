@@ -33,19 +33,6 @@ logger.info("Variables de entorno cargadas correctamente");
 
 const catalogRoutes = require("./routes/catalogRoutes");
 const statusRoutes = require("./routes/statusRoutes");
-const authRoutes = require("./routes/authRoutes");
-
-const app = express();
-const server = http.createServer(app);
-
-// Configuración de CORS
-const allowedOrigins = [
-  "https://control-caducidades-caducidades.up.railway.app",
-  "http://localhost:5173",
-  "http://localhost:3000",
-  "http://127.0.0.1:5173",
-  process.env.NODE_ENV === "production" ? process.env.RAILWAY_STATIC_URL : null,
-  process.env.NODE_ENV === "production"
     ? process.env.RAILWAY_PUBLIC_DOMAIN
     : null,
 ].filter(Boolean);
