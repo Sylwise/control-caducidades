@@ -164,7 +164,8 @@ app.use((err, req, res, _next) => {
 
   res.status(500).json({
     error: "Error interno del servidor",
-    details: process.env.NODE_ENV === "development" ? err.message : undefined,
+    details: err.message,
+    stack: err.stack
   });
 });
 
