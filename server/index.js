@@ -40,22 +40,24 @@ const server = http.createServer(app);
 
 // Configuración de CORS
 const allowedOrigins = [
+  "https://caducidades.up.railway.app",
   "https://control-caducidades-caducidades.up.railway.app",
   "http://localhost:5173",
   "http://localhost:3000",
   "http://127.0.0.1:5173",
-  process.env.NODE_ENV === "production" ? process.env.RAILWAY_STATIC_URL : null,
-  process.env.NODE_ENV === "production"
-    ? process.env.RAILWAY_PUBLIC_DOMAIN
-    : null,
+  process.env.RAILWAY_STATIC_URL,
+  process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : null
 ].filter(Boolean);
 
 const corsOptions = {
   origin: function (origin, callback) {
-    if (allowedOrigins.includes(origin) || !origin) {
+    // Permitir solicitudes sin origen (como curl o apps móviles)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      logger.warn(`Origin bloqueado por CORS: ${origin}`);
+      logger.warn(`Origin bloqueado por CORS: ${origin}. Allowed: ${allowedOrigins.join(', ')}`);
       callback(new Error("Not allowed by CORS"));
     }
   },
@@ -164,8 +166,7 @@ app.use((err, req, res, _next) => {
 
   res.status(500).json({
     error: "Error interno del servidor",
-    details: err.message,
-    stack: err.stack
+    details: process.env.NODE_ENV === "development" ? err.message : undefined,
   });
 });
 
