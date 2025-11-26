@@ -33,6 +33,11 @@ logger.info("Variables de entorno cargadas correctamente");
 
 const catalogRoutes = require("./routes/catalogRoutes");
 const statusRoutes = require("./routes/statusRoutes");
+const authRoutes = require("./routes/authRoutes");
+
+const app = express();
+const server = http.createServer(app);
+
 // Configuración de CORS
 const allowedOrigins = [
   "https://caducidades.up.railway.app",
