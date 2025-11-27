@@ -138,7 +138,9 @@ const ProductList = () => {
 
       // Extraer fechas adicionales si existen
       const fechas = product.fechasAlmacen || [];
-      const [primeraFecha, segundaFecha, terceraFecha] = fechas;
+      // fechas es ahora un array de objetos { date, boxes }
+      const segundaFechaObj = fechas[0]; // La primera en el array es la segunda en total (fechaAlmacen es la principal)
+      const terceraFechaObj = fechas[1];
 
       setUpdateForm({
         fechaFrente: product.fechaFrente
@@ -147,21 +149,25 @@ const ProductList = () => {
         fechaAlmacen:
           product.estado === "frente-agota"
             ? ""
-            : primeraFecha
-            ? new Date(primeraFecha).toISOString().split("T")[0]
             : product.fechaAlmacen
             ? new Date(product.fechaAlmacen).toISOString().split("T")[0]
             : "",
-        fechaAlmacen2: segundaFecha
-          ? new Date(segundaFecha).toISOString().split("T")[0]
+        cajasAlmacen: product.cajasAlmacen || 1,
+        
+        fechaAlmacen2: segundaFechaObj?.date
+          ? new Date(segundaFechaObj.date).toISOString().split("T")[0]
           : "",
-        fechaAlmacen3: terceraFecha
-          ? new Date(terceraFecha).toISOString().split("T")[0]
+        cajasAlmacen2: segundaFechaObj?.boxes || 1,
+
+        fechaAlmacen3: terceraFechaObj?.date
+          ? new Date(terceraFechaObj.date).toISOString().split("T")[0]
           : "",
+        cajasAlmacen3: terceraFechaObj?.boxes || 1,
+
         cajaUnica: product.cajaUnica || false,
         hayUnicaCajaActual: product.hayUnicaCajaActual || false,
-        showSecondDate: Boolean(segundaFecha),
-        showThirdDate: Boolean(terceraFecha),
+        showSecondDate: Boolean(segundaFechaObj),
+        showThirdDate: Boolean(terceraFechaObj),
         noHayEnAlmacen: product.estado === "frente-agota",
       });
 
@@ -187,14 +193,18 @@ const ProductList = () => {
       // Preparar array de fechas de almacén
       const fechasAlmacen = [];
       if (!updateForm.noHayEnAlmacen) {
-        if (updateForm.fechaAlmacen) {
-          fechasAlmacen.push(updateForm.fechaAlmacen);
-        }
+        // La primera fecha va en fechaAlmacen, las siguientes en el array
         if (updateForm.showSecondDate && updateForm.fechaAlmacen2) {
-          fechasAlmacen.push(updateForm.fechaAlmacen2);
+          fechasAlmacen.push({
+            date: updateForm.fechaAlmacen2,
+            boxes: updateForm.cajasAlmacen2 || 1
+          });
         }
         if (updateForm.showThirdDate && updateForm.fechaAlmacen3) {
-          fechasAlmacen.push(updateForm.fechaAlmacen3);
+          fechasAlmacen.push({
+            date: updateForm.fechaAlmacen3,
+            boxes: updateForm.cajasAlmacen3 || 1
+          });
         }
       }
 
@@ -203,6 +213,7 @@ const ProductList = () => {
         fechaAlmacen: updateForm.noHayEnAlmacen
           ? null
           : updateForm.fechaAlmacen || null,
+        cajasAlmacen: updateForm.noHayEnAlmacen ? 0 : (updateForm.cajasAlmacen || 1),
         fechasAlmacen: updateForm.noHayEnAlmacen ? [] : fechasAlmacen,
         cajaUnica: Boolean(updateForm.cajaUnica),
         hayUnicaCajaActual: Boolean(updateForm.hayUnicaCajaActual),
@@ -330,20 +341,41 @@ const ProductList = () => {
       updateProductInState(data.productStatus);
     } else if (data.type === "delete") {
       removeProductFromState(data.productId);
+      
+      // Si el servidor envía los datos del producto (desclasificación),
+      // añadirlo de nuevo a la lista de sin clasificar
+      if (data.product) {
+        addProductToState({
+          producto: data.product,
+          estado: "sin-clasificar",
+          fechaFrente: null,
+          fechaAlmacen: null,
+          fechasAlmacen: [],
+          cajaUnica: false,
+          hayUnicaCajaActual: false
+        });
+      }
     }
-  }, [updateProductInState, removeProductFromState]);
+  }, [updateProductInState, removeProductFromState, addProductToState]);
 
   // Efecto para eventos locales (independiente del socket)
   useEffect(() => {
     const handleLocalCatalogUpdate = (event) => {
       handleCatalogUpdate(event.detail);
     };
+
+    const handleLocalProductStatusUpdate = (event) => {
+      handleProductStatusUpdate(event.detail);
+    };
+
     window.addEventListener("localCatalogUpdate", handleLocalCatalogUpdate);
+    window.addEventListener("localProductStatusUpdate", handleLocalProductStatusUpdate);
 
     return () => {
       window.removeEventListener("localCatalogUpdate", handleLocalCatalogUpdate);
+      window.removeEventListener("localProductStatusUpdate", handleLocalProductStatusUpdate);
     };
-  }, [handleCatalogUpdate]);
+  }, [handleCatalogUpdate, handleProductStatusUpdate]);
 
   // Efecto para eventos de socket
   useEffect(() => {

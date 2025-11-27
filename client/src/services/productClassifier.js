@@ -41,13 +41,17 @@ export function classifyProduct({
 
   // Si las fechas coinciden
   if (frontDate === storageDate) {
-    if (cajaUnica) {
+    // Lógica basada en CAJAS (coincide con el backend)
+    // Si solo queda 1 caja en almacén (la actual) y NO hay más fechas detrás -> abierto-agota
+    if (cajasAlmacen === 1 && (!fechasAlmacen || fechasAlmacen.length === 0)) {
       return PRODUCT_STATES.ABIERTO_AGOTA;
-    } else if (fechasAlmacen && fechasAlmacen.length > 0 && hayUnicaCajaActual) {
-      // Solo es "abierto-cambia" si hay solo una caja de la fecha actual 
-      // y hay otras fechas diferentes en almacén
+    } 
+    // Si solo queda 1 caja en almacén (la actual) y SÍ hay más fechas detrás -> abierto-cambia
+    else if (cajasAlmacen === 1 && fechasAlmacen && fechasAlmacen.length > 0) {
       return PRODUCT_STATES.ABIERTO_CAMBIA;
-    } else {
+    } 
+    // En cualquier otro caso (más de 1 caja), es sin-clasificar
+    else {
       return PRODUCT_STATES.SIN_CLASIFICAR;
     }
   }
@@ -79,7 +83,10 @@ export function validateProductData(data) {
     if (!Array.isArray(data.fechasAlmacen)) {
       errors.push("Las fechas de almacén deben ser un array");
     } else {
-      data.fechasAlmacen.forEach((fecha, index) => {
+      data.fechasAlmacen.forEach((item, index) => {
+        // Manejar tanto strings (legado) como objetos { date, boxes }
+        const fecha = typeof item === 'object' && item.date ? item.date : item;
+        
         if (isNaN(new Date(fecha).getTime())) {
           errors.push(`La fecha de almacén #${index + 1} no es válida`);
         }

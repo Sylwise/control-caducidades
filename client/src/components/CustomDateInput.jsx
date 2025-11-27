@@ -332,15 +332,13 @@ const CustomDateInput = ({
             <span className="text-gray-500">Seleccionar {label}</span>
           )}
         </button>
-        {((value && !disabled) ||
-          (!value && showRemoveWhenEmpty && onRemove)) && (
+        {onRemove && ((value && !disabled) ||
+          (!value && showRemoveWhenEmpty)) && (
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              if (onRemove) {
-                onRemove();
-              }
+              onRemove();
             }}
             className="p-2.5 text-gray-400 hover:text-gray-600
               hover:bg-gray-100 rounded-lg transition-colors"

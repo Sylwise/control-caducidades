@@ -153,6 +153,9 @@ const CatalogManagement = ({ isOpen, onClose }) => {
         );
       } else if (data.type === "update") {
         setProducts((prevProducts) => {
+          // Verificar que data.product exista
+          if (!data.product) return prevProducts;
+
           // Si el producto no existe en el array, no intentamos actualizarlo
           if (!prevProducts.some(p => p._id === data.product._id)) {
             return prevProducts;

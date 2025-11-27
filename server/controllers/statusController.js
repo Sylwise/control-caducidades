@@ -35,6 +35,7 @@ exports.updateStatus = async (req, res) => {
     const {
       fechaFrente,
       fechaAlmacen,
+      cajasAlmacen,
       fechasAlmacen = [],
       cajaUnica,
       hayUnicaCajaActual,
@@ -43,6 +44,7 @@ exports.updateStatus = async (req, res) => {
     const updateData = {
       fechaFrente,
       fechaAlmacen,
+      cajasAlmacen,
       fechasAlmacen,
       cajaUnica: Boolean(cajaUnica),
       hayUnicaCajaActual: Boolean(hayUnicaCajaActual),
@@ -102,7 +104,7 @@ exports.deleteStatus = async (req, res) => {
     const deletedStatus = await ProductStatus.findOneAndDelete({
       producto: productoId,
       restaurante: req.user.restaurante,
-    });
+    }).populate("producto");
 
     if (deletedStatus) {
       logger.info(`Estado del producto eliminado: ${productoId}`);
@@ -111,11 +113,15 @@ exports.deleteStatus = async (req, res) => {
           io.to(req.user.restaurante).emit("productStatusUpdate", {
             type: "delete",
             productId: productoId,
+            product: deletedStatus.producto
           });
       }
     }
 
-    res.json({ message: "Estado eliminado correctamente" });
+    res.json({ 
+      message: "Estado eliminado correctamente",
+      product: deletedStatus ? deletedStatus.producto : null
+    });
   } catch (error) {
     logger.error({ error, params: req.params }, "Error al eliminar el estado del producto");
     res.status(400).json({ message: "Error al eliminar el estado" });

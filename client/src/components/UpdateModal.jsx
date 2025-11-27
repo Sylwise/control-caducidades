@@ -1,8 +1,9 @@
-import { RefreshCw, Plus, AlertCircle, Check, HelpCircle } from "lucide-react";
+import { RefreshCw, Plus, AlertCircle, Check, HelpCircle, Trash } from "lucide-react";
 import PropTypes from "prop-types";
 import { useState } from "react";
 import CustomDateInput from "./CustomDateInput";
 import ModalContainer from "./ModalContainer";
+import QuantitySelector from "./QuantitySelector";
 
 // Componente de checkbox mejorado con tooltip
 const CustomCheckbox = ({ 
@@ -128,6 +129,14 @@ const UpdateModal = ({
     fechaAlmacen3: "",
   });
   const [showFrontDateDialog, setShowFrontDateDialog] = useState(false);
+  const [dateToDelete, setDateToDelete] = useState(null);
+
+  const handleConfirmDeleteDate = () => {
+    if (dateToDelete) {
+      handleStorageDateRemoval(dateToDelete);
+      setDateToDelete(null);
+    }
+  };
 
   const isDateAfter = (dateToCheck, baseDate) => {
     if (!dateToCheck || !baseDate) return true;
@@ -189,32 +198,33 @@ const UpdateModal = ({
     const frontDate = new Date(updateForm.fechaFrente).setHours(0, 0, 0, 0);
     const storageDate = new Date(updateForm.fechaAlmacen).setHours(0, 0, 0, 0);
 
-    if (frontDate === storageDate) {
-      const currentFrontDate = updateForm.fechaFrente;
-      setUpdateForm({
-        ...updateForm,
-        fechaFrente: currentFrontDate,
-        fechaAlmacen: updateForm.fechaAlmacen2 || "",
-        fechaAlmacen2: updateForm.fechaAlmacen3 || "",
-        fechaAlmacen3: "",
-        showThirdDate: false,
-        showSecondDate: Boolean(updateForm.fechaAlmacen3),
-      });
-    } else {
-      setShowFrontDateDialog(true);
-    }
+    // Siempre mostrar el diálogo para dar control al usuario
+    setShowFrontDateDialog(true);
   };
 
-  const handleAllToFront = () => {
-    setUpdateForm((prev) => ({
-      ...prev,
-      fechaFrente: prev.fechaAlmacen,
-      fechaAlmacen: prev.fechaAlmacen2 || "",
-      fechaAlmacen2: prev.fechaAlmacen3 || "",
-      fechaAlmacen3: "",
-      showThirdDate: false,
-      showSecondDate: Boolean(prev.fechaAlmacen3),
-    }));
+  const handleMoveBoxToFront = () => {
+    const currentBoxes = updateForm.cajasAlmacen || 1;
+
+    if (currentBoxes > 1) {
+      setUpdateForm((prev) => ({
+        ...prev,
+        fechaFrente: prev.fechaAlmacen,
+        cajasAlmacen: currentBoxes - 1,
+      }));
+    } else {
+      setUpdateForm((prev) => ({
+        ...prev,
+        fechaFrente: prev.fechaAlmacen,
+        fechaAlmacen: prev.fechaAlmacen2 || "",
+        cajasAlmacen: prev.fechaAlmacen2 ? (prev.cajasAlmacen2 || 1) : 1,
+        fechaAlmacen2: prev.fechaAlmacen3 || "",
+        cajasAlmacen2: prev.fechaAlmacen3 ? (prev.cajasAlmacen3 || 1) : 1,
+        fechaAlmacen3: "",
+        cajasAlmacen3: 1,
+        showThirdDate: false,
+        showSecondDate: Boolean(prev.fechaAlmacen3),
+      }));
+    }
     setShowFrontDateDialog(false);
   };
 
@@ -232,17 +242,28 @@ const UpdateModal = ({
 
       if (dateNumber === 1) {
         newState.fechaAlmacen = prev.fechaAlmacen2 || "";
+        newState.cajasAlmacen = prev.fechaAlmacen2 ? (prev.cajasAlmacen2 || 1) : 1;
+        
         newState.fechaAlmacen2 = prev.fechaAlmacen3 || "";
+        newState.cajasAlmacen2 = prev.fechaAlmacen3 ? (prev.cajasAlmacen3 || 1) : 1;
+        
         newState.fechaAlmacen3 = "";
+        newState.cajasAlmacen3 = 1;
+        
         newState.showThirdDate = false;
         newState.showSecondDate = Boolean(prev.fechaAlmacen3);
       } else if (dateNumber === 2) {
         newState.fechaAlmacen2 = prev.fechaAlmacen3 || "";
+        newState.cajasAlmacen2 = prev.fechaAlmacen3 ? (prev.cajasAlmacen3 || 1) : 1;
+        
         newState.fechaAlmacen3 = "";
+        newState.cajasAlmacen3 = 1;
+        
         newState.showThirdDate = false;
         newState.showSecondDate = Boolean(prev.fechaAlmacen3);
       } else if (dateNumber === 3) {
         newState.fechaAlmacen3 = "";
+        newState.cajasAlmacen3 = 1;
         newState.showThirdDate = false;
       }
 
@@ -269,6 +290,7 @@ const UpdateModal = ({
         ...prev,
         showSecondDate: true,
         fechaAlmacen2: "",
+        cajasAlmacen2: 1, // Resetear cajas al añadir nueva fecha
         cajaUnica: false,
         hayUnicaCajaActual: false,
       }));
@@ -289,6 +311,7 @@ const UpdateModal = ({
         ...prev,
         showThirdDate: true,
         fechaAlmacen3: "",
+        cajasAlmacen3: 1, // Resetear cajas al añadir nueva fecha
         cajaUnica: false,
         hayUnicaCajaActual: false,
       }));
@@ -362,7 +385,7 @@ const UpdateModal = ({
         title={title}
       >
         <div className="flex flex-col h-full">
-          <div className="flex-1 p-5 space-y-4">
+          <div className="flex-1 p-5 space-y-6 min-h-[400px]">
             <div className="space-y-4">
               <div className="relative">
                 <h3 className="text-sm font-medium text-gray-500 mb-2">
@@ -398,84 +421,163 @@ const UpdateModal = ({
                     <h3 className="text-sm font-medium text-gray-500 mb-2">
                       Fechas de caducidad en almacén
                     </h3>
-                    <div className="flex flex-col space-y-4">
-                      <CustomDateInput
-                        label="Fecha Principal"
-                        value={updateForm.fechaAlmacen}
-                        onChange={(value) =>
-                          setUpdateForm({
-                            ...updateForm,
-                            fechaAlmacen: value,
-                            ...(value === "" && {
-                              fechaAlmacen2: "",
-                              fechaAlmacen3: "",
-                              showSecondDate: false,
-                              showThirdDate: false,
-                            }),
-                          })
-                        }
-                        onRemove={() => handleStorageDateRemoval(1)}
-                        className="w-full py-2.5 px-4 my-1.5 rounded-lg transition-all duration-200 font-medium text-sm select-none flex items-center justify-between shadow-sm hover:shadow-md"
-                      />
+                    <div className="flex flex-col gap-4">
+                      {/* Fecha Principal */}
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 min-w-0">
+                          <CustomDateInput
+                            label="Fecha Principal"
+                            value={updateForm.fechaAlmacen}
+                            onChange={(value) =>
+                              setUpdateForm({
+                                ...updateForm,
+                                fechaAlmacen: value,
+                                // Si se está poniendo una nueva fecha (value existe y antes no había o era diferente), resetear a 1
+                                // Si se está borrando (value es vacío), poner a 0
+                                cajasAlmacen: value ? (updateForm.fechaAlmacen ? updateForm.cajasAlmacen : 1) : 0,
+                                ...(value === "" && {
+                                  fechaAlmacen2: "",
+                                  fechaAlmacen3: "",
+                                  showSecondDate: false,
+                                  showThirdDate: false,
+                                }),
+                              })
+                            }
+                            // No pasamos onRemove aquí para manejarlo externamente
+                            className="w-full py-2.5 px-3 my-0 rounded-lg transition-all duration-200 font-medium text-sm select-none flex items-center justify-between shadow-sm hover:shadow-md h-[42px]"
+                          />
+                        </div>
+                        
+                        {updateForm.fechaAlmacen && (
+                          <>
+                            <div className="flex-shrink-0">
+                              <QuantitySelector
+                                value={updateForm.cajasAlmacen || 1}
+                                onChange={(val) => setUpdateForm({ ...updateForm, cajasAlmacen: val })}
+                                min={1}
+                                max={50}
+                                className="w-[100px]"
+                              />
+                            </div>
+                            <button
+                              onClick={() => setDateToDelete(1)}
+                              className="flex-shrink-0 p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Eliminar fecha"
+                            >
+                              <Trash className="w-5 h-5" />
+                            </button>
+                          </>
+                        )}
+                      </div>
 
                       {updateForm.showSecondDate && (
-                        <div className="relative">
-                          <CustomDateInput
-                            label="Fecha Secundaria"
-                            value={updateForm.fechaAlmacen2}
-                            onChange={(value) => {
-                              if (validateAdditionalDate(value, 2)) {
-                                setUpdateForm({
-                                  ...updateForm,
-                                  fechaAlmacen2: value,
-                                  ...(value === "" && {
-                                    fechaAlmacen3: "",
-                                    showThirdDate: false,
-                                  }),
-                                });
-                              }
-                            }}
-                            data-date-input="fechaAlmacen2"
-                            onRemove={() => handleStorageDateRemoval(2)}
-                            showRemoveWhenEmpty
-                            className="w-full py-2.5 px-4 my-1.5 rounded-lg transition-all duration-200 font-medium text-sm select-none flex items-center justify-between shadow-sm hover:shadow-md"
-                          />
-                          {dateErrors.fechaAlmacen2 && (
-                            <div className="flex items-center gap-1.5 mt-1">
-                              <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
-                              <p className="text-sm text-red-600 font-medium">
-                                {dateErrors.fechaAlmacen2}
-                              </p>
-                            </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 min-w-0">
+                            <CustomDateInput
+                              label="Fecha Secundaria"
+                              value={updateForm.fechaAlmacen2}
+                              onChange={(value) => {
+                                if (validateAdditionalDate(value, 2)) {
+                                  setUpdateForm({
+                                    ...updateForm,
+                                    fechaAlmacen2: value,
+                                    // Resetear a 1 si es una nueva fecha
+                                    cajasAlmacen2: value ? (updateForm.fechaAlmacen2 ? updateForm.cajasAlmacen2 : 1) : 0,
+                                    ...(value === "" && {
+                                      fechaAlmacen3: "",
+                                      showThirdDate: false,
+                                    }),
+                                  });
+                                }
+                              }}
+                              data-date-input="fechaAlmacen2"
+                              // No pasamos onRemove aquí
+                              showRemoveWhenEmpty={false}
+                              className="w-full py-2.5 px-3 my-0 rounded-lg transition-all duration-200 font-medium text-sm select-none flex items-center justify-between shadow-sm hover:shadow-md h-[42px]"
+                            />
+                            {dateErrors.fechaAlmacen2 && (
+                              <div className="flex items-center gap-1.5 mt-1">
+                                <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                                <p className="text-xs text-red-600 font-medium">
+                                  {dateErrors.fechaAlmacen2}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {updateForm.fechaAlmacen2 && (
+                            <>
+                              <div className="flex-shrink-0">
+                                <QuantitySelector
+                                  value={updateForm.cajasAlmacen2 || 1}
+                                  onChange={(val) => setUpdateForm({ ...updateForm, cajasAlmacen2: val })}
+                                  min={1}
+                                  max={50}
+                                  className="w-[100px]"
+                                />
+                              </div>
+                              <button
+                                onClick={() => setDateToDelete(2)}
+                                className="flex-shrink-0 p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Eliminar fecha"
+                              >
+                                <Trash className="w-5 h-5" />
+                              </button>
+                            </>
                           )}
                         </div>
                       )}
 
                       {updateForm.showThirdDate && (
-                        <div className="relative">
-                          <CustomDateInput
-                            label="Fecha Adicional"
-                            value={updateForm.fechaAlmacen3}
-                            onChange={(value) => {
-                              if (validateAdditionalDate(value, 3)) {
-                                setUpdateForm({
-                                  ...updateForm,
-                                  fechaAlmacen3: value,
-                                });
-                              }
-                            }}
-                            data-date-input="fechaAlmacen3"
-                            onRemove={() => handleStorageDateRemoval(3)}
-                            showRemoveWhenEmpty
-                            className="w-full py-2.5 px-4 my-1.5 rounded-lg transition-all duration-200 font-medium text-sm select-none flex items-center justify-between shadow-sm hover:shadow-md"
-                          />
-                          {dateErrors.fechaAlmacen3 && (
-                            <div className="flex items-center gap-1.5 mt-1">
-                              <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
-                              <p className="text-sm text-red-600 font-medium">
-                                {dateErrors.fechaAlmacen3}
-                              </p>
-                            </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 min-w-0">
+                            <CustomDateInput
+                              label="Fecha Adicional"
+                              value={updateForm.fechaAlmacen3}
+                              onChange={(value) => {
+                                if (validateAdditionalDate(value, 3)) {
+                                  setUpdateForm({
+                                    ...updateForm,
+                                    fechaAlmacen3: value,
+                                    // Resetear a 1 si es una nueva fecha
+                                    cajasAlmacen3: value ? (updateForm.fechaAlmacen3 ? updateForm.cajasAlmacen3 : 1) : 0,
+                                  });
+                                }
+                              }}
+                              data-date-input="fechaAlmacen3"
+                              // No pasamos onRemove aquí
+                              showRemoveWhenEmpty={false}
+                              className="w-full py-2.5 px-3 my-0 rounded-lg transition-all duration-200 font-medium text-sm select-none flex items-center justify-between shadow-sm hover:shadow-md h-[42px]"
+                            />
+                            {dateErrors.fechaAlmacen3 && (
+                              <div className="flex items-center gap-1.5 mt-1">
+                                <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                                <p className="text-xs text-red-600 font-medium">
+                                  {dateErrors.fechaAlmacen3}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {updateForm.fechaAlmacen3 && (
+                            <>
+                              <div className="flex-shrink-0">
+                                <QuantitySelector
+                                  value={updateForm.cajasAlmacen3 || 1}
+                                  onChange={(val) => setUpdateForm({ ...updateForm, cajasAlmacen3: val })}
+                                  min={1}
+                                  max={50}
+                                  className="w-[100px]"
+                                />
+                              </div>
+                              <button
+                                onClick={() => setDateToDelete(3)}
+                                className="flex-shrink-0 p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Eliminar fecha"
+                              >
+                                <Trash className="w-5 h-5" />
+                              </button>
+                            </>
                           )}
                         </div>
                       )}
@@ -500,42 +602,8 @@ const UpdateModal = ({
                       Añadir fecha adicional
                     </button>
                   )}
-
-                  {/* Separador visual */}
-                  <div className="border-t border-gray-100 my-3"></div>
-
-                  <CustomCheckbox
-                    id="cajaUnica"
-                    label="Solo queda una caja"
-                    checked={updateForm.cajaUnica}
-                    disabled={
-                      updateForm.noHayEnAlmacen || updateForm.showSecondDate
-                    }
-                    onChange={(checked) =>
-                      setUpdateForm({
-                        ...updateForm,
-                        cajaUnica: checked,
-                      })
-                    }
-                    tooltip="Si se selecciona esta opción, se considerará que solo queda una caja del producto en almacén."
-                  />
-                  
-                  {updateForm.showSecondDate && !updateForm.noHayEnAlmacen && (
-                    <CustomCheckbox
-                      id="hayUnicaCajaActual"
-                      label="Solo una caja de la fecha principal"
-                      checked={updateForm.hayUnicaCajaActual}
-                      onChange={(checked) =>
-                        setUpdateForm({
-                          ...updateForm,
-                          hayUnicaCajaActual: checked,
-                        })
-                      }
-                      tooltip="Si se selecciona esta opción, se considerará que solo hay una caja de la fecha principal antes de cambiar a otra fecha."
-                    />
-                  )}
                 </div>
-              )}
+              )}    {/* Checkbox de caja única eliminado en favor del contador */}
             </div>
           </div>
 
@@ -585,8 +653,17 @@ const UpdateModal = ({
         />
       )}
 
+      {dateToDelete && (
+        <ConfirmDialog
+          title="¿Eliminar fecha?"
+          message="¿Estás seguro de que deseas eliminar esta fecha y sus cajas?"
+          onConfirm={handleConfirmDeleteDate}
+          onCancel={() => setDateToDelete(null)}
+        />
+      )}
+
       {showFrontDateDialog && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center animate-fade-in">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center animate-fade-in select-none">
           <div
             className="fixed inset-0 bg-black/50"
             onClick={() => setShowFrontDateDialog(false)}
@@ -599,25 +676,17 @@ const UpdateModal = ({
                   ¿Qué deseas hacer?
                 </h3>
                 <p className="text-sm text-gray-600">
-                  Al quitar la fecha de frente, ¿cómo deseas manejar el producto
-                  del almacén?
+                  ¿Has traído una caja entera al frente?
                 </p>
               </div>
             </div>
             <div className="space-y-3">
               <button
-                onClick={handleAllToFront}
+                onClick={handleMoveBoxToFront}
                 className="w-full px-4 py-2.5 text-sm font-medium text-white
                   bg-[#1d5030] hover:bg-[#1d5030]/90 rounded-md transition-colors"
               >
-                Todo el producto pasa al frente
-              </button>
-              <button
-                onClick={handlePartialToFront}
-                className="w-full px-4 py-2.5 text-sm font-medium text-[#1d5030]
-                  bg-[#1d5030]/10 hover:bg-[#1d5030]/20 rounded-md transition-colors"
-              >
-                Solo una parte pasa al frente
+                Sí, mover 1 caja al frente
               </button>
               <button
                 onClick={() => setShowFrontDateDialog(false)}

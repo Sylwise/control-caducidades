@@ -241,18 +241,24 @@ class OfflineManager {
           });
           
           const response = await this.processChange(change);
-          if (response && response._id) {
+          
+          // La respuesta del servidor es un ProductStatus (con .producto poblado)
+          // Pero necesitamos el ID del Producto para el mapeo y el catálogo
+          const permanentId = response.producto ? response.producto._id : response._id;
+          const productData = response.producto ? response.producto : response;
+
+          if (permanentId) {
             // Guardar la relación entre ID temporal y permanente
             if (change.tempId) {
-              idMapping.set(change.tempId, response._id);
+              idMapping.set(change.tempId, permanentId);
               
               // También mapear el productId si existe y es diferente del tempId
               if (change.productId && change.productId !== change.tempId) {
-                idMapping.set(change.productId, response._id);
+                idMapping.set(change.productId, permanentId);
               }
             } else if (change.productId) {
               // Si no hay tempId pero hay productId, usar ese
-              idMapping.set(change.productId, response._id);
+              idMapping.set(change.productId, permanentId);
             }
             
             await IndexedDB.removePendingChange(change.id);
@@ -270,12 +276,12 @@ class OfflineManager {
               );
             }
 
-            // Actualizar el producto en IndexedDB con su nuevo ID
+            // Actualizar el producto en IndexedDB con su nuevo ID y datos correctos
             const oldId = change.tempId || change.productId;
             if (oldId) {
               await IndexedDB.updateCatalogProduct(oldId, {
-                ...response,
-                _id: response._id,
+                ...productData,
+                _id: permanentId,
               });
             }
 
@@ -284,7 +290,7 @@ class OfflineManager {
               new CustomEvent("localCatalogUpdate", {
                 detail: {
                   type: "create",
-                  product: response,
+                  product: productData,
                 },
               })
             );
@@ -403,7 +409,32 @@ class OfflineManager {
               }
 
               // Procesar el cambio con el ID permanente
-              await this.processChange(change);
+              const response = await this.processChange(change);
+              
+              // Actualizar IndexedDB y UI según el tipo de cambio
+              if (change.type === "UPDATE") {
+                await IndexedDB.saveProductStatus(response);
+                window.dispatchEvent(
+                  new CustomEvent("localProductStatusUpdate", {
+                    detail: {
+                      type: "update",
+                      productStatus: response,
+                    },
+                  })
+                );
+              } else if (change.type === "DELETE") {
+                await IndexedDB.deleteProductStatus(change.productId);
+                window.dispatchEvent(
+                  new CustomEvent("localProductStatusUpdate", {
+                    detail: {
+                      type: "delete",
+                      productId: change.productId,
+                      product: response.producto // Incluir producto para restauración
+                    },
+                  })
+                );
+              }
+
               await IndexedDB.removePendingChange(change.id);
 
               // Si es un DELETE, notificar a la UI
@@ -427,7 +458,33 @@ class OfflineManager {
             }
           } else {
             // Procesar cambios con IDs permanentes normalmente
-            await this.processChange(change);
+            const response = await this.processChange(change);
+            
+            // Actualizar IndexedDB y UI según el tipo de cambio
+            if (change.type === "UPDATE") {
+              await IndexedDB.saveProductStatus(response);
+              window.dispatchEvent(
+                new CustomEvent("localProductStatusUpdate", {
+                  detail: {
+                    type: "update",
+                    productStatus: response,
+                  },
+                })
+              );
+            } else if (change.type === "DELETE") {
+              // Ya se eliminó del servidor, asegurarnos de limpiar localmente
+              await IndexedDB.deleteProductStatus(change.productId);
+              window.dispatchEvent(
+                new CustomEvent("localProductStatusUpdate", {
+                  detail: {
+                    type: "delete",
+                    productId: change.productId,
+                    product: response.product // Incluir producto para restauración (backend devuelve .product)
+                  },
+                })
+              );
+            }
+
             await IndexedDB.removePendingChange(change.id);
           }
         } catch (error) {

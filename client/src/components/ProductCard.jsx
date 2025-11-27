@@ -95,7 +95,7 @@ const ProductCard = ({
                 </div>
               )}
               {product.fechaAlmacen && (
-                <div className="bg-[#f8f8f8] rounded-md p-3">
+                <div className="bg-[#f8f8f8] rounded-md p-3 relative">
                   <div
                     className="inline-block bg-[#1d5030]/10 px-2 py-1 rounded text-[#1d5030] 
                     text-[14px] font-semibold mb-2 select-none"
@@ -105,6 +105,11 @@ const ProductCard = ({
                   <div className="text-xl font-bold text-[#1a1a1a] leading-tight select-none">
                     {formatDate(product.fechaAlmacen)}
                   </div>
+                  {product.cajasAlmacen > 0 && (
+                    <div className="absolute top-3 right-3 bg-white border border-[#1d5030]/20 text-[#1d5030] text-xs font-bold px-2 py-1 rounded-full shadow-sm">
+                      {product.cajasAlmacen} {product.cajasAlmacen === 1 ? 'caja' : 'cajas'}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -180,6 +185,7 @@ ProductCard.propTypes = {
     estado: PropTypes.string,
     fechaFrente: PropTypes.string,
     fechaAlmacen: PropTypes.string,
+    cajasAlmacen: PropTypes.number,
     cajaUnica: PropTypes.bool,
     hayOtrasFechas: PropTypes.bool,
   }).isRequired,

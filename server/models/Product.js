@@ -20,10 +20,22 @@ const productStatusSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    cajasAlmacen: {
+      type: Number,
+      default: 0,
+    },
     fechasAlmacen: {
-      type: [Date],
+      type: [
+        {
+          date: Date,
+          boxes: { type: Number, default: 1 },
+        },
+      ],
       default: [],
     },
+    // cajaUnica y hayUnicaCajaActual ya no son necesarios como inputs manuales,
+    // pero los mantenemos por compatibilidad o para lógica interna si se requiere,
+    // aunque la lógica principal ahora se basará en contadores.
     cajaUnica: {
       type: Boolean,
       default: false,
@@ -54,9 +66,8 @@ productStatusSchema.pre("save", function (next) {
   console.log("Pre-save middleware ejecutándose con datos:", {
     fechaFrente: this.fechaFrente,
     fechaAlmacen: this.fechaAlmacen,
+    cajasAlmacen: this.cajasAlmacen,
     fechasAlmacen: this.fechasAlmacen,
-    cajaUnica: this.cajaUnica,
-    hayUnicaCajaActual: this.hayUnicaCajaActual,
     estado: this.estado,
   });
 
@@ -87,17 +98,28 @@ productStatusSchema.pre("save", function (next) {
 
     // Si las fechas coinciden
     if (frontDate === storageDate) {
-      if (this.cajaUnica) {
-        console.log("Estableciendo estado: abierto-agota (última caja)");
+      // Lógica basada en CAJAS
+      // Si solo queda 1 caja en almacén (la actual) y NO hay más fechas detrás -> abierto-agota
+      if (this.cajasAlmacen === 1 && (!this.fechasAlmacen || this.fechasAlmacen.length === 0)) {
+        console.log("Estableciendo estado: abierto-agota (última caja y no hay más fechas)");
         this.estado = "abierto-agota";
-      } else if (this.fechasAlmacen && this.fechasAlmacen.length > 0 && this.hayUnicaCajaActual) {
-        console.log("Estableciendo estado: abierto-cambia (hay otras fechas y solo una caja actual)");
+        this.cajaUnica = true; // Mantener compatibilidad
+      } 
+      // Si solo queda 1 caja en almacén (la actual) y SÍ hay más fechas detrás -> abierto-cambia
+      else if (this.cajasAlmacen === 1 && this.fechasAlmacen && this.fechasAlmacen.length > 0) {
+        console.log("Estableciendo estado: abierto-cambia (última caja de esta fecha, pero hay más fechas)");
         this.estado = "abierto-cambia";
-      } else {
+        this.hayUnicaCajaActual = true; // Mantener compatibilidad
+      } 
+      // En cualquier otro caso (más de 1 caja), es sin-clasificar (o el estado por defecto)
+      // Nota: Antes usábamos "sin-clasificar" para esto, pero semánticamente es "tengo stock de sobra"
+      else {
         console.log(
-          "Estableciendo estado: sin-clasificar (fechas iguales, sin condiciones especiales)"
+          "Estableciendo estado: sin-clasificar (fechas iguales, stock suficiente)"
         );
         this.estado = "sin-clasificar";
+        this.cajaUnica = false;
+        this.hayUnicaCajaActual = false;
       }
     }
 
