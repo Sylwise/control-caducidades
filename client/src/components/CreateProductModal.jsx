@@ -65,7 +65,16 @@ const CreateProductModal = ({ isOpen, onClose, onProductCreated }) => {
       onProductCreated(newProduct);
       handleClose();
     } catch (err) {
-      setError(err.message);
+      console.error("Error creating product:", err);
+      if (
+        err.message.includes("duplicate") ||
+        err.message.includes("duplicado") ||
+        err.message.includes("ya existe")
+      ) {
+        setError("Este producto ya existe en el catálogo.");
+      } else {
+        setError(err.message || "Error al crear el producto");
+      }
     } finally {
       setIsSubmitting(false);
     }

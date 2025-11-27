@@ -78,8 +78,8 @@ const ProductCard = ({
       `}
       >
         <div className="space-y-4">
-          {/* Mostrar fechas solo si el producto está clasificado */}
-          {isClassified && (
+          {/* Mostrar fechas si existen, independientemente del estado */}
+          {(product.fechaFrente || product.fechaAlmacen) && (
             <div className="grid grid-cols-2 gap-4">
               {product.fechaFrente && (
                 <div className="bg-[#f8f8f8] rounded-md p-3">
@@ -110,8 +110,8 @@ const ProductCard = ({
             </div>
           )}
 
-          {/* Mostrar etiqueta de caja única solo si está clasificado */}
-          {isClassified && product.hayOtrasFechas && (
+          {/* Mostrar etiqueta de caja única si aplica */}
+          {product.hayOtrasFechas && (
             <div className="flex items-center gap-2 mt-2">
               <Clock className="w-4 h-4 text-gray-600" />
               <span className="text-sm text-gray-600 select-none">
