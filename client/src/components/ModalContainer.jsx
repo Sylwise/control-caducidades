@@ -15,7 +15,7 @@ const ModalContainer = ({
   return (
     <div
       className={`
-        fixed inset-0 z-50 flex items-center justify-center
+        fixed inset-0 z-50 flex items-center justify-center p-4
         ${isClosing ? "animate-fade-out" : "animate-fade-in"}
       `}
       onClick={onClose}
@@ -24,7 +24,7 @@ const ModalContainer = ({
       <div className="fixed inset-0 bg-black/50 transition-opacity duration-300" />
       <div
         className={`
-          relative w-full max-w-md mx-4
+          relative w-full max-w-md
           bg-white rounded-lg shadow-xl
           min-h-[200px] max-h-[90vh]
           flex flex-col z-10
@@ -47,7 +47,7 @@ const ModalContainer = ({
             </div>
           </div>
         )}
-        <div className="flex-1 overflow-y-auto overscroll-contain">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain">
           {children}
         </div>
       </div>

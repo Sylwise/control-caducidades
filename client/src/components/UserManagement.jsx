@@ -41,6 +41,7 @@ const UserManagement = ({
   const [isEditing, setIsEditing] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [restaurants, setRestaurants] = useState([]);
+  const [selectedRestaurantFilter, setSelectedRestaurantFilter] = useState("");
 
   // Cargar restaurantes si es admin
   useEffect(() => {
@@ -302,6 +303,7 @@ const UserManagement = ({
       role: "",
       restaurante: ""
     });
+    setSelectedRestaurantFilter("");
     onClose();
   };
 
@@ -652,6 +654,24 @@ const UserManagement = ({
           </form>
         )}
         
+        {/* Filtro de restaurante (solo admin) */}
+        {currentUser?.role === "admin" && !isOffline && (
+          <div className="mb-4">
+            <select
+              value={selectedRestaurantFilter}
+              onChange={(e) => setSelectedRestaurantFilter(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-md focus:ring-[#1d5030] focus:border-[#1d5030] text-sm"
+            >
+              <option value="">Todos los restaurantes</option>
+              {restaurants.map((r) => (
+                <option key={r._id} value={r._id}>
+                  {r.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {/* Lista de usuarios */}
         <div className="space-y-3">
           {loading && !isOffline ? (
@@ -659,7 +679,12 @@ const UserManagement = ({
               <RefreshCw className="w-6 h-6 text-[#1d5030] animate-spin" />
             </div>
           ) : (
-            users.map((user) => (
+            users
+              .filter((user) => {
+                if (!selectedRestaurantFilter) return true;
+                return user.restaurante?._id === selectedRestaurantFilter || user.restaurante === selectedRestaurantFilter;
+              })
+              .map((user) => (
               <div
                 key={user._id}
                 className={`p-3 bg-white border border-gray-200 rounded-lg
@@ -678,6 +703,11 @@ const UserManagement = ({
                       : user.role === "supervisor"
                       ? "Supervisor"
                       : "Encargado"}
+                    {user.restaurante?.nombre && (
+                      <span className="ml-2 text-xs bg-gray-100 px-2 py-0.5 rounded-full text-gray-600">
+                        {user.restaurante.nombre}
+                      </span>
+                    )}
                   </p>
                 </div>
 
@@ -958,7 +988,13 @@ UserManagement.propTypes = {
     _id: PropTypes.string,
     username: PropTypes.string,
     role: PropTypes.string,
-    restaurante: PropTypes.string,
+    restaurante: PropTypes.oneOfType([
+      PropTypes.string,
+      PropTypes.shape({
+        _id: PropTypes.string,
+        nombre: PropTypes.string,
+      }),
+    ]),
   }),
 };
 

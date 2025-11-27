@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const { promisify } = require("util");
+const User = require("../models/User");
 const logger = require("../logger");
 
 // Verificar token JWT
@@ -16,6 +17,15 @@ exports.verifyToken = async (req, res, next) => {
     }
 
     const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+    
+    // Verificar si el usuario aún existe
+    const currentUser = await User.findById(decoded.id);
+    if (!currentUser) {
+      return res.status(401).json({
+        error: "El usuario perteneciente a este token ya no existe.",
+      });
+    }
+
     req.user = decoded;
     next();
   } catch (error) {

@@ -253,7 +253,7 @@ const UpdateModal = ({
   const title = (
     <div className="text-[#2d3748]">
       <span className="font-medium">Actualizar estado de</span>
-      <span className="block text-[#1d5030] font-semibold mt-1">
+      <span className="block text-[#1d5030] font-semibold mt-1 break-words">
         {editingProduct?.producto?.nombre}
       </span>
     </div>

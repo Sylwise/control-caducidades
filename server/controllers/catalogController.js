@@ -49,7 +49,7 @@ exports.addProduct = async (req, res) => {
     const io = req.app.get('io');
     if (io) {
         logger.info(`Emitting catalogUpdate event for product: ${populatedStatus.producto.nombre} to restaurant: ${req.user.restaurante}`);
-        io.to(req.user.restaurante).emit("catalogUpdate", {
+        io.to(req.user.restaurante.toString()).emit("catalogUpdate", {
             type: "create",
             productStatus: populatedStatus,
         });
@@ -89,7 +89,7 @@ exports.deleteProduct = async (req, res) => {
     logger.info(`Producto eliminado del catálogo y estados asociados: ${id}`);
 
     const io = req.app.get('io');
-    io.to(req.user.restaurante).emit("catalogUpdate", {
+    io.to(req.user.restaurante.toString()).emit("catalogUpdate", {
       type: "delete",
       productId: id,
     });
@@ -126,7 +126,7 @@ exports.toggleProductStatus = async (req, res) => {
     logger.info(`Estado del producto actualizado: ${updatedProduct.nombre}, activo: ${updatedProduct.activo}`);
 
     const io = req.app.get('io');
-    io.to(req.user.restaurante).emit("catalogUpdate", {
+    io.to(req.user.restaurante.toString()).emit("catalogUpdate", {
       type: "update",
       product: updatedProduct,
     });
@@ -170,7 +170,7 @@ exports.updateProduct = async (req, res) => {
     logger.info(`Producto actualizado en el catálogo: ${updatedProduct.nombre}`);
 
     const io = req.app.get('io');
-    io.to(req.user.restaurante).emit("catalogUpdate", {
+    io.to(req.user.restaurante.toString()).emit("catalogUpdate", {
       type: "update",
       product: updatedProduct,
     });

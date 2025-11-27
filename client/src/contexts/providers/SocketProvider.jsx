@@ -88,6 +88,17 @@ export const SocketProvider = ({ children }) => {
       setError("No se pudo restablecer la conexión");
     });
 
+    // Manejar evento de restaurante eliminado
+    socketInstance.on("restaurantDeleted", (data) => {
+      console.warn("Restaurante eliminado:", data.message);
+      alert("Tu restaurante ha sido eliminado. La sesión se cerrará.");
+      
+      // Limpiar almacenamiento y redirigir
+      localStorage.removeItem("token");
+      sessionStorage.removeItem("token");
+      window.location.href = "/login";
+    });
+
     setSocket(socketInstance);
 
     return () => cleanupSocket(socketInstance);

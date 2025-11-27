@@ -80,9 +80,16 @@ const HeaderSection = ({
         </div>
       </div>
       <div className="flex items-center gap-3">
-        <h1 className="text-2xl font-bold text-[#1d5030] font-['Noto Sans'] tracking-tight select-none">
-          Lista de Caducidades
-        </h1>
+        <div className="flex flex-col items-center">
+          <h1 className="text-2xl font-bold text-[#1d5030] font-['Noto Sans'] tracking-tight select-none">
+            Lista de Caducidades
+          </h1>
+          {user?.restaurante?.nombre && (
+            <span className="text-sm font-medium text-gray-500 select-none">
+              {user.restaurante.nombre}
+            </span>
+          )}
+        </div>
         {expiringCount > 0 && (
           <button
             onClick={onExpiringClick}
@@ -116,6 +123,9 @@ HeaderSection.propTypes = {
   user: PropTypes.shape({
     username: PropTypes.string,
     role: PropTypes.oneOf(["admin", "supervisor", "encargado", "gerente"]),
+    restaurante: PropTypes.shape({
+      nombre: PropTypes.string,
+    }),
   }),
   expiringCount: PropTypes.number.isRequired,
   hasExpiredProducts: PropTypes.bool.isRequired,

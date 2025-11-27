@@ -16,7 +16,7 @@ exports.login = async (req, res) => {
       });
     }
 
-    const user = await User.findOne({ username }).select("+password");
+    const user = await User.findOne({ username }).select("+password").populate("restaurante", "nombre");
 
     if (!user) {
       logger.warn(`Intento de login para usuario no existente: ${username}`);
@@ -46,7 +46,7 @@ exports.login = async (req, res) => {
         id: user._id,
         username: user.username,
         role: user.role,
-        restaurante: user.restaurante,
+        restaurante: user.restaurante._id || user.restaurante,
       },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
@@ -71,7 +71,7 @@ exports.login = async (req, res) => {
 // Obtener usuario actual
 exports.getCurrentUser = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user.id).populate("restaurante", "nombre");
     if (!user) {
       return res.status(404).json({ error: "Usuario no encontrado" });
     }

@@ -296,10 +296,14 @@ class OfflineManager {
             
             try {
               // Si ya existe, intentamos obtenerlo del servidor para hacer el mapping
-              // Como no tenemos endpoint de búsqueda por nombre, obtenemos todos y filtramos
-              // Esto no es ideal pero soluciona el bloqueo
               const serverProducts = await api.http.getAllCatalogProducts();
-              const existingProduct = serverProducts.find(p => p.nombre === change.data.nombre);
+              
+              // Normalizar el nombre para la búsqueda (trim y case insensitive si es necesario)
+              const searchName = change.data.nombre.trim().toLowerCase();
+              
+              const existingProduct = serverProducts.find(p => 
+                p.nombre.trim().toLowerCase() === searchName
+              );
               
               if (existingProduct) {
                 OfflineDebugger.log("FOUND_EXISTING_PRODUCT", { existingProduct });
@@ -339,16 +343,30 @@ class OfflineManager {
                   });
                 }
 
+                // Construir un objeto de estado simulado que coincida con lo que espera addProductToState
+                // Importante: addProductToState espera un objeto con la propiedad 'producto'
+                const simulatedStatus = { 
+                  producto: response, 
+                  estado: "sin-clasificar",
+                  // Añadimos un ID ficticio para el estado si es necesario, aunque useProductManagement usa producto._id
+                  _id: `simulated_${response._id}` 
+                };
+
                 window.dispatchEvent(
                   new CustomEvent("localCatalogUpdate", {
                     detail: {
                       type: "create",
-                      productStatus: { producto: response, estado: "sin-clasificar" }, // Simular estructura
+                      productStatus: simulatedStatus,
                     },
                   })
                 );
                 
                 continue; // Continuar con el siguiente cambio
+              } else {
+                OfflineDebugger.error("DUPLICATE_PRODUCT_NOT_FOUND_LOCALLY", { 
+                  searchName, 
+                  serverCount: serverProducts.length 
+                });
               }
             } catch (recoveryError) {
               OfflineDebugger.error("RECOVERY_FAILED", recoveryError);

@@ -26,6 +26,18 @@ const getHeaders = (contentType = false) => {
   return headers;
 };
 
+const fetchWithNoCache = async (url, options = {}) => {
+  return fetch(url, {
+    ...options,
+    cache: 'no-store',
+    headers: {
+      ...options.headers,
+      'Pragma': 'no-cache',
+      'Cache-Control': 'no-cache'
+    }
+  });
+};
+
 // Función auxiliar para manejar errores de la API
 const handleApiError = async (response) => {
   const contentType = response.headers.get("content-type");
@@ -56,7 +68,7 @@ const handleApiError = async (response) => {
 // Implementación de las operaciones HTTP directas
 const httpOperations = {
   getAllProductStatus: async () => {
-    const response = await fetch(`${API_BASE_URL}/status`, {
+    const response = await fetchWithNoCache(`${API_BASE_URL}/status`, {
       headers: getHeaders(),
     });
 
@@ -68,7 +80,7 @@ const httpOperations = {
   },
 
   updateProductStatus: async (productId, data) => {
-    const response = await fetch(`${API_BASE_URL}/status/${productId}`, {
+    const response = await fetchWithNoCache(`${API_BASE_URL}/status/${productId}`, {
       method: "PUT",
       headers: getHeaders(true),
       body: JSON.stringify(data),
@@ -82,7 +94,7 @@ const httpOperations = {
   },
 
   getAllCatalogProducts: async () => {
-    const response = await fetch(`${API_BASE_URL}/catalog`, {
+    const response = await fetchWithNoCache(`${API_BASE_URL}/catalog`, {
       headers: getHeaders(),
     });
 
@@ -94,7 +106,7 @@ const httpOperations = {
   },
 
   createCatalogProduct: async (data) => {
-    const response = await fetch(`${API_BASE_URL}/catalog`, {
+    const response = await fetchWithNoCache(`${API_BASE_URL}/catalog`, {
       method: "POST",
       headers: getHeaders(true),
       body: JSON.stringify(data),
@@ -108,7 +120,7 @@ const httpOperations = {
   },
 
   updateCatalogProduct: async (productId, data) => {
-    const response = await fetch(`${API_BASE_URL}/catalog/${productId}`, {
+    const response = await fetchWithNoCache(`${API_BASE_URL}/catalog/${productId}`, {
       method: "PUT",
       headers: getHeaders(true),
       body: JSON.stringify(data),
@@ -122,7 +134,7 @@ const httpOperations = {
   },
 
   deleteCatalogProduct: async (productId) => {
-    const response = await fetch(`${API_BASE_URL}/catalog/${productId}`, {
+    const response = await fetchWithNoCache(`${API_BASE_URL}/catalog/${productId}`, {
       method: "DELETE",
       headers: getHeaders(),
     });
@@ -135,7 +147,7 @@ const httpOperations = {
   },
 
   deleteProductStatus: async (productId) => {
-    const response = await fetch(`${API_BASE_URL}/status/${productId}`, {
+    const response = await fetchWithNoCache(`${API_BASE_URL}/status/${productId}`, {
       method: "DELETE",
       headers: getHeaders(),
     });
@@ -148,7 +160,7 @@ const httpOperations = {
   },
 
   deleteProduct: async (productId) => {
-    const response = await fetch(`${API_BASE_URL}/catalog/${productId}`, {
+    const response = await fetchWithNoCache(`${API_BASE_URL}/catalog/${productId}`, {
       method: "DELETE",
       headers: getHeaders(),
     });
