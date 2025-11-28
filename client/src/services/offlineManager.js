@@ -34,6 +34,62 @@ class OfflineManager {
     });
   }
 
+  // ==========================================
+  // Métodos Privados de Ayuda (Refactorización)
+  // ==========================================
+
+  /**
+   * Centraliza el despacho de eventos locales
+   */
+  _dispatchLocalEvent(eventName, detail) {
+    window.dispatchEvent(new CustomEvent(eventName, { detail }));
+  }
+
+  /**
+   * Actualiza el mapa de IDs temporales a permanentes
+   */
+  _updateIdMappings(idMapping, change, permanentId) {
+    if (change.tempId) {
+      idMapping.set(change.tempId, permanentId);
+      // También mapear el productId si existe y es diferente del tempId
+      if (change.productId && change.productId !== change.tempId) {
+        idMapping.set(change.productId, permanentId);
+      }
+    } else if (change.productId) {
+      // Si no hay tempId pero hay productId, usar ese
+      idMapping.set(change.productId, permanentId);
+    }
+  }
+
+  /**
+   * Notifica a la UI tras una sincronización exitosa de creación de catálogo
+   * Maneja la eliminación del ID temporal y la creación con el ID final
+   */
+  _notifySyncSuccess(change, tempIdToRemove, productData, isSimulation = false) {
+    // 1. Notificar eliminación del temporal
+    if (tempIdToRemove) {
+      this._dispatchLocalEvent("localCatalogUpdate", {
+        type: "delete",
+        productId: tempIdToRemove,
+      });
+    }
+
+    // 2. Notificar creación del final
+    // Si es simulación (caso duplicado), usamos productStatus, si no product
+    const detail = { type: "create" };
+    if (isSimulation) {
+      detail.productStatus = productData;
+    } else {
+      detail.product = productData;
+    }
+
+    this._dispatchLocalEvent("localCatalogUpdate", detail);
+  }
+
+  // ==========================================
+  // Métodos Públicos
+  // ==========================================
+
   // Métodos para productos y estados
   async getAllProductStatus() {
     try {
@@ -248,33 +304,10 @@ class OfflineManager {
           const productData = response.producto ? response.producto : response;
 
           if (permanentId) {
-            // Guardar la relación entre ID temporal y permanente
-            if (change.tempId) {
-              idMapping.set(change.tempId, permanentId);
-              
-              // También mapear el productId si existe y es diferente del tempId
-              if (change.productId && change.productId !== change.tempId) {
-                idMapping.set(change.productId, permanentId);
-              }
-            } else if (change.productId) {
-              // Si no hay tempId pero hay productId, usar ese
-              idMapping.set(change.productId, permanentId);
-            }
+            // Usar helper para actualizar mapeos
+            this._updateIdMappings(idMapping, change, permanentId);
             
             await IndexedDB.removePendingChange(change.id);
-
-            // Notificar a la UI que elimine el producto temporal
-            const tempIdToRemove = change.tempId || change.productId;
-            if (tempIdToRemove) {
-              window.dispatchEvent(
-                new CustomEvent("localCatalogUpdate", {
-                  detail: {
-                    type: "delete",
-                    productId: tempIdToRemove,
-                  },
-                })
-              );
-            }
 
             // Actualizar el producto en IndexedDB con su nuevo ID y datos correctos
             const oldId = change.tempId || change.productId;
@@ -285,15 +318,9 @@ class OfflineManager {
               });
             }
 
-            // Notificar a la UI que añada el producto con ID permanente
-            window.dispatchEvent(
-              new CustomEvent("localCatalogUpdate", {
-                detail: {
-                  type: "create",
-                  product: productData,
-                },
-              })
-            );
+            // Usar helper para notificar a la UI
+            const tempIdToRemove = change.tempId || change.productId;
+            this._notifySyncSuccess(change, tempIdToRemove, productData);
           }
         } catch (error) {
           // Manejar error de duplicado (E11000)
@@ -317,29 +344,10 @@ class OfflineManager {
                 // Procedemos como si fuera una creación exitosa
                 const response = existingProduct;
                 
-                // Copiamos la lógica de éxito de arriba
-                if (change.tempId) {
-                  idMapping.set(change.tempId, response._id);
-                  if (change.productId && change.productId !== change.tempId) {
-                    idMapping.set(change.productId, response._id);
-                  }
-                } else if (change.productId) {
-                  idMapping.set(change.productId, response._id);
-                }
+                // Usar helper para actualizar mapeos
+                this._updateIdMappings(idMapping, change, response._id);
                 
                 await IndexedDB.removePendingChange(change.id);
-
-                const tempIdToRemove = change.tempId || change.productId;
-                if (tempIdToRemove) {
-                  window.dispatchEvent(
-                    new CustomEvent("localCatalogUpdate", {
-                      detail: {
-                        type: "delete",
-                        productId: tempIdToRemove,
-                      },
-                    })
-                  );
-                }
 
                 const oldId = change.tempId || change.productId;
                 if (oldId) {
@@ -349,23 +357,16 @@ class OfflineManager {
                   });
                 }
 
-                // Construir un objeto de estado simulado que coincida con lo que espera addProductToState
-                // Importante: addProductToState espera un objeto con la propiedad 'producto'
+                // Construir un objeto de estado simulado
                 const simulatedStatus = { 
                   producto: response, 
                   estado: "sin-clasificar",
-                  // Añadimos un ID ficticio para el estado si es necesario, aunque useProductManagement usa producto._id
                   _id: `simulated_${response._id}` 
                 };
 
-                window.dispatchEvent(
-                  new CustomEvent("localCatalogUpdate", {
-                    detail: {
-                      type: "create",
-                      productStatus: simulatedStatus,
-                    },
-                  })
-                );
+                // Usar helper para notificar a la UI (modo simulación)
+                const tempIdToRemove = change.tempId || change.productId;
+                this._notifySyncSuccess(change, tempIdToRemove, simulatedStatus, true);
                 
                 continue; // Continuar con el siguiente cambio
               } else {
@@ -414,39 +415,29 @@ class OfflineManager {
               // Actualizar IndexedDB y UI según el tipo de cambio
               if (change.type === "UPDATE") {
                 await IndexedDB.saveProductStatus(response);
-                window.dispatchEvent(
-                  new CustomEvent("localProductStatusUpdate", {
-                    detail: {
-                      type: "update",
-                      productStatus: response,
-                    },
-                  })
-                );
+                this._dispatchLocalEvent("localProductStatusUpdate", {
+                  type: "update",
+                  productStatus: response,
+                });
               } else if (change.type === "DELETE") {
                 await IndexedDB.deleteProductStatus(change.productId);
-                window.dispatchEvent(
-                  new CustomEvent("localProductStatusUpdate", {
-                    detail: {
-                      type: "delete",
-                      productId: change.productId,
-                      product: response.producto // Incluir producto para restauración
-                    },
-                  })
-                );
+                this._dispatchLocalEvent("localProductStatusUpdate", {
+                  detail: {
+                    type: "delete",
+                    productId: change.productId,
+                    product: response.producto // Incluir producto para restauración
+                  },
+                });
               }
 
               await IndexedDB.removePendingChange(change.id);
 
               // Si es un DELETE, notificar a la UI
               if (change.type === "DELETE_CATALOG") {
-                window.dispatchEvent(
-                  new CustomEvent("localCatalogUpdate", {
-                    detail: {
-                      type: "delete",
-                      productId: permanentId,
-                    },
-                  })
-                );
+                this._dispatchLocalEvent("localCatalogUpdate", {
+                  type: "delete",
+                  productId: permanentId,
+                });
               }
             } else {
               // Si no encontramos un ID permanente, probablemente el producto ya no existe
@@ -463,26 +454,18 @@ class OfflineManager {
             // Actualizar IndexedDB y UI según el tipo de cambio
             if (change.type === "UPDATE") {
               await IndexedDB.saveProductStatus(response);
-              window.dispatchEvent(
-                new CustomEvent("localProductStatusUpdate", {
-                  detail: {
-                    type: "update",
-                    productStatus: response,
-                  },
-                })
-              );
+              this._dispatchLocalEvent("localProductStatusUpdate", {
+                type: "update",
+                productStatus: response,
+              });
             } else if (change.type === "DELETE") {
               // Ya se eliminó del servidor, asegurarnos de limpiar localmente
               await IndexedDB.deleteProductStatus(change.productId);
-              window.dispatchEvent(
-                new CustomEvent("localProductStatusUpdate", {
-                  detail: {
-                    type: "delete",
-                    productId: change.productId,
-                    product: response.product // Incluir producto para restauración (backend devuelve .product)
-                  },
-                })
-              );
+              this._dispatchLocalEvent("localProductStatusUpdate", {
+                type: "delete",
+                productId: change.productId,
+                product: response.product // Incluir producto para restauración (backend devuelve .product)
+              });
             }
 
             await IndexedDB.removePendingChange(change.id);
@@ -589,14 +572,10 @@ class OfflineManager {
         await IndexedDB.saveCatalogProduct(result.producto);
         
         // Emitir evento local para actualizar la UI inmediatamente
-        window.dispatchEvent(
-          new CustomEvent("localCatalogUpdate", {
-            detail: {
-              type: "create",
-              productStatus: result,
-            },
-          })
-        );
+        this._dispatchLocalEvent("localCatalogUpdate", {
+          type: "create",
+          productStatus: result,
+        });
         
         return result;
       }
@@ -620,14 +599,10 @@ class OfflineManager {
       });
 
       // Emitir un evento local para actualizar la UI
-      window.dispatchEvent(
-        new CustomEvent("localCatalogUpdate", {
-          detail: {
-            type: "create",
-            product: productToSave,
-          },
-        })
-      );
+      this._dispatchLocalEvent("localCatalogUpdate", {
+        type: "create",
+        product: productToSave,
+      });
 
       return productToSave;
     } catch (error) {
@@ -647,14 +622,10 @@ class OfflineManager {
         await IndexedDB.saveCatalogProduct(result);
 
         // Emitir evento local para actualizar la UI inmediatamente
-        window.dispatchEvent(
-          new CustomEvent("localCatalogUpdate", {
-            detail: {
-              type: "update",
-              product: result,
-            },
-          })
-        );
+        this._dispatchLocalEvent("localCatalogUpdate", {
+          type: "update",
+          product: result,
+        });
 
         return result;
       }
@@ -679,14 +650,10 @@ class OfflineManager {
       });
 
       // Emitir un evento local para actualizar la UI
-      window.dispatchEvent(
-        new CustomEvent("localCatalogUpdate", {
-          detail: {
-            type: "update",
-            product: updatedProduct,
-          },
-        })
-      );
+      this._dispatchLocalEvent("localCatalogUpdate", {
+        type: "update",
+        product: updatedProduct,
+      });
 
       return updatedProduct;
     } catch (error) {
@@ -707,14 +674,10 @@ class OfflineManager {
         await IndexedDB.deleteCatalogProduct(productId);
 
         // Emitir evento local para actualizar la UI inmediatamente
-        window.dispatchEvent(
-          new CustomEvent("localCatalogUpdate", {
-            detail: {
-              type: "delete",
-              productId,
-            },
-          })
-        );
+        this._dispatchLocalEvent("localCatalogUpdate", {
+          type: "delete",
+          productId,
+        });
 
         return result;
       }
@@ -730,14 +693,10 @@ class OfflineManager {
       });
 
       // Emitir un evento local para actualizar la UI
-      window.dispatchEvent(
-        new CustomEvent("localCatalogUpdate", {
-          detail: {
-            type: "delete",
-            productId,
-          },
-        })
-      );
+      this._dispatchLocalEvent("localCatalogUpdate", {
+        type: "delete",
+        productId,
+      });
 
       return { success: true };
     } catch (error) {

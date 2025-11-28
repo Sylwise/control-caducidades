@@ -673,125 +673,128 @@ const UserManagement = ({
         )}
 
         {/* Lista de usuarios */}
-        <div className="space-y-3">
-          {loading && !isOffline ? (
-            <div className="flex items-center justify-center py-8">
-              <RefreshCw className="w-6 h-6 text-[#1d5030] animate-spin" />
-            </div>
-          ) : (
-            users
-              .filter((user) => {
-                if (!selectedRestaurantFilter) return true;
-                return user.restaurante?._id === selectedRestaurantFilter || user.restaurante === selectedRestaurantFilter;
-              })
-              .map((user) => (
-              <div
-                key={user._id}
-                className={`p-3 bg-white border border-gray-200 rounded-lg
-                  flex items-center justify-between gap-4
-                  hover:border-[#1d5030]/20 transition-colors
-                  ${selectedUserId === user._id ? "bg-gray-50" : ""} select-none`}
-                onClick={() => setSelectedUserId(selectedUserId === user._id ? null : user._id)}
-              >
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-[#2d3748] truncate select-none">
-                    {user.username}
-                  </h4>
-                  <p className="text-sm text-gray-500 select-none">
-                    {user.role === "admin"
-                      ? "Administrador"
-                      : user.role === "supervisor"
-                      ? "Supervisor"
-                      : "Encargado"}
-                    {user.restaurante?.nombre && (
-                      <span className="ml-2 text-xs bg-gray-100 px-2 py-0.5 rounded-full text-gray-600">
-                        {user.restaurante.nombre}
-                      </span>
-                    )}
-                  </p>
-                </div>
-
-                {/* Acciones (solo visibles cuando el usuario está seleccionado y no está en modo offline) */}
-                {!isOffline && currentUser?._id !== user._id && selectedUserId === user._id && (
-                  <div className="flex items-center gap-2">
-                    {/* Botón de editar */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleStartEditing(user);
-                      }}
-                      className="p-2 min-w-[48px] min-h-[48px] flex items-center justify-center text-[#1d5030] hover:bg-[#1d5030]/10
-                        rounded-lg transition-colors select-none"
-                      aria-label="Editar usuario"
-                    >
-                      <Edit className="w-5 h-5" />
-                    </button>
-                    
-                    {/* Botón de eliminar */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDeleteConfirm(user._id);
-                      }}
-                      className="p-2 min-w-[48px] min-h-[48px] flex items-center justify-center text-red-500 hover:bg-red-50
-                        rounded-lg transition-colors select-none"
-                      aria-label="Eliminar usuario"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
+        {/* Lista de usuarios (oculta en modo offline) */}
+        {!isOffline && (
+          <div className="space-y-3">
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <RefreshCw className="w-6 h-6 text-[#1d5030] animate-spin" />
+              </div>
+            ) : (
+              users
+                .filter((user) => {
+                  if (!selectedRestaurantFilter) return true;
+                  return user.restaurante?._id === selectedRestaurantFilter || user.restaurante === selectedRestaurantFilter;
+                })
+                .map((user) => (
+                <div
+                  key={user._id}
+                  className={`p-3 bg-white border border-gray-200 rounded-lg
+                    flex items-center justify-between gap-4
+                    hover:border-[#1d5030]/20 transition-colors
+                    ${selectedUserId === user._id ? "bg-gray-50" : ""} select-none`}
+                  onClick={() => setSelectedUserId(selectedUserId === user._id ? null : user._id)}
+                >
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium text-[#2d3748] truncate select-none">
+                      {user.username}
+                    </h4>
+                    <p className="text-sm text-gray-500 select-none">
+                      {user.role === "admin"
+                        ? "Administrador"
+                        : user.role === "supervisor"
+                        ? "Supervisor"
+                        : "Encargado"}
+                      {user.restaurante?.nombre && (
+                        <span className="ml-2 text-xs bg-gray-100 px-2 py-0.5 rounded-full text-gray-600">
+                          {user.restaurante.nombre}
+                        </span>
+                      )}
+                    </p>
                   </div>
-                )}
 
-                {/* Confirmación de eliminación */}
-                {deleteConfirm === user._id && !isOffline && (
-                  <div
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4
-                      bg-black/50 animate-[fadeIn_0.2s_ease-out] select-none"
-                    onClick={() => setDeleteConfirm(null)}
-                  >
+                  {/* Acciones (solo visibles cuando el usuario está seleccionado y no está en modo offline) */}
+                  {!isOffline && currentUser?._id !== user._id && selectedUserId === user._id && (
+                    <div className="flex items-center gap-2">
+                      {/* Botón de editar */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStartEditing(user);
+                        }}
+                        className="p-2 min-w-[48px] min-h-[48px] flex items-center justify-center text-[#1d5030] hover:bg-[#1d5030]/10
+                          rounded-lg transition-colors select-none"
+                        aria-label="Editar usuario"
+                      >
+                        <Edit className="w-5 h-5" />
+                      </button>
+                      
+                      {/* Botón de eliminar */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteConfirm(user._id);
+                        }}
+                        className="p-2 min-w-[48px] min-h-[48px] flex items-center justify-center text-red-500 hover:bg-red-50
+                          rounded-lg transition-colors select-none"
+                        aria-label="Eliminar usuario"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Confirmación de eliminación */}
+                  {deleteConfirm === user._id && !isOffline && (
                     <div
-                      className="bg-white p-6 rounded-lg shadow-xl
-                        animate-[slideIn_0.3s_ease-out] select-none"
-                      onClick={(e) => e.stopPropagation()}
+                      className="fixed inset-0 z-50 flex items-center justify-center p-4
+                        bg-black/50 animate-[fadeIn_0.2s_ease-out] select-none"
+                      onClick={() => setDeleteConfirm(null)}
                     >
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2 select-none">
-                        ¿Eliminar usuario?
-                      </h3>
-                      <p className="text-gray-500 mb-4 select-none">
-                        Esta acción no se puede deshacer.
-                      </p>
-                      <div className="flex justify-end gap-3">
-                        <button
-                          onClick={() => setDeleteConfirm(null)}
-                          className="px-4 py-3 min-h-[48px] min-w-[100px] text-sm font-medium text-gray-700
-                            bg-gray-100 hover:bg-gray-200
-                            rounded-md transition-colors flex items-center justify-center select-none"
-                        >
-                          Cancelar
-                        </button>
-                        <button
-                          onClick={() => handleDeleteUser(user._id)}
-                          className="px-4 py-3 min-h-[48px] min-w-[100px] text-sm font-medium text-white
-                            bg-red-500 hover:bg-red-600
-                            rounded-md transition-colors flex items-center justify-center select-none"
-                        >
-                          Eliminar
-                        </button>
+                      <div
+                        className="bg-white p-6 rounded-lg shadow-xl
+                          animate-[slideIn_0.3s_ease-out] select-none"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2 select-none">
+                          ¿Eliminar usuario?
+                        </h3>
+                        <p className="text-gray-500 mb-4 select-none">
+                          Esta acción no se puede deshacer.
+                        </p>
+                        <div className="flex justify-end gap-3">
+                          <button
+                            onClick={() => setDeleteConfirm(null)}
+                            className="px-4 py-3 min-h-[48px] min-w-[100px] text-sm font-medium text-gray-700
+                              bg-gray-100 hover:bg-gray-200
+                              rounded-md transition-colors flex items-center justify-center select-none"
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUser(user._id)}
+                            className="px-4 py-3 min-h-[48px] min-w-[100px] text-sm font-medium text-white
+                              bg-red-500 hover:bg-red-600
+                              rounded-md transition-colors flex items-center justify-center select-none"
+                          >
+                            Eliminar
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
+              ))
+            )}
+            
+            {/* Mensaje si no hay usuarios para mostrar */}
+            {!loading && users.length === 0 && (
+              <div className="text-center py-8 text-gray-500 select-none">
+                No hay usuarios para mostrar
               </div>
-            ))
-          )}
-          
-          {/* Mensaje si no hay usuarios para mostrar */}
-          {!loading && users.length === 0 && !isOffline && (
-            <div className="text-center py-8 text-gray-500 select-none">
-              No hay usuarios para mostrar
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
         {/* Modal de Edición */}
         {editingUser && !isOffline && (

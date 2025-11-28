@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
-import { Store, Plus, Trash2, Edit, RefreshCw, MapPin } from "lucide-react";
+import { Store, Plus, Trash2, Edit, RefreshCw, MapPin, WifiOff } from "lucide-react";
 import PropTypes from "prop-types";
 import config from "../config";
 import usePreventScroll from "../hooks/usePreventScroll";
 import ModalContainer from "./ModalContainer";
+import OfflineManager from "../services/offlineManager";
 
 const RestaurantManagement = ({
   isOpen = false,
@@ -27,7 +28,33 @@ const RestaurantManagement = ({
     direccion: "",
   });
 
+  const [isOffline, setIsOffline] = useState(false);
+
+  useEffect(() => {
+    const checkOfflineStatus = () => {
+      const status = !navigator.onLine || OfflineManager.isOfflineMode;
+      setIsOffline(status);
+    };
+
+    if (isOpen) {
+      checkOfflineStatus();
+    }
+
+    window.addEventListener("online", checkOfflineStatus);
+    window.addEventListener("offline", checkOfflineStatus);
+
+    return () => {
+      window.removeEventListener("online", checkOfflineStatus);
+      window.removeEventListener("offline", checkOfflineStatus);
+    };
+  }, [isOpen]);
+
   const loadRestaurants = useCallback(async () => {
+    if (isOffline) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       const response = await fetch(`${config.apiUrl}/restaurants`, {
@@ -52,7 +79,7 @@ const RestaurantManagement = ({
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isOffline]);
 
   useEffect(() => {
     if (isOpen) {
@@ -162,13 +189,27 @@ const RestaurantManagement = ({
       containerClassName="max-w-2xl select-none"
     >
       <div className="p-4 max-h-[calc(100vh-12rem)] overflow-y-auto">
+        {isOffline && (
+          <div className="mb-4 p-4 bg-amber-50 border border-amber-300 rounded-md
+            animate-[slideDown_0.3s_ease-out] text-amber-800 flex items-start gap-3 select-none">
+            <WifiOff className="w-5 h-5 mt-0.5 flex-shrink-0" />
+            <div>
+              <h3 className="font-medium mb-1 select-none">Servicio no disponible</h3>
+              <p className="text-sm select-none">
+                La gestión de restaurantes no está disponible en modo offline por razones de seguridad.
+                Por favor, conéctate a internet para administrar restaurantes.
+              </p>
+            </div>
+          </div>
+        )}
+
         {error && (
           <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-md text-sm animate-[slideDown_0.3s_ease-out]">
             {error}
           </div>
         )}
 
-        {!showCreateForm && (
+        {!showCreateForm && !isOffline && (
           <button
             onClick={() => setShowCreateForm(true)}
             className="w-full p-3 mb-4 flex items-center justify-center gap-2 min-h-[48px]
@@ -180,7 +221,7 @@ const RestaurantManagement = ({
           </button>
         )}
 
-        {showCreateForm && (
+        {showCreateForm && !isOffline && (
           <form onSubmit={handleCreateRestaurant} className="mb-6 p-4 bg-gray-50 rounded-lg animate-[slideDown_0.3s_ease-out]">
             <h3 className="text-lg font-semibold text-[#1d5030] mb-4">Nuevo Restaurante</h3>
             <div className="space-y-4">
@@ -225,45 +266,47 @@ const RestaurantManagement = ({
           </form>
         )}
 
-        <div className="space-y-3">
-          {loading ? (
-            <div className="flex justify-center py-8">
-              <RefreshCw className="w-6 h-6 text-[#1d5030] animate-spin" />
-            </div>
-          ) : (
-            restaurants.map((restaurant) => (
-              <div key={restaurant._id} className="p-4 bg-white border border-gray-200 rounded-lg flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium text-gray-900">{restaurant.nombre}</h4>
-                  <div className="flex items-center gap-1 text-sm text-gray-500 mt-1">
-                    <MapPin className="w-3 h-3" />
-                    <span>{restaurant.direccion || "Sin dirección"}</span>
+        {!isOffline && (
+          <div className="space-y-3">
+            {loading ? (
+              <div className="flex justify-center py-8">
+                <RefreshCw className="w-6 h-6 text-[#1d5030] animate-spin" />
+              </div>
+            ) : (
+              restaurants.map((restaurant) => (
+                <div key={restaurant._id} className="p-4 bg-white border border-gray-200 rounded-lg flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium text-gray-900">{restaurant.nombre}</h4>
+                    <div className="flex items-center gap-1 text-sm text-gray-500 mt-1">
+                      <MapPin className="w-3 h-3" />
+                      <span>{restaurant.direccion || "Sin dirección"}</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        setEditingRestaurant(restaurant._id);
+                        setEditFormData({ nombre: restaurant.nombre, direccion: restaurant.direccion });
+                      }}
+                      className="p-2 text-[#1d5030] hover:bg-[#1d5030]/10 rounded-lg"
+                    >
+                      <Edit className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => setDeleteConfirm(restaurant._id)}
+                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => {
-                      setEditingRestaurant(restaurant._id);
-                      setEditFormData({ nombre: restaurant.nombre, direccion: restaurant.direccion });
-                    }}
-                    className="p-2 text-[#1d5030] hover:bg-[#1d5030]/10 rounded-lg"
-                  >
-                    <Edit className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => setDeleteConfirm(restaurant._id)}
-                    className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+              ))
+            )}
+          </div>
+        )}
 
         {/* Modal Edición */}
-        {editingRestaurant && (
+        {editingRestaurant && !isOffline && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
             <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
               <h3 className="text-lg font-semibold text-[#1d5030] mb-4">Editar Restaurante</h3>
@@ -309,7 +352,7 @@ const RestaurantManagement = ({
         )}
 
         {/* Confirmación Borrado */}
-        {deleteConfirm && (
+        {deleteConfirm && !isOffline && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
             <div className="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">¿Eliminar restaurante?</h3>
