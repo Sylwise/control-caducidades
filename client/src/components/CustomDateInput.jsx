@@ -12,6 +12,7 @@ const CustomDateInput = ({
   showRemoveWhenEmpty = false,
   "data-date-input": dataDateInput,
   onCancel,
+  RemoveIcon = X,
 }) => {
   const [inputValue, setInputValue] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -343,7 +344,7 @@ const CustomDateInput = ({
             className="p-2.5 text-gray-400 hover:text-gray-600
               hover:bg-gray-100 rounded-lg transition-colors"
           >
-            <X className="w-4.5 h-4.5" />
+            <RemoveIcon className="w-4.5 h-4.5" />
           </button>
         )}
       </div>

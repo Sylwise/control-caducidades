@@ -398,6 +398,7 @@ const UpdateModal = ({
                     setUpdateForm({ ...updateForm, fechaFrente: value })
                   }
                   onRemove={handleFrontDateRemoval}
+                  RemoveIcon={Trash}
                   className="w-full py-2.5 px-4 my-1.5 rounded-lg transition-all duration-200 font-medium text-sm select-none flex items-center justify-between shadow-sm hover:shadow-md"
                 />
               </div>

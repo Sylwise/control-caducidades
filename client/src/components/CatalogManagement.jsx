@@ -80,9 +80,7 @@ const CatalogManagement = ({ isOpen, onClose }) => {
   const loadProducts = useCallback(async () => {
     try {
       setLoading(true);
-      console.log("Intentando cargar productos...");
       const data = await OfflineManager.getAllCatalogProducts();
-      console.log("Datos recibidos:", data);
       setProducts(data);
       setError(null);
     } catch (err) {
@@ -189,7 +187,6 @@ const CatalogManagement = ({ isOpen, onClose }) => {
   const handleDeleteProduct = async (productId) => {
     try {
       setLoading(true);
-      console.log("Intentando eliminar producto:", productId);
 
       await OfflineManager.deleteCatalogProduct(productId);
       // Actualizar el estado local sin recargar todos los productos

@@ -267,7 +267,6 @@ export const useProductManagement = (addToast) => {
     setProducts((prevProducts) => {
       // Si el producto ya tiene un estado, usarlo directamente
       if (productData.estado) {
-        console.log("Adding product with status to state:", productData);
         const category = productData.estado;
         // Verificar si el producto ya existe en la categoría
         const exists = prevProducts[category].some(
@@ -275,7 +274,6 @@ export const useProductManagement = (addToast) => {
         );
         
         if (exists) {
-            console.log("Product already exists in state, skipping:", productData.producto.nombre);
             return prevProducts;
         }
 

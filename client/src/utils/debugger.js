@@ -1,9 +1,10 @@
 class OfflineDebugger {
-  static enabled = import.meta.env.DEV;
+  static enabled = import.meta.env.MODE !== 'production';
   static logHistory = [];
   static maxLogHistory = 1000;
 
   static enable() {
+    if (import.meta.env.MODE === 'production') return;
     this.enabled = true;
     console.log("Debugger activado");
   }
