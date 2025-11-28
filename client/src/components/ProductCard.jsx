@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Box, Clock, Edit3, Trash2 } from "lucide-react";
+import { Box, Clock, Edit3, Trash2, Package } from "lucide-react";
 import PropTypes from "prop-types";
 
 const formatDate = (dateString) => {
@@ -41,7 +41,7 @@ const ProductCard = memo(({
         bg-white hover:bg-gray-50
         rounded-lg
         ${viewMode === 'compact' 
-          ? 'p-2 flex items-center gap-4 border-b border-gray-100 hover:bg-gray-50' 
+          ? 'p-3 sm:p-2 border-b border-gray-100 hover:bg-gray-50' 
           : 'p-4 shadow-sm hover:shadow mb-4'}
         transition-all duration-300
         ${isSelected ? "ring-1 ring-[#1d5030]/30 bg-[#1d5030]/5" : ""}
@@ -57,67 +57,81 @@ const ProductCard = memo(({
     >
       {viewMode === 'compact' ? (
         // VISTA COMPACTA
-        <>
-          {/* Indicador de estado (punto) */}
-          <div className={`
-            w-2 h-2 rounded-full flex-shrink-0
-            ${isExpiringSoon(product.fechaFrente) ? 'bg-[#ffb81c] animate-pulse' : 'bg-gray-300'}
-          `} />
+        <div className="flex flex-col sm:flex-row sm:items-center w-full gap-2 sm:gap-4">
+          {/* FILA SUPERIOR (Móvil) / IZQUIERDA (Desktop): Indicador y Nombre */}
+          <div className="flex items-center gap-3 w-full sm:flex-1 min-w-0">
+            {/* Indicador de estado (punto) */}
+            <div className={`
+              w-2.5 h-2.5 rounded-full flex-shrink-0
+              ${isExpiringSoon(product.fechaFrente) ? 'bg-[#ffb81c] animate-pulse' : 'bg-gray-300'}
+            `} />
 
-          {/* Nombre del producto */}
-          <div className="flex-1 min-w-0">
-            <span className="font-['Noto Sans'] font-medium text-[#2d3748] text-sm truncate block">
+            {/* Nombre del producto */}
+            <span className="font-['Noto Sans'] font-medium text-[#2d3748] text-sm sm:text-sm truncate block w-full">
               {product.producto?.nombre}
             </span>
           </div>
 
-          {/* Fechas Compactas */}
-          <div className="flex items-center gap-3 text-xs">
-            {product.fechaFrente && (
-              <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded border border-gray-100">
-                <span className="text-[#1d5030] font-semibold">F:</span>
-                <span className="font-medium text-gray-700">{formatDate(product.fechaFrente)}</span>
-              </div>
-            )}
-            {product.fechaAlmacen && (
-              <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded border border-gray-100">
-                <span className="text-[#1d5030] font-semibold">A:</span>
-                <span className="font-medium text-gray-700">{formatDate(product.fechaAlmacen)}</span>
-                {product.cajasAlmacen > 0 && (
-                  <span className="ml-1 px-1.5 py-0.5 bg-[#1d5030]/10 text-[#1d5030] rounded-full text-[10px] font-bold">
-                    {product.cajasAlmacen}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
+          {/* FILA INFERIOR (Móvil) / DERECHA (Desktop): Fechas y Acciones */}
+          <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4 sm:gap-6 pl-5 sm:pl-0">
+            {/* Fechas Compactas */}
+            <div className="flex items-center gap-3 text-xs">
+              {product.fechaFrente && (
+                <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded border border-gray-100">
+                  <span className="text-[#1d5030] font-semibold">F:</span>
+                  <span className="font-medium text-gray-700">{formatDate(product.fechaFrente)}</span>
+                </div>
+              )}
+              {product.fechaAlmacen && (
+                <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded border border-gray-100">
+                  <span className="text-[#1d5030] font-semibold">A:</span>
+                  <span className="font-medium text-gray-700">{formatDate(product.fechaAlmacen)}</span>
+                  {product.cajasAlmacen > 0 && (
+                    <span className="ml-1 px-1.5 py-0.5 bg-[#1d5030]/10 text-[#1d5030] rounded-full text-[10px] font-bold">
+                      {product.cajasAlmacen}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
 
-          {/* Acciones Rápidas */}
-          <div className="flex items-center gap-1 ml-2">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onUpdateClick(product, e);
-              }}
-              className="p-1.5 text-gray-400 hover:text-[#1d5030] hover:bg-[#1d5030]/10 rounded transition-colors"
-              title="Editar"
-            >
-              <Edit3 className="w-4 h-4" />
-            </button>
-            {(product.estado !== "sin-clasificar" || product.fechaFrente || product.fechaAlmacen) && (
+            {/* Acciones Rápidas - Touch Friendly */}
+            <div className="flex items-center gap-4 sm:gap-1">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  onDeleteClick(product, e);
+                  onUpdateClick(product, e);
                 }}
-                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
-                title="Eliminar"
+                className="
+                  flex items-center justify-center
+                  min-w-[40px] min-h-[40px] sm:min-w-[32px] sm:min-h-[32px]
+                  text-gray-400 hover:text-[#1d5030] hover:bg-[#1d5030]/10 
+                  rounded-full sm:rounded transition-colors
+                "
+                title="Editar"
               >
-                <Trash2 className="w-4 h-4" />
+                <Edit3 className="w-5 h-5 sm:w-4 sm:h-4" />
               </button>
-            )}
+              {(product.estado !== "sin-clasificar" || product.fechaFrente || product.fechaAlmacen) && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteClick(product, e);
+                  }}
+                  className="
+                    flex items-center justify-center
+                    min-w-[40px] min-h-[40px] sm:min-w-[32px] sm:min-h-[32px]
+                    text-gray-400 hover:text-red-500 hover:bg-red-50 
+                    rounded-full sm:rounded transition-colors
+                  "
+                  title="Eliminar"
+                >
+                  <Trash2 className="w-5 h-5 sm:w-4 sm:h-4" />
+                </button>
+              )}
+            </div>
           </div>
-        </>
+        </div>
       ) : (
         // VISTA TARJETA (Original)
         <>
@@ -152,34 +166,37 @@ const ProductCard = memo(({
               {(product.fechaFrente || product.fechaAlmacen) && (
                 <div className="grid grid-cols-2 gap-4">
                   {product.fechaFrente && (
-                    <div className="bg-[#f8f8f8] rounded-md p-3">
-                      <div
-                        className="inline-block bg-[#1d5030]/10 px-2 py-1 rounded text-[#1d5030] 
-                        text-[14px] font-semibold mb-2 select-none"
-                      >
-                        FRENTE
+                    <div className="w-full bg-white border border-gray-200 rounded-md overflow-hidden border-l-4 border-l-[#1d5030]">
+                      <div className="bg-slate-100 w-full h-9 flex justify-between items-center px-2">
+                        <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">
+                          FRENTE
+                        </span>
                       </div>
-                      <div className="text-xl font-bold text-[#1a1a1a] leading-tight select-none">
-                        {formatDate(product.fechaFrente)}
+                      <div className="p-2 text-center">
+                        <div className="text-lg font-bold text-[#1a1a1a] leading-tight select-none">
+                          {formatDate(product.fechaFrente)}
+                        </div>
                       </div>
                     </div>
                   )}
                   {product.fechaAlmacen && (
-                    <div className="bg-[#f8f8f8] rounded-md p-3 relative">
-                      <div
-                        className="inline-block bg-[#1d5030]/10 px-2 py-1 rounded text-[#1d5030] 
-                        text-[14px] font-semibold mb-2 select-none"
-                      >
-                        ALMACÉN
+                    <div className="w-full bg-white border border-gray-200 rounded-md overflow-hidden border-l-4 border-l-[#1d5030]">
+                      <div className="bg-slate-100 w-full h-9 flex justify-between items-center px-2">
+                        <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">
+                          ALMACÉN
+                        </span>
+                        {product.cajasAlmacen > 0 && (
+                          <div className="bg-white px-2 py-0.5 rounded shadow-sm flex items-center gap-1 text-xs font-bold text-[#1d5030] border border-gray-100">
+                            <Package size={12} />
+                            <span>{product.cajasAlmacen}</span>
+                          </div>
+                        )}
                       </div>
-                      <div className="text-xl font-bold text-[#1a1a1a] leading-tight select-none">
-                        {formatDate(product.fechaAlmacen)}
-                      </div>
-                      {product.cajasAlmacen > 0 && (
-                        <div className="absolute top-3 right-3 bg-white border border-[#1d5030]/20 text-[#1d5030] text-xs font-bold px-2 py-1 rounded-full shadow-sm">
-                          {product.cajasAlmacen} {product.cajasAlmacen === 1 ? 'caja' : 'cajas'}
+                      <div className="p-2 text-center">
+                        <div className="text-lg font-bold text-[#1a1a1a] leading-tight select-none">
+                          {formatDate(product.fechaAlmacen)}
                         </div>
-                      )}
+                      </div>
                     </div>
                   )}
                 </div>
