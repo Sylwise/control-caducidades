@@ -14,7 +14,8 @@ export const AuthProvider = ({ children }) => {
 
       if (token) {
         // Obtener información del usuario
-        fetch("http://localhost:5000/api/auth/me", {
+        const apiUrl = import.meta.env.PROD ? "/api/auth/me" : "http://localhost:5000/api/auth/me";
+        fetch(apiUrl, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

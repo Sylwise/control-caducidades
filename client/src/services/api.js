@@ -4,7 +4,9 @@ import OfflineManager from "./offlineManager";
 // API Base URL basada en el entorno
 const API_BASE_URL = import.meta.env.PROD
   ? `${window.location.origin}/api` // URL de producción
-  : "http://localhost:5000/api"; // URL de desarrollo
+  : import.meta.env.PROD 
+    ? "/api" 
+    : "http://localhost:5000/api";
 
 
 

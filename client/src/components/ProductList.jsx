@@ -158,7 +158,8 @@ const ProductList = () => {
         const token = localStorage.getItem("token");
         if (!token) return;
 
-        const response = await fetch("http://localhost:5000/api/auth/me", {
+        const apiUrl = import.meta.env.PROD ? "/api/auth/me" : "http://localhost:5000/api/auth/me";
+        const response = await fetch(apiUrl, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
