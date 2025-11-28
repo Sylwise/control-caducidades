@@ -318,7 +318,11 @@ const ProductList = () => {
               ) : (
                 <CategorySection
                   category="sin-clasificar"
-                  products={products["sin-clasificar"]}
+                  products={
+                    viewMode === 'compact'
+                      ? products["sin-clasificar"].filter(p => p.fechaFrente || p.fechaAlmacen)
+                      : products["sin-clasificar"]
+                  }
                   selectedProduct={selectedProduct}
                   isExpiringSoon={isExpiringSoon}
                   lastUpdatedProductId={lastUpdatedProductId}
@@ -334,7 +338,6 @@ const ProductList = () => {
             </div>
           </ModalContainer>
         )}
-
         {/* Lista de productos clasificados */}
         <ProductListContainer
           filteredProducts={filterProducts(searchTerm)}
