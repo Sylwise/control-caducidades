@@ -1,5 +1,6 @@
 const ProductStatus = require("../models/Product");
 const logger = require("../logger");
+const socketService = require("../services/socketService");
 
 exports.getAllStatus = async (req, res) => {
   try {
@@ -71,12 +72,12 @@ exports.updateStatus = async (req, res) => {
     logger.info(`Estado del producto actualizado: ${productoId}`);
 
     const io = req.app.get('io');
-    if (io) {
-        io.to(req.user.restaurante).emit("productStatusUpdate", {
-            type: isNew ? "create" : "update",
-            productStatus: populatedStatus,
-        });
-    }
+    socketService.notifyStatusUpdate(
+      io, 
+      req.user.restaurante, 
+      isNew ? "create" : "update", 
+      populatedStatus
+    );
 
     res.json(populatedStatus);
   } catch (error) {
@@ -109,13 +110,12 @@ exports.deleteStatus = async (req, res) => {
     if (deletedStatus) {
       logger.info(`Estado del producto eliminado: ${productoId}`);
       const io = req.app.get('io');
-      if (io) {
-          io.to(req.user.restaurante).emit("productStatusUpdate", {
-            type: "delete",
-            productId: productoId,
-            product: deletedStatus.producto
-          });
-      }
+      socketService.notifyStatusDelete(
+        io,
+        req.user.restaurante,
+        productoId,
+        deletedStatus.producto
+      );
     }
 
     res.json({ 
