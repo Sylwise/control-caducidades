@@ -12,6 +12,7 @@ const CategorySection = memo(({
   onProductClick,
   onUpdateClick,
   onDeleteClick,
+  viewMode,
 }) => {
   if (!products || products.length === 0) return null;
 
@@ -47,6 +48,7 @@ const CategorySection = memo(({
             onProductClick={onProductClick}
             onUpdateClick={onUpdateClick}
             onDeleteClick={onDeleteClick}
+            viewMode={viewMode}
           />
         ))}
       </div>
@@ -65,6 +67,7 @@ CategorySection.propTypes = {
   onProductClick: PropTypes.func.isRequired,
   onUpdateClick: PropTypes.func.isRequired,
   onDeleteClick: PropTypes.func.isRequired,
+  viewMode: PropTypes.string,
 };
 
 export default CategorySection;

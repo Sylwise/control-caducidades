@@ -79,40 +79,40 @@ const HeaderSection = ({
           </button>
         </div>
       </div>
-      <div className="flex items-center gap-3">
-        <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center gap-1">
+        <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold text-[#1d5030] font-['Noto Sans'] tracking-tight select-none">
             Lista de Caducidades
           </h1>
-          {user?.restaurante?.nombre && (
-            <span className="text-sm font-medium text-gray-500 select-none">
-              {user.restaurante.nombre}
-            </span>
+          {expiringCount > 0 && (
+            <button
+              onClick={onExpiringClick}
+              className={`
+                relative inline-flex items-center justify-center
+                min-w-[24px] h-[24px]
+                ${
+                  hasExpiredProducts
+                    ? "bg-red-600 text-white"
+                    : "bg-[#ffb81c] text-[#1a1a1a]"
+                }
+                rounded-full px-2
+                font-['Noto Sans'] font-bold text-sm
+                shadow-sm select-none
+                transition-all duration-200
+                hover:opacity-90 hover:shadow
+                active:scale-95
+                ${hasExpiredProducts ? "animate-pulse" : ""}
+              `}
+              aria-label="Ver productos próximos a caducar"
+            >
+              {expiringCount}
+            </button>
           )}
         </div>
-        {expiringCount > 0 && (
-          <button
-            onClick={onExpiringClick}
-            className={`
-              relative inline-flex items-center justify-center
-              min-w-[24px] h-[24px]
-              ${
-                hasExpiredProducts
-                  ? "bg-red-600 text-white"
-                  : "bg-[#ffb81c] text-[#1a1a1a]"
-              }
-              rounded-full px-2
-              font-['Noto Sans'] font-bold text-sm
-              shadow-sm select-none
-              transition-all duration-200
-              hover:opacity-90 hover:shadow
-              active:scale-95
-              ${hasExpiredProducts ? "animate-pulse" : ""}
-            `}
-            aria-label="Ver productos próximos a caducar"
-          >
-            {expiringCount}
-          </button>
+        {user?.restaurante?.nombre && (
+          <span className="text-sm font-medium text-gray-500 select-none">
+            {user.restaurante.nombre}
+          </span>
         )}
       </div>
     </div>

@@ -27,6 +27,7 @@ const ProductCard = memo(({
   onProductClick,
   onUpdateClick,
   onDeleteClick,
+  viewMode = 'card',
 }) => {
   // Determinar si el producto está clasificado o no
   const isClassified = product.estado !== "sin-clasificar";
@@ -39,140 +40,210 @@ const ProductCard = memo(({
         w-full text-left 
         bg-white hover:bg-gray-50
         rounded-lg
-        shadow-sm hover:shadow
+        ${viewMode === 'compact' 
+          ? 'p-2 flex items-center gap-4 border-b border-gray-100 hover:bg-gray-50' 
+          : 'p-4 shadow-sm hover:shadow mb-4'}
         transition-all duration-300
-        ${isSelected ? "ring-1 ring-[#1d5030]/30" : ""}
+        ${isSelected ? "ring-1 ring-[#1d5030]/30 bg-[#1d5030]/5" : ""}
         ${
           lastUpdatedProductId === product.producto?._id
             ? "animate-highlight bg-[#1d5030]/5"
             : ""
         }
         active:scale-[0.995]
-        p-4 product-card
+        product-card
         cursor-pointer
       `}
     >
-      <div className="flex items-center gap-2">
-        <span className="font-['Noto Sans'] font-semibold text-[#2d3748] text-base flex-1 select-none">
-          {product.producto?.nombre}
-        </span>
-        {isExpiringSoon(product.fechaFrente) && (
-          <div
-            className="
-            w-2 h-2 
-            rounded-full 
-            bg-[#ffb81c]
-            shadow-[0_0_6px_rgba(255,184,28,0.5)]
-            animate-pulse
-            transition-opacity duration-300
-          "
-          />
-        )}
-      </div>
+      {viewMode === 'compact' ? (
+        // VISTA COMPACTA
+        <>
+          {/* Indicador de estado (punto) */}
+          <div className={`
+            w-2 h-2 rounded-full flex-shrink-0
+            ${isExpiringSoon(product.fechaFrente) ? 'bg-[#ffb81c] animate-pulse' : 'bg-gray-300'}
+          `} />
 
-      {/* Contenido expandible - para todos los productos cuando están seleccionados */}
-      <div
-        className={`
-        transform transition-all duration-300
-        ${isSelected ? "max-h-[500px] opacity-100 mt-4" : "max-h-0 opacity-0"}
-        overflow-hidden
-      `}
-      >
-        <div className="space-y-4">
-          {/* Mostrar fechas si existen, independientemente del estado */}
-          {(product.fechaFrente || product.fechaAlmacen) && (
-            <div className="grid grid-cols-2 gap-4">
-              {product.fechaFrente && (
-                <div className="bg-[#f8f8f8] rounded-md p-3">
-                  <div
-                    className="inline-block bg-[#1d5030]/10 px-2 py-1 rounded text-[#1d5030] 
-                    text-[14px] font-semibold mb-2 select-none"
-                  >
-                    FRENTE
-                  </div>
-                  <div className="text-xl font-bold text-[#1a1a1a] leading-tight select-none">
-                    {formatDate(product.fechaFrente)}
-                  </div>
-                </div>
-              )}
-              {product.fechaAlmacen && (
-                <div className="bg-[#f8f8f8] rounded-md p-3 relative">
-                  <div
-                    className="inline-block bg-[#1d5030]/10 px-2 py-1 rounded text-[#1d5030] 
-                    text-[14px] font-semibold mb-2 select-none"
-                  >
-                    ALMACÉN
-                  </div>
-                  <div className="text-xl font-bold text-[#1a1a1a] leading-tight select-none">
-                    {formatDate(product.fechaAlmacen)}
-                  </div>
-                  {product.cajasAlmacen > 0 && (
-                    <div className="absolute top-3 right-3 bg-white border border-[#1d5030]/20 text-[#1d5030] text-xs font-bold px-2 py-1 rounded-full shadow-sm">
-                      {product.cajasAlmacen} {product.cajasAlmacen === 1 ? 'caja' : 'cajas'}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+          {/* Nombre del producto */}
+          <div className="flex-1 min-w-0">
+            <span className="font-['Noto Sans'] font-medium text-[#2d3748] text-sm truncate block">
+              {product.producto?.nombre}
+            </span>
+          </div>
 
-          {/* Mostrar etiqueta de caja única si aplica */}
-          {product.hayOtrasFechas && (
-            <div className="flex items-center gap-2 mt-2">
-              <Clock className="w-4 h-4 text-gray-600" />
-              <span className="text-sm text-gray-600 select-none">
-                Hay más fechas disponibles
-              </span>
-              {product.cajaUnica && (
-                <div
-                  className="inline-flex items-center px-2.5 py-1 rounded-md
-                  bg-[#ffb81c]/5 text-[#1d5030] text-sm select-none"
-                >
-                  <Box className="w-3.5 h-3.5 mr-1" />
-                  Última caja
-                </div>
-              )}
-            </div>
-          )}
-          
-          {/* Botones - siempre mostrar el botón de actualizar, y el de eliminar solo si aplica */}
-          <div className="flex items-center justify-between pt-2">
+          {/* Fechas Compactas */}
+          <div className="flex items-center gap-3 text-xs">
+            {product.fechaFrente && (
+              <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded border border-gray-100">
+                <span className="text-[#1d5030] font-semibold">F:</span>
+                <span className="font-medium text-gray-700">{formatDate(product.fechaFrente)}</span>
+              </div>
+            )}
+            {product.fechaAlmacen && (
+              <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded border border-gray-100">
+                <span className="text-[#1d5030] font-semibold">A:</span>
+                <span className="font-medium text-gray-700">{formatDate(product.fechaAlmacen)}</span>
+                {product.cajasAlmacen > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 bg-[#1d5030]/10 text-[#1d5030] rounded-full text-[10px] font-bold">
+                    {product.cajasAlmacen}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Acciones Rápidas */}
+          <div className="flex items-center gap-1 ml-2">
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onUpdateClick(product, e);
               }}
-              className="flex-1 py-2 text-white rounded-md
-                bg-[#1d5030] hover:bg-[#1d5030]/90
-                transition-colors duration-200
-                font-medium text-sm select-none
-                flex items-center justify-center gap-1.5
-                shadow-sm hover:shadow
-                mr-2"
+              className="p-1.5 text-gray-400 hover:text-[#1d5030] hover:bg-[#1d5030]/10 rounded transition-colors"
+              title="Editar"
             >
-              <Edit3 className="w-3.5 h-3.5" />
-              Actualizar Estado
+              <Edit3 className="w-4 h-4" />
             </button>
-            {(product.estado !== "sin-clasificar" ||
-              product.fechaFrente ||
-              product.fechaAlmacen) && (
+            {(product.estado !== "sin-clasificar" || product.fechaFrente || product.fechaAlmacen) && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onDeleteClick(product, e);
                 }}
-                className="min-w-[48px] h-[40px] flex items-center justify-center
-                  text-gray-400 rounded-md
-                  hover:text-red-500 hover:bg-red-50
-                  transition-colors duration-200
-                  active:bg-red-100"
+                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                title="Eliminar"
               >
-                <Trash2 className="w-5 h-5" />
+                <Trash2 className="w-4 h-4" />
               </button>
             )}
           </div>
-        </div>
-      </div>
+        </>
+      ) : (
+        // VISTA TARJETA (Original)
+        <>
+          <div className="flex items-center gap-2">
+            <span className="font-['Noto Sans'] font-semibold text-[#2d3748] text-base flex-1 select-none">
+              {product.producto?.nombre}
+            </span>
+            {isExpiringSoon(product.fechaFrente) && (
+              <div
+                className="
+                w-2 h-2 
+                rounded-full 
+                bg-[#ffb81c]
+                shadow-[0_0_6px_rgba(255,184,28,0.5)]
+                animate-pulse
+                transition-opacity duration-300
+              "
+              />
+            )}
+          </div>
+
+          {/* Contenido expandible - para todos los productos cuando están seleccionados */}
+          <div
+            className={`
+            transform transition-all duration-300
+            ${isSelected ? "max-h-[500px] opacity-100 mt-4" : "max-h-0 opacity-0"}
+            overflow-hidden
+          `}
+          >
+            <div className="space-y-4">
+              {/* Mostrar fechas si existen, independientemente del estado */}
+              {(product.fechaFrente || product.fechaAlmacen) && (
+                <div className="grid grid-cols-2 gap-4">
+                  {product.fechaFrente && (
+                    <div className="bg-[#f8f8f8] rounded-md p-3">
+                      <div
+                        className="inline-block bg-[#1d5030]/10 px-2 py-1 rounded text-[#1d5030] 
+                        text-[14px] font-semibold mb-2 select-none"
+                      >
+                        FRENTE
+                      </div>
+                      <div className="text-xl font-bold text-[#1a1a1a] leading-tight select-none">
+                        {formatDate(product.fechaFrente)}
+                      </div>
+                    </div>
+                  )}
+                  {product.fechaAlmacen && (
+                    <div className="bg-[#f8f8f8] rounded-md p-3 relative">
+                      <div
+                        className="inline-block bg-[#1d5030]/10 px-2 py-1 rounded text-[#1d5030] 
+                        text-[14px] font-semibold mb-2 select-none"
+                      >
+                        ALMACÉN
+                      </div>
+                      <div className="text-xl font-bold text-[#1a1a1a] leading-tight select-none">
+                        {formatDate(product.fechaAlmacen)}
+                      </div>
+                      {product.cajasAlmacen > 0 && (
+                        <div className="absolute top-3 right-3 bg-white border border-[#1d5030]/20 text-[#1d5030] text-xs font-bold px-2 py-1 rounded-full shadow-sm">
+                          {product.cajasAlmacen} {product.cajasAlmacen === 1 ? 'caja' : 'cajas'}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Mostrar etiqueta de caja única si aplica */}
+              {product.hayOtrasFechas && (
+                <div className="flex items-center gap-2 mt-2">
+                  <Clock className="w-4 h-4 text-gray-600" />
+                  <span className="text-sm text-gray-600 select-none">
+                    Hay más fechas disponibles
+                  </span>
+                  {product.cajaUnica && (
+                    <div
+                      className="inline-flex items-center px-2.5 py-1 rounded-md
+                      bg-[#ffb81c]/5 text-[#1d5030] text-sm select-none"
+                    >
+                      <Box className="w-3.5 h-3.5 mr-1" />
+                      Última caja
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* Botones - siempre mostrar el botón de actualizar, y el de eliminar solo si aplica */}
+              <div className="flex items-center justify-between pt-2">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onUpdateClick(product, e);
+                  }}
+                  className="flex-1 py-2 text-white rounded-md
+                    bg-[#1d5030] hover:bg-[#1d5030]/90
+                    transition-colors duration-200
+                    font-medium text-sm select-none
+                    flex items-center justify-center gap-1.5
+                    shadow-sm hover:shadow
+                    mr-2"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  Actualizar Estado
+                </button>
+                {(product.estado !== "sin-clasificar" ||
+                  product.fechaFrente ||
+                  product.fechaAlmacen) && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteClick(product, e);
+                    }}
+                    className="min-w-[48px] h-[40px] flex items-center justify-center
+                      text-gray-400 rounded-md
+                      hover:text-red-500 hover:bg-red-50
+                      transition-colors duration-200
+                      active:bg-red-100"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 });
@@ -198,6 +269,7 @@ ProductCard.propTypes = {
   onProductClick: PropTypes.func.isRequired,
   onUpdateClick: PropTypes.func.isRequired,
   onDeleteClick: PropTypes.func.isRequired,
+  viewMode: PropTypes.string,
 };
 
 export default ProductCard;

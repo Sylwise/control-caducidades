@@ -13,9 +13,13 @@ export const isDateValid = (dateString) => {
 };
 
 export const getDaysUntilExpiry = (date) => {
+  if (!date) return Infinity;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const expiryDate = new Date(date);
+  
+  if (isNaN(expiryDate.getTime())) return Infinity;
+
   expiryDate.setHours(0, 0, 0, 0);
   const diffTime = expiryDate.getTime() - today.getTime();
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));

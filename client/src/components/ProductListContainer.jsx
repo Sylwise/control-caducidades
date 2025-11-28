@@ -11,6 +11,7 @@ const ProductListContainer = memo(({
   onUpdateClick,
   onDeleteClick,
   searchTerm,
+  viewMode,
 }) => {
   // Verificar si hay productos en alguna categoría
   const hasProducts = Object.values(filteredProducts).some(
@@ -47,6 +48,7 @@ const ProductListContainer = memo(({
                 onProductClick={onProductClick}
                 onUpdateClick={onUpdateClick}
                 onDeleteClick={onDeleteClick}
+                viewMode={viewMode}
               />
             </div>
           )
@@ -66,6 +68,7 @@ ProductListContainer.propTypes = {
   onUpdateClick: PropTypes.func.isRequired,
   onDeleteClick: PropTypes.func.isRequired,
   searchTerm: PropTypes.string.isRequired,
+  viewMode: PropTypes.string,
 };
 
 export default ProductListContainer;

@@ -37,6 +37,7 @@ const ProductList = () => {
   // Estados locales
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [viewMode, setViewMode] = useState('card');
 
   // Custom Hooks
   const {
@@ -287,6 +288,8 @@ const ProductList = () => {
           onSearchChange={setSearchTerm}
           unclassifiedCount={products["sin-clasificar"].length}
           onUnclassifiedClick={() => setShowUnclassified(!showUnclassified)}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
         />
 
         {/* Lista de productos sin clasificar */}
@@ -325,6 +328,7 @@ const ProductList = () => {
                   }}
                   onUpdateClick={prepareFormForUpdate} // Usar la nueva función del hook
                   onDeleteClick={handleDeleteClick}
+                  viewMode={viewMode}
                 />
               )}
             </div>
@@ -341,6 +345,7 @@ const ProductList = () => {
           onUpdateClick={prepareFormForUpdate} // Usar la nueva función del hook
           onDeleteClick={handleDeleteClick}
           searchTerm={searchTerm}
+          viewMode={viewMode}
         />
 
         {/* Modales */}

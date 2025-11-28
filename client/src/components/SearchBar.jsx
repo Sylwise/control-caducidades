@@ -1,4 +1,4 @@
-import { Search, X } from "lucide-react";
+import { Search, X, LayoutGrid, List } from "lucide-react";
 import PropTypes from "prop-types";
 
 function SearchBar({
@@ -6,6 +6,8 @@ function SearchBar({
   onSearchChange,
   unclassifiedCount,
   onUnclassifiedClick,
+  viewMode = 'card',
+  onViewModeChange,
 }) {
   return (
     <div className="flex gap-2 mb-6">
@@ -62,6 +64,34 @@ function SearchBar({
           {unclassifiedCount}
         </span>
       </button>
+
+      {/* Selector de Vista */}
+      <div className="flex bg-white rounded-lg shadow-sm border border-gray-100 p-1 h-11">
+        <button
+          onClick={() => onViewModeChange('card')}
+          className={`
+            p-2 rounded-md transition-all duration-200
+            ${viewMode === 'card' 
+              ? 'bg-[#1d5030]/10 text-[#1d5030]' 
+              : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'}
+          `}
+          title="Vista Tarjeta"
+        >
+          <LayoutGrid className="w-5 h-5" />
+        </button>
+        <button
+          onClick={() => onViewModeChange('compact')}
+          className={`
+            p-2 rounded-md transition-all duration-200
+            ${viewMode === 'compact' 
+              ? 'bg-[#1d5030]/10 text-[#1d5030]' 
+              : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'}
+          `}
+          title="Vista Compacta"
+        >
+          <List className="w-5 h-5" />
+        </button>
+      </div>
     </div>
   );
 }
@@ -71,6 +101,8 @@ SearchBar.propTypes = {
   onSearchChange: PropTypes.func.isRequired,
   unclassifiedCount: PropTypes.number.isRequired,
   onUnclassifiedClick: PropTypes.func.isRequired,
+  viewMode: PropTypes.string,
+  onViewModeChange: PropTypes.func,
 };
 
 export default SearchBar;
