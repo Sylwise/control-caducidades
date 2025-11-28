@@ -89,7 +89,12 @@ const EditProductModal = ({ isOpen, onClose, productId, onProductUpdated }) => {
 
     try {
       setIsSubmitting(true);
-      const updatedProduct = await OfflineManager.updateCatalogProduct(productId, formData);
+      setIsSubmitting(true);
+      const updatedData = {
+        ...formData,
+        nombre: formData.nombre.trim(),
+      };
+      const updatedProduct = await OfflineManager.updateCatalogProduct(productId, updatedData);
       onProductUpdated(updatedProduct);
       handleClose();
     } catch (err) {
@@ -168,6 +173,8 @@ const EditProductModal = ({ isOpen, onClose, productId, onProductUpdated }) => {
                   className={`w-full px-3 py-2 border rounded-md
                     ${formErrors.nombre ? "border-red-500" : "border-gray-300"}
                     focus:outline-none focus:ring-2 focus:ring-[#1d5030]/50`}
+                  required
+                  maxLength={60}
                 />
                 {formErrors.nombre && (
                   <p className="mt-1 text-sm text-red-500">{formErrors.nombre}</p>

@@ -187,6 +187,12 @@ const UserManagement = ({
   const handleInputChange = useCallback(
     (e) => {
       const { name, value } = e.target;
+      
+      // Bloquear espacios en el nombre de usuario
+      if (name === "username" && value.includes(" ")) {
+        return;
+      }
+
       const newFormData = { ...formData, [name]: value };
       setFormData(newFormData);
 
@@ -513,6 +519,9 @@ const UserManagement = ({
                       : "border-gray-300 focus:ring-[#1d5030]"
                   }
                   focus:outline-none focus:ring-2 focus:ring-opacity-50 select-none`}
+                required
+                minLength={3}
+                maxLength={20}
               />
               {formErrors.username && (
                 <p className="mt-1 text-sm text-red-500 select-none">{formErrors.username}</p>
@@ -541,6 +550,8 @@ const UserManagement = ({
                         : "border-gray-300 focus:ring-[#1d5030]"
                     }
                     focus:outline-none focus:ring-2 focus:ring-opacity-50 select-none`}
+                  required
+                  minLength={6}
                 />
                 <button
                   type="button"

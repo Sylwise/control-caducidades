@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Box, Clock, Edit3, Trash2 } from "lucide-react";
 import PropTypes from "prop-types";
 
@@ -18,7 +19,7 @@ const formatDate = (dateString) => {
   }
 };
 
-const ProductCard = ({
+const ProductCard = memo(({
   product,
   isSelected,
   isExpiringSoon,
@@ -174,7 +175,9 @@ const ProductCard = ({
       </div>
     </div>
   );
-};
+});
+
+ProductCard.displayName = "ProductCard";
 
 ProductCard.propTypes = {
   product: PropTypes.shape({

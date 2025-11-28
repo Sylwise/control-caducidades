@@ -1,7 +1,8 @@
+import { memo } from "react";
 import PropTypes from "prop-types";
 import CategorySection from "./CategorySection";
 
-const ProductListContainer = ({
+const ProductListContainer = memo(({
   filteredProducts,
   selectedProduct,
   isExpiringSoon,
@@ -52,7 +53,9 @@ const ProductListContainer = ({
       )}
     </div>
   );
-};
+});
+
+ProductListContainer.displayName = "ProductListContainer";
 
 ProductListContainer.propTypes = {
   filteredProducts: PropTypes.object.isRequired,

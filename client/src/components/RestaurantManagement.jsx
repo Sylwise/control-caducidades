@@ -101,7 +101,11 @@ const RestaurantManagement = ({
             localStorage.getItem("token") || sessionStorage.getItem("token")
           }`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          nombre: formData.nombre.trim(),
+          direccion: formData.direccion.trim(),
+        }),
       });
 
       if (!response.ok) {
@@ -156,7 +160,11 @@ const RestaurantManagement = ({
             localStorage.getItem("token") || sessionStorage.getItem("token")
           }`,
         },
-        body: JSON.stringify(editFormData),
+        body: JSON.stringify({
+          ...editFormData,
+          nombre: editFormData.nombre.trim(),
+          direccion: editFormData.direccion.trim(),
+        }),
       });
 
       if (!response.ok) {
@@ -227,14 +235,15 @@ const RestaurantManagement = ({
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
-                <input
-                  type="text"
-                  value={formData.nombre}
-                  onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-[#1d5030] focus:border-[#1d5030]"
-                  placeholder="Ej: Restaurante Centro"
-                  required
-                />
+                  <input
+                    type="text"
+                    value={formData.nombre}
+                    onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-[#1d5030] focus:border-[#1d5030]"
+                    placeholder="Ej: Restaurante Centro"
+                    required
+                    maxLength={20}
+                  />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
@@ -244,6 +253,8 @@ const RestaurantManagement = ({
                   onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
                   className="w-full p-3 border border-gray-300 rounded-md focus:ring-[#1d5030] focus:border-[#1d5030]"
                   placeholder="Ej: Av. Principal 123"
+                  required
+                  maxLength={120}
                 />
               </div>
               <div className="flex justify-end gap-3">
@@ -319,6 +330,7 @@ const RestaurantManagement = ({
                     onChange={(e) => setEditFormData({ ...editFormData, nombre: e.target.value })}
                     className="w-full p-3 border border-gray-300 rounded-md focus:ring-[#1d5030] focus:border-[#1d5030]"
                     required
+                    maxLength={50}
                   />
                 </div>
                 <div>
@@ -328,6 +340,8 @@ const RestaurantManagement = ({
                     value={editFormData.direccion}
                     onChange={(e) => setEditFormData({ ...editFormData, direccion: e.target.value })}
                     className="w-full p-3 border border-gray-300 rounded-md focus:ring-[#1d5030] focus:border-[#1d5030]"
+                    required
+                    maxLength={120}
                   />
                 </div>
                 <div className="flex justify-end gap-3">

@@ -1,8 +1,9 @@
+import { memo } from "react";
 import PropTypes from "prop-types";
 import ProductCard from "./ProductCard";
 import { CATEGORY_TITLES } from "../constants/productConstants";
 
-const CategorySection = ({
+const CategorySection = memo(({
   category,
   products,
   selectedProduct,
@@ -51,7 +52,9 @@ const CategorySection = ({
       </div>
     </div>
   );
-};
+});
+
+CategorySection.displayName = "CategorySection";
 
 CategorySection.propTypes = {
   category: PropTypes.string.isRequired,

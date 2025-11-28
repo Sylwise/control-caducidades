@@ -61,7 +61,11 @@ const CreateProductModal = ({ isOpen, onClose, onProductCreated }) => {
 
     try {
       setIsSubmitting(true);
-      const newProduct = await OfflineManager.createCatalogProduct(formData);
+      const productData = {
+        ...formData,
+        nombre: formData.nombre.trim(),
+      };
+      const newProduct = await OfflineManager.createCatalogProduct(productData);
       onProductCreated(newProduct);
       handleClose();
     } catch (err) {
@@ -145,6 +149,8 @@ const CreateProductModal = ({ isOpen, onClose, onProductCreated }) => {
                 className={`w-full px-3 py-2 border rounded-md
                   ${formErrors.nombre ? "border-red-500" : "border-gray-300"}
                   focus:outline-none focus:ring-2 focus:ring-[#1d5030]/50`}
+                required
+                maxLength={60}
               />
               {formErrors.nombre && (
                 <p className="mt-1 text-sm text-red-500">{formErrors.nombre}</p>

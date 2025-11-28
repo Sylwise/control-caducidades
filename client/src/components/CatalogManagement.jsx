@@ -411,10 +411,10 @@ const CatalogManagement = ({ isOpen, onClose }) => {
                   value={searchTerm}
                   onChange={(e) => {
                     const value = e.target.value;
-                    // Solo permitir letras y espacios, máximo 15 caracteres
+                    // Permitir letras, números y espacios, máximo 20 caracteres
                     if (
-                      /^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ\s]*$/.test(value) &&
-                      value.length <= 15
+                      /^[a-zA-Z0-9áéíóúüñÁÉÍÓÚÜÑ\s]*$/.test(value) &&
+                      value.length <= 20
                     ) {
                       setSearchTerm(value);
                     }
@@ -422,7 +422,7 @@ const CatalogManagement = ({ isOpen, onClose }) => {
                   className="w-full pl-3 pr-10 py-3 min-h-[48px] border border-gray-300 rounded-md
                     focus:outline-none focus:ring-2 focus:ring-[#1d5030]/50 focus:border-transparent
                     text-gray-900 placeholder-gray-500 select-none"
-                  maxLength={15}
+                  maxLength={20}
                 />
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               </div>

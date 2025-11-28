@@ -124,14 +124,14 @@ const ProductList = () => {
     });
   }, []);
 
-  const handleDeleteClick = async (product, e) => {
+  const handleDeleteClick = useCallback(async (product, e) => {
     e.stopPropagation();
     const success = await handleDeleteProduct(product.producto?._id);
     if (success) {
       setSelectedProduct(null);
       setSearchTerm("");
     }
-  };
+  }, [handleDeleteProduct]);
 
   const navigateToProduct = useCallback(
     (product) => {

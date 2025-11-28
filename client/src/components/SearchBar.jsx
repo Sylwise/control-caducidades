@@ -17,10 +17,10 @@ function SearchBar({
           value={searchTerm}
           onChange={(e) => {
             const value = e.target.value;
-            // Solo permitir letras y espacios, máximo 15 caracteres
+            // Permitir letras, números y espacios, máximo 20 caracteres
             if (
-              /^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ\s]*$/.test(value) &&
-              value.length <= 15
+              /^[a-zA-Z0-9áéíóúüñÁÉÍÓÚÜÑ\s]*$/.test(value) &&
+              value.length <= 20
             ) {
               onSearchChange(value);
             }
@@ -29,7 +29,7 @@ function SearchBar({
             focus:outline-none focus:ring-2 focus:ring-[#1d5030]/50 focus:border-transparent
             font-['Noto Sans'] text-sm font-medium placeholder:text-gray-400
             bg-white shadow-sm"
-          maxLength={15}
+          maxLength={20}
         />
         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#1d5030] w-5 h-5" />
         {searchTerm && (
