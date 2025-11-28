@@ -47,6 +47,9 @@ const userSchema = new mongoose.Schema(
   }
 );
 
+// Índices para optimización multi-tenant
+userSchema.index({ restaurante: 1 }); // Listar usuarios por restaurante
+
 // Middleware para hashear la contraseña antes de guardar
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) {

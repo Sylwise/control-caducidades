@@ -48,16 +48,6 @@ function setupSocket(server, allowedOrigins) {
       socket.join('supervisors');
     }
 
-    socket.on("productStatusUpdate", (data) => {
-      logger.info({ data }, "Actualización de estado recibida");
-      io.emit("productStatusUpdate", data);
-    });
-
-    socket.on("catalogUpdate", (data) => {
-      logger.info({ data }, "Actualización de catálogo recibida");
-      io.emit("catalogUpdate", data);
-    });
-
     socket.on("disconnect", () => {
       logger.info(`Cliente desconectado: ${socket.id}`);
     });

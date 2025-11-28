@@ -62,6 +62,11 @@ const productStatusSchema = new mongoose.Schema(
   }
 );
 
+// Índices para optimización multi-tenant
+productStatusSchema.index({ restaurante: 1 }); // Búsquedas generales por restaurante
+productStatusSchema.index({ restaurante: 1, estado: 1 }); // Filtrado por estado dentro de un restaurante
+productStatusSchema.index({ restaurante: 1, producto: 1 }, { unique: true }); // Unicidad y búsquedas rápidas por producto
+
 productStatusSchema.pre("save", function (next) {
   console.log("Pre-save middleware ejecutándose con datos:", {
     fechaFrente: this.fechaFrente,
