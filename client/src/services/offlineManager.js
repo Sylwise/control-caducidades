@@ -1,8 +1,8 @@
 import FeatureManager from "../config/features";
 import OfflineDebugger from "../utils/debugger";
 import IndexedDB from "./indexedDB";
-import { processProduct, compareClassifications } from "./productClassifier";
-import * as api from "./api";
+import catalogService from "./offline/catalogService";
+import statusService from "./offline/statusService";
 
 class OfflineManager {
   static instance = null;
@@ -75,195 +75,47 @@ class OfflineManager {
     }
 
     // 2. Notificar creación del final
-    // Si es simulación (caso duplicado), usamos productStatus, si no product
-    const detail = { type: "create" };
+    // NOTA: El servicio catalogService ya emite el evento "create" cuando se llama a createCatalogProduct.
+    // Sin embargo, si es una simulación (duplicado), el servicio no se llamó, así que debemos emitirlo aquí.
     if (isSimulation) {
+      const detail = { type: "create" };
       detail.productStatus = productData;
-    } else {
-      detail.product = productData;
+      this._dispatchLocalEvent("localCatalogUpdate", detail);
     }
-
-    this._dispatchLocalEvent("localCatalogUpdate", detail);
   }
 
   // ==========================================
-  // Métodos Públicos
+  // Métodos Públicos (Proxies)
   // ==========================================
 
   // Métodos para productos y estados
   async getAllProductStatus() {
-    try {
-      OfflineDebugger.log("GET_PRODUCTS_START", {
-        isOnline: this.isOnline,
-        offlineMode: this.isOfflineMode,
-      });
-
-      if (this.isOnline && !this.isOfflineMode) {
-        // Si estamos online y no en modo offline forzado, obtener del servidor
-        const serverProducts = await api.http.getAllProductStatus();
-        await this.saveToLocalStorage(serverProducts);
-        return serverProducts;
-      }
-
-      // Modo offline - obtener de IndexedDB
-      return await IndexedDB.getAllProductStatus();
-    } catch (error) {
-      OfflineDebugger.error("GET_PRODUCTS_ERROR", error);
-      throw error;
-    }
+    return await statusService.getAllProductStatus();
   }
 
   async updateProductStatus(productId, data) {
-    try {
-      // Procesar y validar datos localmente
-      const processedData = processProduct(data);
-
-      if (this.isOnline && !this.isOfflineMode) {
-        const serverResult = await api.http.updateProductStatus(
-          productId,
-          processedData
-        );
-
-        // Comparar clasificación local con servidor
-        const comparison = compareClassifications(processedData, serverResult);
-        if (!comparison.match) {
-          OfflineDebugger.log("CLASSIFICATION_MISMATCH", comparison);
-        }
-
-        await IndexedDB.saveProductStatus(serverResult);
-        return serverResult;
-      }
-
-      // Modo offline - Obtener información del producto del catálogo y estado actual
-      const [catalogProduct, currentStatus] = await Promise.all([
-        IndexedDB.getCatalogProduct(productId),
-        IndexedDB.getProductStatus(productId),
-      ]);
-
-      if (!catalogProduct) {
-        throw new Error("Producto no encontrado en el catálogo local");
-      }
-
-      // Si ya existe un estado, verificar si hay cambios reales
-      if (currentStatus) {
-        const hasChanges = Object.entries(processedData).some(
-          ([key, value]) => {
-            // Comparar arrays de fechasAlmacen
-            if (key === "fechasAlmacen") {
-              if (!value)
-                return currentStatus[key] && currentStatus[key].length > 0;
-              if (!currentStatus[key]) return value.length > 0;
-              if (value.length !== currentStatus[key].length) return true;
-              return value.some(
-                (date, index) => date !== currentStatus[key][index]
-              );
-            }
-            return value !== currentStatus[key];
-          }
-        );
-
-        if (!hasChanges) {
-          OfflineDebugger.log("NO_CHANGES_DETECTED", {
-            productId,
-            current: currentStatus,
-            new: processedData,
-          });
-          return currentStatus;
-        }
-      }
-
-      // Modo offline - Combinar datos existentes con nuevos datos
-      const productToSave = {
-        ...currentStatus,
-        producto: catalogProduct,
-        ...processedData, // Sobrescribir con nuevos datos
-        updatedAt: new Date().toISOString(),
-      };
-
-      await IndexedDB.saveProductStatus(productToSave);
-
-      // Registrar cambio pendiente solo si hay cambios reales
-      await IndexedDB.addPendingChange({
-        type: "UPDATE",
-        productId,
-        data: processedData,
-        timestamp: new Date().toISOString(),
-      });
-
-      return productToSave;
-    } catch (error) {
-      OfflineDebugger.error("UPDATE_PRODUCT_ERROR", error, {
-        productId,
-        data,
-      });
-      throw error;
-    }
+    return await statusService.updateProductStatus(productId, data);
   }
 
   async deleteProductStatus(productId) {
-    try {
-      OfflineDebugger.log("DELETE_PRODUCT_STATUS", { productId });
-
-      if (this.isOnline && !this.isOfflineMode) {
-        const result = await api.http.deleteProductStatus(productId);
-        // Asegurar que se elimine de IndexedDB
-        await IndexedDB.deleteProductStatus(productId);
-        return result;
-      }
-
-      // En modo offline
-      // 1. Verificar si el producto existe en IndexedDB
-      const existingStatus = await IndexedDB.getProductStatus(productId);
-      if (!existingStatus) {
-        OfflineDebugger.log("PRODUCT_STATUS_NOT_FOUND", { productId });
-        return { success: true };
-      }
-
-      // 2. Eliminar el estado
-      await IndexedDB.deleteProductStatus(productId);
-
-      // 3. Registrar el cambio pendiente
-      await IndexedDB.addPendingChange({
-        type: "DELETE",
-        productId,
-        timestamp: new Date().toISOString(),
-      });
-
-      // 4. Verificar y limpiar estados huérfanos
-      const allStates = await IndexedDB.getAllProductStatus();
-      OfflineDebugger.log("REMAINING_STATES", { count: allStates.length });
-
-      return { success: true };
-    } catch (error) {
-      OfflineDebugger.error("DELETE_PRODUCT_ERROR", error, { productId });
-      throw error;
-    }
+    return await statusService.deleteProductStatus(productId);
   }
 
   // Métodos para el catálogo
   async getAllCatalogProducts() {
-    try {
-      OfflineDebugger.log("GET_CATALOG_START", {
-        isOnline: this.isOnline,
-        offlineMode: this.isOfflineMode,
-      });
+    return await catalogService.getAllCatalogProducts();
+  }
 
-      if (this.isOnline && !this.isOfflineMode) {
-        const serverData = await api.http.getAllCatalogProducts();
-        await this.saveCatalogToLocalStorage(serverData);
-        return serverData;
-      }
+  async createCatalogProduct(productData) {
+    return await catalogService.createCatalogProduct(productData);
+  }
 
-      const localData = await IndexedDB.getAllCatalog();
-      OfflineDebugger.log("CATALOG_LOCAL_RESPONSE", {
-        count: localData.length,
-      });
-      return localData;
-    } catch (error) {
-      OfflineDebugger.error("GET_CATALOG_ERROR", error);
-      // Si hay un error, intentar obtener datos locales como fallback
-      return await IndexedDB.getAllCatalog();
-    }
+  async updateCatalogProduct(productId, data) {
+    return await catalogService.updateCatalogProduct(productId, data);
+  }
+
+  async deleteCatalogProduct(productId) {
+    return await catalogService.deleteCatalogProduct(productId);
   }
 
   // Métodos de sincronización
@@ -296,7 +148,8 @@ class OfflineManager {
             productId: change.productId
           });
           
-          const response = await this.processChange(change);
+          // Delegar en el servicio
+          const response = await catalogService.createCatalogProduct(change.data);
           
           // La respuesta del servidor es un ProductStatus (con .producto poblado)
           // Pero necesitamos el ID del Producto para el mapeo y el catálogo
@@ -310,17 +163,17 @@ class OfflineManager {
             await IndexedDB.removePendingChange(change.id);
 
             // Actualizar el producto en IndexedDB con su nuevo ID y datos correctos
+            // NOTA: catalogService ya guardó el nuevo producto. Aquí limpiamos el viejo (temp).
             const oldId = change.tempId || change.productId;
-            if (oldId) {
-              await IndexedDB.updateCatalogProduct(oldId, {
-                ...productData,
-                _id: permanentId,
-              });
+            if (oldId && oldId !== permanentId) {
+               // Si el ID cambió, eliminamos el temporal antiguo para evitar duplicados en DB local
+               // ya que el servicio guardó el nuevo.
+               await IndexedDB.deleteCatalogProduct(oldId);
             }
 
-            // Usar helper para notificar a la UI
+            // Usar helper para notificar a la UI (principalmente para borrar el temp)
             const tempIdToRemove = change.tempId || change.productId;
-            this._notifySyncSuccess(change, tempIdToRemove, productData);
+            this._notifySyncSuccess(change, tempIdToRemove, productData, false);
           }
         } catch (error) {
           // Manejar error de duplicado (E11000)
@@ -329,7 +182,8 @@ class OfflineManager {
             
             try {
               // Si ya existe, intentamos obtenerlo del servidor para hacer el mapping
-              const serverProducts = await api.http.getAllCatalogProducts();
+              // Usamos el servicio para obtener el catálogo
+              const serverProducts = await catalogService.getAllCatalogProducts();
               
               // Normalizar el nombre para la búsqueda (trim y case insensitive si es necesario)
               const searchName = change.data.nombre.trim().toLowerCase();
@@ -350,11 +204,8 @@ class OfflineManager {
                 await IndexedDB.removePendingChange(change.id);
 
                 const oldId = change.tempId || change.productId;
-                if (oldId) {
-                  await IndexedDB.updateCatalogProduct(oldId, {
-                    ...response,
-                    _id: response._id,
-                  });
+                if (oldId && oldId !== response._id) {
+                   await IndexedDB.deleteCatalogProduct(oldId);
                 }
 
                 // Construir un objeto de estado simulado
@@ -409,36 +260,39 @@ class OfflineManager {
                 change.data.producto = permanentId;
               }
 
-              // Procesar el cambio con el ID permanente
-              const response = await this.processChange(change);
-              
-              // Actualizar IndexedDB y UI según el tipo de cambio
+              // Procesar el cambio con el ID permanente delegando en servicios
+              let response;
               if (change.type === "UPDATE") {
-                await IndexedDB.saveProductStatus(response);
-                this._dispatchLocalEvent("localProductStatusUpdate", {
-                  type: "update",
-                  productStatus: response,
-                });
+                 response = await statusService.updateProductStatus(change.productId, change.data);
+                 // statusService no emite eventos, así que lo hacemos aquí
+                 this._dispatchLocalEvent("localProductStatusUpdate", {
+                    type: "update",
+                    productStatus: response,
+                 });
               } else if (change.type === "DELETE") {
-                await IndexedDB.deleteProductStatus(change.productId);
-                this._dispatchLocalEvent("localProductStatusUpdate", {
-                  detail: {
-                    type: "delete",
-                    productId: change.productId,
-                    product: response.producto // Incluir producto para restauración
-                  },
-                });
+                 response = await statusService.deleteProductStatus(change.productId);
+                 // statusService no emite eventos, así que lo hacemos aquí
+                 
+                 // Intentar recuperar el producto de la respuesta o de los datos guardados
+                 const productToRestore = response.product || (change.data && change.data.product);
+                 
+                 this._dispatchLocalEvent("localProductStatusUpdate", {
+                    detail: {
+                      type: "delete",
+                      productId: change.productId,
+                      product: productToRestore
+                    },
+                 });
+              } else if (change.type === "UPDATE_CATALOG") {
+                 response = await catalogService.updateCatalogProduct(change.productId, change.data);
+                 // catalogService SÍ emite eventos, no duplicar
+              } else if (change.type === "DELETE_CATALOG") {
+                 response = await catalogService.deleteCatalogProduct(change.productId);
+                 // catalogService SÍ emite eventos, no duplicar
               }
 
               await IndexedDB.removePendingChange(change.id);
 
-              // Si es un DELETE, notificar a la UI
-              if (change.type === "DELETE_CATALOG") {
-                this._dispatchLocalEvent("localCatalogUpdate", {
-                  type: "delete",
-                  productId: permanentId,
-                });
-              }
             } else {
               // Si no encontramos un ID permanente, probablemente el producto ya no existe
               await IndexedDB.removePendingChange(change.id);
@@ -449,23 +303,28 @@ class OfflineManager {
             }
           } else {
             // Procesar cambios con IDs permanentes normalmente
-            const response = await this.processChange(change);
-            
-            // Actualizar IndexedDB y UI según el tipo de cambio
+            let response;
             if (change.type === "UPDATE") {
-              await IndexedDB.saveProductStatus(response);
-              this._dispatchLocalEvent("localProductStatusUpdate", {
-                type: "update",
-                productStatus: response,
-              });
+                response = await statusService.updateProductStatus(change.productId, change.data);
+                this._dispatchLocalEvent("localProductStatusUpdate", {
+                  type: "update",
+                  productStatus: response,
+                });
             } else if (change.type === "DELETE") {
-              // Ya se eliminó del servidor, asegurarnos de limpiar localmente
-              await IndexedDB.deleteProductStatus(change.productId);
-              this._dispatchLocalEvent("localProductStatusUpdate", {
-                type: "delete",
-                productId: change.productId,
-                product: response.product // Incluir producto para restauración (backend devuelve .product)
-              });
+                response = await statusService.deleteProductStatus(change.productId);
+                
+                // Intentar recuperar el producto de la respuesta o de los datos guardados
+                const productToRestore = response.product || (change.data && change.data.product);
+
+                this._dispatchLocalEvent("localProductStatusUpdate", {
+                  type: "delete",
+                  productId: change.productId,
+                  product: productToRestore
+                });
+            } else if (change.type === "UPDATE_CATALOG") {
+                await catalogService.updateCatalogProduct(change.productId, change.data);
+            } else if (change.type === "DELETE_CATALOG") {
+                await catalogService.deleteCatalogProduct(change.productId);
             }
 
             await IndexedDB.removePendingChange(change.id);
@@ -480,230 +339,6 @@ class OfflineManager {
       OfflineDebugger.error("SYNC_ERROR", error);
     } finally {
       this.syncInProgress = false;
-    }
-  }
-
-  async processChange(change) {
-    try {
-      let result;
-      switch (change.type) {
-        case "UPDATE":
-          return await api.http.updateProductStatus(
-            change.productId,
-            change.data
-          );
-        case "DELETE":
-          return await api.http.deleteProductStatus(change.productId);
-        case "CREATE_CATALOG":
-          OfflineDebugger.log("PROCESSING_CREATE_CATALOG", { 
-            change, 
-            productId: change.productId, 
-            tempId: change.tempId 
-          });
-          result = await api.http.createCatalogProduct(change.data);
-          return result;
-        case "UPDATE_CATALOG":
-          return await api.http.updateCatalogProduct(
-            change.productId,
-            change.data
-          );
-        case "DELETE_CATALOG":
-          return await api.http.deleteCatalogProduct(change.productId);
-        default:
-          throw new Error(`Tipo de cambio no soportado: ${change.type}`);
-      }
-    } catch (error) {
-      OfflineDebugger.error("PROCESS_CHANGE_ERROR", { error, change });
-      throw error;
-    }
-  }
-
-  // Métodos auxiliares
-  async saveToLocalStorage(products) {
-    OfflineDebugger.log("SAVING_TO_LOCAL", { count: products.length });
-
-    // Primero limpiar todos los estados existentes
-    await IndexedDB.clearProductStatus();
-
-    // Luego guardar los nuevos estados
-    for (const product of products) {
-      if (!product._id) {
-        OfflineDebugger.error("SAVE_TO_LOCAL_ERROR", "Product without ID", {
-          product,
-        });
-        continue;
-      }
-      await IndexedDB.saveProductStatus(product);
-    }
-
-    // Verificar que el número de productos es correcto
-    const finalProducts = await IndexedDB.getAllProductStatus();
-    OfflineDebugger.log("FINAL_PRODUCTS", {
-      count: finalProducts.length,
-    });
-  }
-
-  async saveCatalogToLocalStorage(products) {
-    OfflineDebugger.log("SAVING_CATALOG_TO_LOCAL", { count: products.length });
-
-    // Primero limpiar el catálogo actual
-    await IndexedDB.clearCatalog();
-
-    // Luego guardar los nuevos productos
-    for (const product of products) {
-      await IndexedDB.saveCatalogProduct(product);
-    }
-
-    // Verificar que el número de productos es correcto
-    const finalProducts = await IndexedDB.getAllCatalog();
-    OfflineDebugger.log("FINAL_CATALOG_PRODUCTS", {
-      count: finalProducts.length,
-    });
-  }
-
-  // Nuevos métodos para el catálogo
-  async createCatalogProduct(productData) {
-    try {
-      OfflineDebugger.log("CREATE_CATALOG_PRODUCT", { data: productData });
-
-      if (this.isOnline && !this.isOfflineMode) {
-        const result = await api.http.createCatalogProduct(productData);
-        // Guardar el producto del catálogo, no el estado completo
-        await IndexedDB.saveCatalogProduct(result.producto);
-        
-        // Emitir evento local para actualizar la UI inmediatamente
-        this._dispatchLocalEvent("localCatalogUpdate", {
-          type: "create",
-          productStatus: result,
-        });
-        
-        return result;
-      }
-
-      // Generar un ID temporal para modo offline
-      const tempId = `temp_${Date.now()}`;
-      const productToSave = {
-        _id: tempId,
-        ...productData,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      await IndexedDB.saveCatalogProduct(productToSave);
-      await IndexedDB.addPendingChange({
-        type: "CREATE_CATALOG",
-        tempId: tempId,
-        productId: tempId, // Adding productId to match what the sync process expects
-        data: productData,
-        timestamp: new Date().toISOString(),
-      });
-
-      // Emitir un evento local para actualizar la UI
-      this._dispatchLocalEvent("localCatalogUpdate", {
-        type: "create",
-        product: productToSave,
-      });
-
-      return productToSave;
-    } catch (error) {
-      OfflineDebugger.error("CREATE_CATALOG_PRODUCT_ERROR", error, {
-        productData,
-      });
-      throw error;
-    }
-  }
-
-  async updateCatalogProduct(productId, data) {
-    try {
-      OfflineDebugger.log("UPDATE_CATALOG_PRODUCT", { productId, data });
-
-      if (this.isOnline && !this.isOfflineMode) {
-        const result = await api.http.updateCatalogProduct(productId, data);
-        await IndexedDB.saveCatalogProduct(result);
-
-        // Emitir evento local para actualizar la UI inmediatamente
-        this._dispatchLocalEvent("localCatalogUpdate", {
-          type: "update",
-          product: result,
-        });
-
-        return result;
-      }
-
-      const existingProduct = await IndexedDB.getCatalogProduct(productId);
-      if (!existingProduct) {
-        throw new Error("Producto no encontrado en el catálogo local");
-      }
-
-      const updatedProduct = {
-        ...existingProduct,
-        ...data,
-        updatedAt: new Date().toISOString(),
-      };
-
-      await IndexedDB.saveCatalogProduct(updatedProduct);
-      await IndexedDB.addPendingChange({
-        type: "UPDATE_CATALOG",
-        productId,
-        data,
-        timestamp: new Date().toISOString(),
-      });
-
-      // Emitir un evento local para actualizar la UI
-      this._dispatchLocalEvent("localCatalogUpdate", {
-        type: "update",
-        product: updatedProduct,
-      });
-
-      return updatedProduct;
-    } catch (error) {
-      OfflineDebugger.error("UPDATE_CATALOG_PRODUCT_ERROR", error, {
-        productId,
-        data,
-      });
-      throw error;
-    }
-  }
-
-  async deleteCatalogProduct(productId) {
-    try {
-      OfflineDebugger.log("DELETE_CATALOG_PRODUCT", { productId });
-
-      if (this.isOnline && !this.isOfflineMode) {
-        const result = await api.http.deleteCatalogProduct(productId);
-        await IndexedDB.deleteCatalogProduct(productId);
-
-        // Emitir evento local para actualizar la UI inmediatamente
-        this._dispatchLocalEvent("localCatalogUpdate", {
-          type: "delete",
-          productId,
-        });
-
-        return result;
-      }
-
-      // Primero eliminar el producto de IndexedDB
-      await IndexedDB.deleteCatalogProduct(productId);
-
-      // Añadir el cambio pendiente
-      await IndexedDB.addPendingChange({
-        type: "DELETE_CATALOG",
-        productId,
-        timestamp: new Date().toISOString(),
-      });
-
-      // Emitir un evento local para actualizar la UI
-      this._dispatchLocalEvent("localCatalogUpdate", {
-        type: "delete",
-        productId,
-      });
-
-      return { success: true };
-    } catch (error) {
-      OfflineDebugger.error("DELETE_CATALOG_PRODUCT_ERROR", error, {
-        productId,
-      });
-      throw error;
     }
   }
 }
