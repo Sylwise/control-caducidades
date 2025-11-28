@@ -19,6 +19,8 @@ import LoadingErrorContainer from "./LoadingErrorContainer";
 import { useProductManagement } from "../hooks/useProductManagement";
 import { useModalManagement } from "../hooks/useModalManagement";
 import { useExpiringProducts } from "../hooks/useExpiringProducts";
+import { useProductUpdateForm } from "../hooks/useProductUpdateForm";
+import { useProductScroll } from "../hooks/useProductScroll";
 import { isExpiringSoon } from "../utils/dateUtils";
 
 const ProductList = () => {
@@ -34,19 +36,6 @@ const ProductList = () => {
   // Estados locales
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [editingProduct, setEditingProduct] = useState(null);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [updateForm, setUpdateForm] = useState({
-    fechaFrente: "",
-    fechaAlmacen: "",
-    fechaAlmacen2: "",
-    fechaAlmacen3: "",
-    cajaUnica: false,
-    hayUnicaCajaActual: false,
-    showSecondDate: false,
-    showThirdDate: false,
-    noHayEnAlmacen: false,
-  });
 
   // Custom Hooks
   const {
@@ -92,6 +81,27 @@ const ProductList = () => {
     getGroupedExpiringProducts,
   } = useExpiringProducts(products);
 
+  // Hook de Scroll (Objetivo 2)
+  const { scrollToProductId } = useProductScroll(selectedProduct);
+
+  // Hook de Formulario (Objetivo 1)
+  const {
+    updateForm,
+    setUpdateForm,
+    editingProduct,
+    isUpdating,
+    prepareFormForUpdate,
+    submitUpdate
+  } = useProductUpdateForm({
+    handleUpdateProduct,
+    addToast,
+    setIsUpdateModalOpen,
+    setShowUnclassified,
+    setSearchTerm,
+    setSelectedProduct,
+    scrollToProductId
+  });
+
   // Prevenir scroll cuando los modales están abiertos
   usePreventScroll(isUpdateModalOpen && !isClosingUpdateModal);
   usePreventScroll(showUnclassified && !isClosingUnclassified);
@@ -109,147 +119,10 @@ const ProductList = () => {
   // Manejadores de eventos
   const handleProductClick = useCallback((product) => {
     setSelectedProduct((current) => {
-      const newSelected =
-        current?.producto?._id === product.producto?._id ? null : product;
-
-      if (newSelected) {
-        setTimeout(() => {
-          const productElement = document.querySelector(
-            `[data-product-id="${product.producto?._id}"]`
-          );
-          if (productElement) {
-            productElement.scrollIntoView({
-              behavior: "smooth",
-              block: "center",
-              inline: "nearest",
-            });
-          }
-        }, 100);
-      }
-
-      return newSelected;
+      // Si es el mismo, lo deseleccionamos (null), si no, seleccionamos el nuevo
+      return current?.producto?._id === product.producto?._id ? null : product;
     });
   }, []);
-
-  const handleUpdateClick = useCallback(
-    (product, e) => {
-      e?.stopPropagation();
-      setEditingProduct(product);
-
-      // Extraer fechas adicionales si existen
-      const fechas = product.fechasAlmacen || [];
-      // fechas es ahora un array de objetos { date, boxes }
-      const segundaFechaObj = fechas[0]; // La primera en el array es la segunda en total (fechaAlmacen es la principal)
-      const terceraFechaObj = fechas[1];
-
-      setUpdateForm({
-        fechaFrente: product.fechaFrente
-          ? new Date(product.fechaFrente).toISOString().split("T")[0]
-          : "",
-        fechaAlmacen:
-          product.estado === "frente-agota"
-            ? ""
-            : product.fechaAlmacen
-            ? new Date(product.fechaAlmacen).toISOString().split("T")[0]
-            : "",
-        cajasAlmacen: product.cajasAlmacen || 1,
-        
-        fechaAlmacen2: segundaFechaObj?.date
-          ? new Date(segundaFechaObj.date).toISOString().split("T")[0]
-          : "",
-        cajasAlmacen2: segundaFechaObj?.boxes || 1,
-
-        fechaAlmacen3: terceraFechaObj?.date
-          ? new Date(terceraFechaObj.date).toISOString().split("T")[0]
-          : "",
-        cajasAlmacen3: terceraFechaObj?.boxes || 1,
-
-        cajaUnica: product.cajaUnica || false,
-        hayUnicaCajaActual: product.hayUnicaCajaActual || false,
-        showSecondDate: Boolean(segundaFechaObj),
-        showThirdDate: Boolean(terceraFechaObj),
-        noHayEnAlmacen: product.estado === "frente-agota",
-      });
-
-      setIsUpdateModalOpen(true);
-    },
-    [setIsUpdateModalOpen]
-  );
-
-  const handleSubmitUpdate = async () => {
-    try {
-      setIsUpdating(true);
-
-      if (!editingProduct) {
-        addToast("No hay producto seleccionado.", "error");
-        return;
-      }
-
-      if (!updateForm.fechaFrente) {
-        addToast("La fecha de frente es obligatoria.", "error");
-        return;
-      }
-
-      // Preparar array de fechas de almacén
-      const fechasAlmacen = [];
-      if (!updateForm.noHayEnAlmacen) {
-        // La primera fecha va en fechaAlmacen, las siguientes en el array
-        if (updateForm.showSecondDate && updateForm.fechaAlmacen2) {
-          fechasAlmacen.push({
-            date: updateForm.fechaAlmacen2,
-            boxes: updateForm.cajasAlmacen2 || 1
-          });
-        }
-        if (updateForm.showThirdDate && updateForm.fechaAlmacen3) {
-          fechasAlmacen.push({
-            date: updateForm.fechaAlmacen3,
-            boxes: updateForm.cajasAlmacen3 || 1
-          });
-        }
-      }
-
-      const updateData = {
-        fechaFrente: updateForm.fechaFrente,
-        fechaAlmacen: updateForm.noHayEnAlmacen
-          ? null
-          : updateForm.fechaAlmacen || null,
-        cajasAlmacen: updateForm.noHayEnAlmacen ? 0 : (updateForm.cajasAlmacen || 1),
-        fechasAlmacen: updateForm.noHayEnAlmacen ? [] : fechasAlmacen,
-        cajaUnica: Boolean(updateForm.cajaUnica),
-        hayUnicaCajaActual: Boolean(updateForm.hayUnicaCajaActual),
-        estado: updateForm.noHayEnAlmacen ? "frente-agota" : "frente-cambia",
-      };
-
-      const success = await handleUpdateProduct(
-        editingProduct.producto._id,
-        updateData
-      );
-
-      if (success) {
-        setIsUpdateModalOpen(false);
-        setShowUnclassified(false);
-        setEditingProduct(null);
-        setSelectedProduct(null);
-        setSearchTerm("");
-
-        setTimeout(() => {
-          const productElement = document.querySelector(
-            `[data-product-id="${editingProduct.producto._id}"]`
-          );
-          if (productElement) {
-            productElement.scrollIntoView({
-              behavior: "smooth",
-              block: "center",
-            });
-          }
-        }, 100);
-      }
-    } catch (error) {
-      addToast(`Error al actualizar: ${error.message}.`, "error");
-    } finally {
-      setIsUpdating(false);
-    }
-  };
 
   const handleDeleteClick = async (product, e) => {
     e.stopPropagation();
@@ -263,21 +136,11 @@ const ProductList = () => {
   const navigateToProduct = useCallback(
     (product) => {
       setIsExpiringModalOpen(false);
+      // Pequeño delay para permitir que el modal se cierre visualmente antes de cambiar el estado
+      // (aunque el scroll ya no depende de timeouts arbitrarios para encontrar el elemento)
       setTimeout(() => {
         setSelectedProduct(product);
         setSearchTerm(product.producto.nombre);
-
-        setTimeout(() => {
-          const productElement = document.querySelector(
-            `[data-product-id="${product.producto._id}"]`
-          );
-          if (productElement) {
-            productElement.scrollIntoView({
-              behavior: "smooth",
-              block: "center",
-            });
-          }
-        }, 100);
       }, 300);
     },
     [setIsExpiringModalOpen]
@@ -441,9 +304,9 @@ const ProductList = () => {
                 lastUpdatedProductId={lastUpdatedProductId}
                 onProductClick={(p) => {
                   handleProductClick(p);
-                  handleUpdateClick(p);
+                  prepareFormForUpdate(p); // Usar la nueva función del hook
                 }}
-                onUpdateClick={handleUpdateClick}
+                onUpdateClick={prepareFormForUpdate} // Usar la nueva función del hook
                 onDeleteClick={handleDeleteClick}
               />
             </div>
@@ -457,7 +320,7 @@ const ProductList = () => {
           isExpiringSoon={isExpiringSoon}
           lastUpdatedProductId={lastUpdatedProductId}
           onProductClick={handleProductClick}
-          onUpdateClick={handleUpdateClick}
+          onUpdateClick={prepareFormForUpdate} // Usar la nueva función del hook
           onDeleteClick={handleDeleteClick}
           searchTerm={searchTerm}
         />
@@ -471,7 +334,7 @@ const ProductList = () => {
           setUpdateForm={setUpdateForm}
           isUpdating={isUpdating}
           onClose={handleCloseUpdateModal}
-          onSubmit={handleSubmitUpdate}
+          onSubmit={submitUpdate} // Usar la nueva función del hook
         />
 
         <ExpiringModal

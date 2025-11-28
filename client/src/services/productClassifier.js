@@ -17,6 +17,7 @@ export function classifyProduct({
   fechaFrente,
   fechaAlmacen,
   fechasAlmacen = [],
+  cajasAlmacen,
   cajaUnica = false,
   hayUnicaCajaActual = false,
 }) {
