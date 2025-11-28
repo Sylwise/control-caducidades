@@ -8,6 +8,7 @@ import RestaurantManagement from "./RestaurantManagement";
 import { useSocket } from "../hooks/useSocket";
 import usePreventScroll from "../hooks/usePreventScroll";
 import useToasts from "../hooks/useToasts";
+import { CheckCircle } from "lucide-react";
 import SearchBar from "./SearchBar";
 import UpdateModal from "./UpdateModal";
 import ExpiringModal from "./ExpiringModal";
@@ -293,22 +294,38 @@ const ProductList = () => {
             isOpen={showUnclassified}
             isClosing={isClosingUnclassified}
             onClose={handleCloseUnclassified}
-            title={`Productos Sin Clasificar (${products["sin-clasificar"].length})`}
+            title="Productos Pendientes"
           >
             <div className="flex-1 overflow-y-auto overscroll-contain p-4">
-              <CategorySection
-                category="sin-clasificar"
-                products={products["sin-clasificar"]}
-                selectedProduct={selectedProduct}
-                isExpiringSoon={isExpiringSoon}
-                lastUpdatedProductId={lastUpdatedProductId}
-                onProductClick={(p) => {
-                  handleProductClick(p);
-                  prepareFormForUpdate(p); // Usar la nueva función del hook
-                }}
-                onUpdateClick={prepareFormForUpdate} // Usar la nueva función del hook
-                onDeleteClick={handleDeleteClick}
-              />
+              {products["sin-clasificar"].length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-center p-8 space-y-4">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                    <CheckCircle className="w-8 h-8 text-green-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                      ¡Todo al día!
+                    </h3>
+                    <p className="text-gray-500">
+                      No hay productos pendientes de clasificar.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <CategorySection
+                  category="sin-clasificar"
+                  products={products["sin-clasificar"]}
+                  selectedProduct={selectedProduct}
+                  isExpiringSoon={isExpiringSoon}
+                  lastUpdatedProductId={lastUpdatedProductId}
+                  onProductClick={(p) => {
+                    handleProductClick(p);
+                    prepareFormForUpdate(p); // Usar la nueva función del hook
+                  }}
+                  onUpdateClick={prepareFormForUpdate} // Usar la nueva función del hook
+                  onDeleteClick={handleDeleteClick}
+                />
+              )}
             </div>
           </ModalContainer>
         )}
