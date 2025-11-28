@@ -135,210 +135,224 @@ class OfflineManager {
       // Mapa para guardar la relación entre IDs temporales y permanentes
       const idMapping = new Map();
 
-      // Primero procesar las creaciones del catálogo
+      // 1. Procesar creaciones del catálogo (prioridad alta para resolver IDs)
       const createChanges = changes.filter(
         (change) => change.type === "CREATE_CATALOG"
       );
+      await this._syncCreateCatalogChanges(createChanges, idMapping);
 
-      for (const change of createChanges) {
-        try {
-          OfflineDebugger.log("PROCESSING_CREATE_CATALOG_CHANGE", {
-            change,
-            tempId: change.tempId,
-            productId: change.productId
-          });
-          
-          // Delegar en el servicio
-          const response = await catalogService.createCatalogProduct(change.data);
-          
-          // La respuesta del servidor es un ProductStatus (con .producto poblado)
-          // Pero necesitamos el ID del Producto para el mapeo y el catálogo
-          const permanentId = response.producto ? response.producto._id : response._id;
-          const productData = response.producto ? response.producto : response;
-
-          if (permanentId) {
-            // Usar helper para actualizar mapeos
-            this._updateIdMappings(idMapping, change, permanentId);
-            
-            await IndexedDB.removePendingChange(change.id);
-
-            // Actualizar el producto en IndexedDB con su nuevo ID y datos correctos
-            // NOTA: catalogService ya guardó el nuevo producto. Aquí limpiamos el viejo (temp).
-            const oldId = change.tempId || change.productId;
-            if (oldId && oldId !== permanentId) {
-               // Si el ID cambió, eliminamos el temporal antiguo para evitar duplicados en DB local
-               // ya que el servicio guardó el nuevo.
-               await IndexedDB.deleteCatalogProduct(oldId);
-            }
-
-            // Usar helper para notificar a la UI (principalmente para borrar el temp)
-            const tempIdToRemove = change.tempId || change.productId;
-            this._notifySyncSuccess(change, tempIdToRemove, productData, false);
-          }
-        } catch (error) {
-          // Manejar error de duplicado (E11000)
-          if (error.message && error.message.includes("E11000")) {
-            OfflineDebugger.log("DUPLICATE_PRODUCT_DETECTED", { change });
-            
-            try {
-              // Si ya existe, intentamos obtenerlo del servidor para hacer el mapping
-              // Usamos el servicio para obtener el catálogo
-              const serverProducts = await catalogService.getAllCatalogProducts();
-              
-              // Normalizar el nombre para la búsqueda (trim y case insensitive si es necesario)
-              const searchName = change.data.nombre.trim().toLowerCase();
-              
-              const existingProduct = serverProducts.find(p => 
-                p.nombre.trim().toLowerCase() === searchName
-              );
-              
-              if (existingProduct) {
-                OfflineDebugger.log("FOUND_EXISTING_PRODUCT", { existingProduct });
-                
-                // Procedemos como si fuera una creación exitosa
-                const response = existingProduct;
-                
-                // Usar helper para actualizar mapeos
-                this._updateIdMappings(idMapping, change, response._id);
-                
-                await IndexedDB.removePendingChange(change.id);
-
-                const oldId = change.tempId || change.productId;
-                if (oldId && oldId !== response._id) {
-                   await IndexedDB.deleteCatalogProduct(oldId);
-                }
-
-                // Construir un objeto de estado simulado
-                const simulatedStatus = { 
-                  producto: response, 
-                  estado: "sin-clasificar",
-                  _id: `simulated_${response._id}` 
-                };
-
-                // Usar helper para notificar a la UI (modo simulación)
-                const tempIdToRemove = change.tempId || change.productId;
-                this._notifySyncSuccess(change, tempIdToRemove, simulatedStatus, true);
-                
-                continue; // Continuar con el siguiente cambio
-              } else {
-                OfflineDebugger.error("DUPLICATE_PRODUCT_NOT_FOUND_LOCALLY", { 
-                  searchName, 
-                  serverCount: serverProducts.length 
-                });
-              }
-            } catch (recoveryError) {
-              OfflineDebugger.error("RECOVERY_FAILED", recoveryError);
-            }
-          }
-          
-          OfflineDebugger.error("SYNC_CHANGE_ERROR", { change, error });
-        }
-      }
-
-      // Procesar los cambios restantes
+      // 2. Procesar el resto de cambios
       const remainingChanges = changes.filter(
-        (change) => !createChanges.includes(change)
+        (change) => change.type !== "CREATE_CATALOG"
       );
-
-      for (const change of remainingChanges) {
-        try {
-          // Si es un DELETE de un producto temporal, simplemente limpiarlo localmente
-          if (change.type === "DELETE_CATALOG" && change.productId.startsWith("temp_")) {
-            // Eliminar el cambio pendiente y el producto de IndexedDB
-            await IndexedDB.removePendingChange(change.id);
-            await IndexedDB.deleteCatalogProduct(change.productId);
-            continue;
-          }
-
-          // Para otros cambios, actualizar el ID si es necesario
-          if (change.productId && change.productId.startsWith("temp_")) {
-            const permanentId = idMapping.get(change.productId);
-            if (permanentId) {
-              // Actualizar el ID en el cambio
-              change.productId = permanentId;
-              if (change.data && change.data.producto) {
-                change.data.producto = permanentId;
-              }
-
-              // Procesar el cambio con el ID permanente delegando en servicios
-              let response;
-              if (change.type === "UPDATE") {
-                 response = await statusService.updateProductStatus(change.productId, change.data);
-                 // statusService no emite eventos, así que lo hacemos aquí
-                 this._dispatchLocalEvent("localProductStatusUpdate", {
-                    type: "update",
-                    productStatus: response,
-                 });
-              } else if (change.type === "DELETE") {
-                 response = await statusService.deleteProductStatus(change.productId);
-                 // statusService no emite eventos, así que lo hacemos aquí
-                 
-                 // Intentar recuperar el producto de la respuesta o de los datos guardados
-                 const productToRestore = response.product || (change.data && change.data.product);
-                 
-                 this._dispatchLocalEvent("localProductStatusUpdate", {
-                    detail: {
-                      type: "delete",
-                      productId: change.productId,
-                      product: productToRestore
-                    },
-                 });
-              } else if (change.type === "UPDATE_CATALOG") {
-                 response = await catalogService.updateCatalogProduct(change.productId, change.data);
-                 // catalogService SÍ emite eventos, no duplicar
-              } else if (change.type === "DELETE_CATALOG") {
-                 response = await catalogService.deleteCatalogProduct(change.productId);
-                 // catalogService SÍ emite eventos, no duplicar
-              }
-
-              await IndexedDB.removePendingChange(change.id);
-
-            } else {
-              // Si no encontramos un ID permanente, probablemente el producto ya no existe
-              await IndexedDB.removePendingChange(change.id);
-              OfflineDebugger.log("SKIPPING_CHANGE", {
-                reason: "No permanent ID found",
-                change,
-              });
-            }
-          } else {
-            // Procesar cambios con IDs permanentes normalmente
-            let response;
-            if (change.type === "UPDATE") {
-                response = await statusService.updateProductStatus(change.productId, change.data);
-                this._dispatchLocalEvent("localProductStatusUpdate", {
-                  type: "update",
-                  productStatus: response,
-                });
-            } else if (change.type === "DELETE") {
-                response = await statusService.deleteProductStatus(change.productId);
-                
-                // Intentar recuperar el producto de la respuesta o de los datos guardados
-                const productToRestore = response.product || (change.data && change.data.product);
-
-                this._dispatchLocalEvent("localProductStatusUpdate", {
-                  type: "delete",
-                  productId: change.productId,
-                  product: productToRestore
-                });
-            } else if (change.type === "UPDATE_CATALOG") {
-                await catalogService.updateCatalogProduct(change.productId, change.data);
-            } else if (change.type === "DELETE_CATALOG") {
-                await catalogService.deleteCatalogProduct(change.productId);
-            }
-
-            await IndexedDB.removePendingChange(change.id);
-          }
-        } catch (error) {
-          OfflineDebugger.error("SYNC_CHANGE_ERROR", { change, error });
-        }
-      }
+      await this._syncStandardChanges(remainingChanges, idMapping);
 
       OfflineDebugger.log("SYNC_COMPLETED", { timestamp: new Date() });
     } catch (error) {
       OfflineDebugger.error("SYNC_ERROR", error);
     } finally {
       this.syncInProgress = false;
+    }
+  }
+
+  /**
+   * Procesa los cambios de creación de catálogo
+   * Maneja duplicados y actualiza el mapeo de IDs
+   */
+  async _syncCreateCatalogChanges(changes, idMapping) {
+    for (const change of changes) {
+      try {
+        OfflineDebugger.log("PROCESSING_CREATE_CATALOG_CHANGE", {
+          change,
+          tempId: change.tempId,
+          productId: change.productId
+        });
+        
+        // Delegar en el servicio
+        const response = await catalogService.createCatalogProduct(change.data);
+        
+        // La respuesta del servidor es un ProductStatus (con .producto poblado)
+        // Pero necesitamos el ID del Producto para el mapeo y el catálogo
+        const permanentId = response.producto ? response.producto._id : response._id;
+        const productData = response.producto ? response.producto : response;
+
+        if (permanentId) {
+          // Usar helper para actualizar mapeos
+          this._updateIdMappings(idMapping, change, permanentId);
+          
+          await IndexedDB.removePendingChange(change.id);
+
+          // Actualizar el producto en IndexedDB con su nuevo ID y datos correctos
+          // NOTA: catalogService ya guardó el nuevo producto. Aquí limpiamos el viejo (temp).
+          const oldId = change.tempId || change.productId;
+          if (oldId && oldId !== permanentId) {
+             // Si el ID cambió, eliminamos el temporal antiguo para evitar duplicados en DB local
+             // ya que el servicio guardó el nuevo.
+             await IndexedDB.deleteCatalogProduct(oldId);
+          }
+
+          // Usar helper para notificar a la UI (principalmente para borrar el temp)
+          const tempIdToRemove = change.tempId || change.productId;
+          this._notifySyncSuccess(change, tempIdToRemove, productData, false);
+        }
+      } catch (error) {
+        // Manejar error de duplicado (E11000)
+        if (error.message && error.message.includes("E11000")) {
+          OfflineDebugger.log("DUPLICATE_PRODUCT_DETECTED", { change });
+          
+          try {
+            // Si ya existe, intentamos obtenerlo del servidor para hacer el mapping
+            // Usamos el servicio para obtener el catálogo
+            const serverProducts = await catalogService.getAllCatalogProducts();
+            
+            // Normalizar el nombre para la búsqueda (trim y case insensitive si es necesario)
+            const searchName = change.data.nombre.trim().toLowerCase();
+            
+            const existingProduct = serverProducts.find(p => 
+              p.nombre.trim().toLowerCase() === searchName
+            );
+            
+            if (existingProduct) {
+              OfflineDebugger.log("FOUND_EXISTING_PRODUCT", { existingProduct });
+              
+              // Procedemos como si fuera una creación exitosa
+              const response = existingProduct;
+              
+              // Usar helper para actualizar mapeos
+              this._updateIdMappings(idMapping, change, response._id);
+              
+              await IndexedDB.removePendingChange(change.id);
+
+              const oldId = change.tempId || change.productId;
+              if (oldId && oldId !== response._id) {
+                 await IndexedDB.deleteCatalogProduct(oldId);
+              }
+
+              // Construir un objeto de estado simulado
+              const simulatedStatus = { 
+                producto: response, 
+                estado: "sin-clasificar",
+                _id: `simulated_${response._id}` 
+              };
+
+              // Usar helper para notificar a la UI (modo simulación)
+              const tempIdToRemove = change.tempId || change.productId;
+              this._notifySyncSuccess(change, tempIdToRemove, simulatedStatus, true);
+              
+              continue; // Continuar con el siguiente cambio
+            } else {
+              OfflineDebugger.error("DUPLICATE_PRODUCT_NOT_FOUND_LOCALLY", { 
+                searchName, 
+                serverCount: serverProducts.length 
+              });
+            }
+          } catch (recoveryError) {
+            OfflineDebugger.error("RECOVERY_FAILED", recoveryError);
+          }
+        }
+        
+        OfflineDebugger.error("SYNC_CHANGE_ERROR", { change, error });
+      }
+    }
+  }
+
+  /**
+   * Procesa cambios estándar (UPDATE, DELETE)
+   * Usa el mapeo de IDs para resolver referencias a productos creados offline
+   */
+  async _syncStandardChanges(changes, idMapping) {
+    for (const change of changes) {
+      try {
+        // Si es un DELETE de un producto temporal, simplemente limpiarlo localmente
+        if (change.type === "DELETE_CATALOG" && change.productId.startsWith("temp_")) {
+          // Eliminar el cambio pendiente y el producto de IndexedDB
+          await IndexedDB.removePendingChange(change.id);
+          await IndexedDB.deleteCatalogProduct(change.productId);
+          continue;
+        }
+
+        // Para otros cambios, actualizar el ID si es necesario
+        if (change.productId && change.productId.startsWith("temp_")) {
+          const permanentId = idMapping.get(change.productId);
+          if (permanentId) {
+            // Actualizar el ID en el cambio
+            change.productId = permanentId;
+            if (change.data && change.data.producto) {
+              change.data.producto = permanentId;
+            }
+
+            // Procesar el cambio con el ID permanente delegando en servicios
+            let response;
+            if (change.type === "UPDATE") {
+               response = await statusService.updateProductStatus(change.productId, change.data);
+               // statusService no emite eventos, así que lo hacemos aquí
+               this._dispatchLocalEvent("localProductStatusUpdate", {
+                  type: "update",
+                  productStatus: response,
+               });
+            } else if (change.type === "DELETE") {
+               response = await statusService.deleteProductStatus(change.productId);
+               // statusService no emite eventos, así que lo hacemos aquí
+               
+               // Intentar recuperar el producto de la respuesta o de los datos guardados
+               const productToRestore = response.product || (change.data && change.data.product);
+               
+               this._dispatchLocalEvent("localProductStatusUpdate", {
+                  detail: {
+                    type: "delete",
+                    productId: change.productId,
+                    product: productToRestore
+                  },
+               });
+            } else if (change.type === "UPDATE_CATALOG") {
+               response = await catalogService.updateCatalogProduct(change.productId, change.data);
+               // catalogService SÍ emite eventos, no duplicar
+            } else if (change.type === "DELETE_CATALOG") {
+               response = await catalogService.deleteCatalogProduct(change.productId);
+               // catalogService SÍ emite eventos, no duplicar
+            }
+
+            await IndexedDB.removePendingChange(change.id);
+
+          } else {
+            // Si no encontramos un ID permanente, probablemente el producto ya no existe
+            await IndexedDB.removePendingChange(change.id);
+            OfflineDebugger.log("SKIPPING_CHANGE", {
+              reason: "No permanent ID found",
+              change,
+            });
+          }
+        } else {
+          // Procesar cambios con IDs permanentes normalmente
+          let response;
+          if (change.type === "UPDATE") {
+              response = await statusService.updateProductStatus(change.productId, change.data);
+              this._dispatchLocalEvent("localProductStatusUpdate", {
+                type: "update",
+                productStatus: response,
+              });
+          } else if (change.type === "DELETE") {
+              response = await statusService.deleteProductStatus(change.productId);
+              
+              // Intentar recuperar el producto de la respuesta o de los datos guardados
+              const productToRestore = response.product || (change.data && change.data.product);
+
+              this._dispatchLocalEvent("localProductStatusUpdate", {
+                type: "delete",
+                productId: change.productId,
+                product: productToRestore
+              });
+          } else if (change.type === "UPDATE_CATALOG") {
+              await catalogService.updateCatalogProduct(change.productId, change.data);
+          } else if (change.type === "DELETE_CATALOG") {
+              await catalogService.deleteCatalogProduct(change.productId);
+          }
+
+          await IndexedDB.removePendingChange(change.id);
+        }
+      } catch (error) {
+        OfflineDebugger.error("SYNC_CHANGE_ERROR", { change, error });
+      }
     }
   }
 }
