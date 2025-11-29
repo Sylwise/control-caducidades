@@ -29,8 +29,7 @@ const ProductCard = memo(({
   onDeleteClick,
   viewMode = 'card',
 }) => {
-  // Determinar si el producto está clasificado o no
-  const isClassified = product.estado !== "sin-clasificar";
+
 
   return (
     <div

@@ -27,8 +27,8 @@ const createAdmin = async () => {
 
     // 2. Crear o Actualizar Admin
     const adminData = {
-      username: "admin",
-      password: "admin123456",
+      username: process.env.ADMIN_USERNAME || "admin",
+      password: process.env.ADMIN_PASSWORD || "admin123456",
       role: "admin",
       restaurante: restaurant._id,
     };

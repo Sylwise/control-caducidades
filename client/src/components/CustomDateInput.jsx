@@ -401,11 +401,13 @@ const CustomDateInput = ({
                     onChange={handleInputChange}
                     placeholder="DD/MM/YYYY"
                     autoComplete="off"
+                    inputMode="none"
+                    readOnly
                     className="w-full text-2xl text-center py-4 text-gray-800
                       rounded-md shadow-sm px-3
                       border border-gray-300 focus:border-[#1d5030] focus:ring-[#1d5030]
                       transition-colors duration-200
-                      outline-none"
+                      outline-none select-none pointer-events-none"
                   />
                   {error && (
                     <div
