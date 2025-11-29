@@ -689,6 +689,16 @@ const UpdateModal = ({
               >
                 Sí, mover 1 caja al frente
               </button>
+              {/* Solo mostrar la opción de actualizar fecha si las fechas son diferentes */}
+              {new Date(updateForm.fechaFrente).setHours(0,0,0,0) !== new Date(updateForm.fechaAlmacen).setHours(0,0,0,0) && (
+                <button
+                  onClick={handlePartialToFront}
+                  className="w-full px-4 py-2.5 text-sm font-medium text-[#1d5030]
+                    bg-[#1d5030]/10 hover:bg-[#1d5030]/20 rounded-md transition-colors"
+                >
+                  Solo actualizar fecha (sin mover caja)
+                </button>
+              )}
               <button
                 onClick={() => setShowFrontDateDialog(false)}
                 className="w-full px-4 py-2.5 text-sm font-medium text-gray-700
