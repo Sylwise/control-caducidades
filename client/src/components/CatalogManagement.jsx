@@ -186,21 +186,22 @@ const CatalogManagement = ({ isOpen, onClose }) => {
   }, [socket]);
 
   // Eliminar producto
-  const handleDeleteProduct = async (productId) => {
-    try {
-      setLoading(true);
+  // Eliminar producto
+  const handleDeleteProduct = (productId) => {
+    // 1. Llamar al servicio (sin await para no bloquear)
+    OfflineManager.deleteCatalogProduct(productId).catch(err => {
+      console.error("Error al eliminar en background:", err);
+      // Opcional: Revertir cambios si falla, pero por simplicidad y petición del usuario, priorizamos la UI inmediata.
+      // Si se quisiera revertir: loadProducts();
+    });
 
-      await OfflineManager.deleteCatalogProduct(productId);
-      // Actualizar el estado local sin recargar todos los productos
-      setProducts(prevProducts => prevProducts.filter(p => p._id !== productId));
-      setDeleteConfirm(null);
-      setError(null);
-      setSearchTerm(""); // Limpiar el buscador
-    } catch (err) {
-      console.error("Error completo al eliminar:", err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
+    // 2. Actualizar estado local INMEDIATAMENTE
+    setProducts(prevProducts => prevProducts.filter(p => p._id !== productId));
+    
+    // Limpiar estados de UI
+    setDeleteConfirm(null);
+    if (selectedProductId === productId) {
+      setSelectedProductId(null);
     }
   };
 
@@ -225,10 +226,10 @@ const CatalogManagement = ({ isOpen, onClose }) => {
   };
 
   // Manejar producto creado
-  const handleProductCreated = async (newProduct) => {
-    // Verificar que el producto no exista antes de añadirlo
+  const handleProductCreated = (newProduct) => {
+    // Añadir al estado local inmediatamente
     setProducts(prevProducts => {
-      // Si el producto ya existe, no lo añadimos de nuevo
+      // Evitar duplicados si ya existe
       if (prevProducts.some(p => p._id === newProduct._id)) {
         return prevProducts;
       }
@@ -238,8 +239,10 @@ const CatalogManagement = ({ isOpen, onClose }) => {
     // Scroll al nuevo producto
     setTimeout(() => {
       scrollToProduct(newProduct._id);
-    }, 300);
-    setSearchTerm(""); // Limpiar el buscador
+    }, 100);
+    
+    // Opcional: Limpiar buscador para ver el nuevo producto si estaba filtrado
+    // setSearchTerm(""); 
   };
 
   // Renderizar producto (memorizado)
@@ -248,6 +251,8 @@ const CatalogManagement = ({ isOpen, onClose }) => {
     if (!product || !product._id) {
       return null;
     }
+
+    const isDeleteConfirm = deleteConfirm === product._id;
     
     return (
       <div
@@ -258,85 +263,102 @@ const CatalogManagement = ({ isOpen, onClose }) => {
             setDeleteConfirm(null);
           }
           
-          setSelectedProductId(
-            selectedProductId === product._id ? null : product._id
-          );
+          if (!isDeleteConfirm) {
+            setSelectedProductId(
+              selectedProductId === product._id ? null : product._id
+            );
+          }
         }}
         className={`
-          flex items-center justify-between p-3 w-full
-          ${selectedProductId === product._id ? "bg-gray-100" : "bg-gray-50"}
+          flex items-center p-3 w-full
+          ${isDeleteConfirm 
+            ? "bg-red-50 justify-center" 
+            : `justify-between ${selectedProductId === product._id ? "bg-gray-100" : "bg-gray-50"}`
+          }
           ${highlightedProductId === product._id ? "animate-pulse bg-gray-100" : ""}
-          rounded-md transition-colors
+          rounded-md transition-all duration-200
           active:bg-gray-200 select-none
+          min-h-[72px]
         `}
       >
-        {/* Información del producto - asegurarnos que no crezca demasiado */}
-        <div className="flex items-center gap-2 flex-1 min-w-0 pr-2 select-none">
-          <Tag
-            className={`w-5 h-5 flex-shrink-0 ${
-              TYPE_STYLES[product.tipo]?.color || "text-gray-400"
-            }`}
-          />
-          <span className="text-gray-900 truncate select-none">{product.nombre}</span>
-        </div>
-
-        {/* Contenedor de botones con ancho fijo */}
-        <div className="w-[140px] flex justify-end">
-          {deleteConfirm === product._id ? (
-            <div className="flex items-center gap-2 justify-end">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeleteProduct(product._id);
-                }}
-                className="px-4 py-3 min-h-[48px] min-w-[80px] bg-red-600 text-white text-sm rounded
-                  hover:bg-red-700 transition-colors whitespace-nowrap flex items-center justify-center select-none"
-              >
-                Confirmar
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setDeleteConfirm(null);
-                }}
-                className="px-4 py-3 min-h-[48px] min-w-[80px] bg-gray-200 text-gray-700 text-sm rounded
-                  hover:bg-gray-300 transition-colors whitespace-nowrap flex items-center justify-center select-none"
-              >
-                Cancelar
-              </button>
-            </div>
-          ) : (
-            selectedProductId === product._id ? (
-              <div className="flex items-center gap-1 justify-end">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleEditProduct(product._id);
-                  }}
-                  className="p-2 min-w-[48px] min-h-[48px] flex items-center justify-center text-[#1d5030] hover:bg-[#1d5030]/10 transition-colors
-                  rounded-lg select-none"
-                  aria-label="Editar producto"
-                >
-                  <Edit className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDeleteConfirm(product._id);
-                  }}
-                  className="p-2 min-w-[48px] min-h-[48px] flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors
-                  rounded-lg select-none"
-                  aria-label="Eliminar producto"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
+        {isDeleteConfirm ? (
+          // MODO CONFIRMACIÓN: Mútuamente excluyente
+          <div className="w-full flex justify-center items-center gap-3 animate-[fadeIn_0.2s_ease-out]">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteProduct(product._id);
+              }}
+              className="flex-1 max-w-[120px] py-2.5 bg-red-600 text-white text-sm font-medium rounded-md
+                hover:bg-red-700 active:bg-red-800 transition-colors shadow-sm
+                flex items-center justify-center"
+            >
+              Confirmar
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setDeleteConfirm(null);
+              }}
+              className="flex-1 max-w-[120px] py-2.5 bg-white text-gray-700 text-sm font-medium rounded-md border border-gray-300
+                hover:bg-gray-50 active:bg-gray-100 transition-colors shadow-sm
+                flex items-center justify-center"
+            >
+              Cancelar
+            </button>
+          </div>
+        ) : (
+          // MODO NORMAL
+          <>
+            {/* Información del producto */}
+            <div className="flex items-center gap-3 flex-1 min-w-0 pr-2 select-none">
+              <div className={`p-2 rounded-full flex-shrink-0 ${TYPE_STYLES[product.tipo]?.bg || "bg-gray-100"}`}>
+                <Tag
+                  className={`w-5 h-5 ${
+                    TYPE_STYLES[product.tipo]?.color || "text-gray-400"
+                  }`}
+                />
               </div>
-            ) : (
-              // Espacio invisible pero con el mismo ancho para mantener el layout consistente
-              <div className="w-[140px]"></div>
-            )
-          )}
-        </div>
+              <span className="text-gray-900 font-medium truncate select-none text-base">
+                {product.nombre}
+              </span>
+            </div>
+
+            {/* Botones de acción */}
+            <div className="flex items-center gap-1 flex-shrink-0">
+              {selectedProductId === product._id ? (
+                <>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditProduct(product._id);
+                    }}
+                    className="p-2.5 text-[#1d5030] hover:bg-[#1d5030]/10 active:bg-[#1d5030]/20 transition-colors
+                    rounded-lg select-none"
+                    aria-label="Editar producto"
+                  >
+                    <Edit className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDeleteConfirm(product._id);
+                    }}
+                    className="p-2.5 text-red-500 hover:bg-red-50 active:bg-red-100 transition-colors
+                    rounded-lg select-none"
+                    aria-label="Eliminar producto"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </>
+              ) : (
+                // Espacio reservado o indicador de "más acciones" si se desea, 
+                // pero por ahora mantenemos limpio si no está seleccionado
+                 <div className="w-[88px]"></div> 
+              )}
+            </div>
+          </>
+        )}
       </div>
     );
   });
@@ -401,7 +423,7 @@ const CatalogManagement = ({ isOpen, onClose }) => {
             )}
 
             {/* Acciones */}
-            <div className="flex items-center justify-between gap-4 mb-4 select-none">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 mb-4 select-none">
               {/* Buscador */}
               <div className="flex-1 relative">
                 <input
@@ -410,11 +432,7 @@ const CatalogManagement = ({ isOpen, onClose }) => {
                   value={searchTerm}
                   onChange={(e) => {
                     const value = e.target.value;
-                    // Permitir letras, números y espacios, máximo 20 caracteres
-                    if (
-                      /^[a-zA-Z0-9áéíóúüñÁÉÍÓÚÜÑ\s]*$/.test(value) &&
-                      value.length <= 20
-                    ) {
+                    if (value.length <= 20) {
                       setSearchTerm(value);
                     }
                   }}
@@ -433,7 +451,7 @@ const CatalogManagement = ({ isOpen, onClose }) => {
                   setSearchTerm(""); // Limpiar el buscador al pulsar "Añadir Producto"
                 }}
                 className="flex items-center justify-center gap-2 px-4 py-3 min-h-[48px] bg-[#1d5030] text-white rounded-md
-                  hover:bg-[#1d5030]/90 transition-colors font-medium select-none"
+                  hover:bg-[#1d5030]/90 transition-colors font-medium select-none w-full sm:w-auto"
               >
                 <PackagePlus className="w-5 h-5" />
                 Añadir Producto

@@ -10,24 +10,20 @@ function SearchBar({
   onViewModeChange,
 }) {
   return (
-    <div className="flex gap-2 mb-6">
-      {/* Buscador más compacto */}
-      <div className="flex-1 relative search-container">
+    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6">
+      {/* Buscador */}
+      <div className="relative w-full md:flex-1">
         <input
           type="text"
           placeholder="Buscar producto..."
           value={searchTerm}
           onChange={(e) => {
             const value = e.target.value;
-            // Permitir letras, números y espacios, máximo 20 caracteres
-            if (
-              /^[a-zA-Z0-9áéíóúüñÁÉÍÓÚÜÑ\s]*$/.test(value) &&
-              value.length <= 20
-            ) {
+            if (value.length <= 20) {
               onSearchChange(value);
             }
           }}
-          className="w-full h-11 pl-10 pr-10 rounded-lg border-0 
+          className="w-full h-12 pl-10 pr-10 rounded-lg border-0 
             focus:outline-none focus:ring-2 focus:ring-[#1d5030]/50 focus:border-transparent
             font-['Noto Sans'] text-sm font-medium placeholder:text-gray-400
             bg-white shadow-sm"
@@ -47,50 +43,54 @@ function SearchBar({
         )}
       </div>
 
-      {/* Botón para productos sin clasificar */}
-      <button
-        onClick={onUnclassifiedClick}
-        className={`
-          h-11 px-4 rounded-lg
-          font-['Noto Sans'] text-sm font-medium select-none
-          transition-colors duration-200
-          flex items-center gap-2
-          bg-white text-[#1d5030] hover:bg-[#1d5030]/10
-          shadow-sm
-        `}
-      >
-        Sin Clasificar
-        <span className="bg-[#f44336] text-white px-2.5 py-1 rounded-full text-xs font-bold select-none animate-pulse">
-          {unclassifiedCount}
-        </span>
-      </button>
+      {/* Acciones: Botón Sin Clasificar + Toggles */}
+      <div className="flex w-full md:w-auto gap-3">
+        {/* Botón para productos sin clasificar */}
+        <button
+          onClick={onUnclassifiedClick}
+          className={`
+            flex-1 md:flex-none
+            h-12 px-4 rounded-lg
+            font-['Noto Sans'] text-sm font-medium select-none
+            transition-colors duration-200
+            flex items-center justify-center gap-2
+            bg-white text-[#1d5030] hover:bg-[#1d5030]/10
+            shadow-sm
+          `}
+        >
+          Sin Clasificar
+          <span className="bg-[#f44336] text-white px-2.5 py-1 rounded-full text-xs font-bold select-none animate-pulse">
+            {unclassifiedCount}
+          </span>
+        </button>
 
-      {/* Selector de Vista */}
-      <div className="flex bg-white rounded-lg shadow-sm border border-gray-100 p-1 h-11">
-        <button
-          onClick={() => onViewModeChange('card')}
-          className={`
-            p-2 rounded-md transition-all duration-200
-            ${viewMode === 'card' 
-              ? 'bg-[#1d5030]/10 text-[#1d5030]' 
-              : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'}
-          `}
-          title="Vista Tarjeta"
-        >
-          <LayoutGrid className="w-5 h-5" />
-        </button>
-        <button
-          onClick={() => onViewModeChange('compact')}
-          className={`
-            p-2 rounded-md transition-all duration-200
-            ${viewMode === 'compact' 
-              ? 'bg-[#1d5030]/10 text-[#1d5030]' 
-              : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'}
-          `}
-          title="Vista Compacta"
-        >
-          <List className="w-5 h-5" />
-        </button>
+        {/* Selector de Vista */}
+        <div className="flex bg-white rounded-lg shadow-sm border border-gray-100 p-1 h-12">
+          <button
+            onClick={() => onViewModeChange('card')}
+            className={`
+              h-full px-3 rounded-md transition-all duration-200 flex items-center justify-center
+              ${viewMode === 'card' 
+                ? 'bg-[#1d5030]/10 text-[#1d5030]' 
+                : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'}
+            `}
+            title="Vista Tarjeta"
+          >
+            <LayoutGrid className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => onViewModeChange('compact')}
+            className={`
+              h-full px-3 rounded-md transition-all duration-200 flex items-center justify-center
+              ${viewMode === 'compact' 
+                ? 'bg-[#1d5030]/10 text-[#1d5030]' 
+                : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'}
+            `}
+            title="Vista Compacta"
+          >
+            <List className="w-5 h-5" />
+          </button>
+        </div>
       </div>
     </div>
   );

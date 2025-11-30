@@ -230,8 +230,14 @@ const RestaurantManagement = ({
         )}
 
         {showCreateForm && !isOffline && (
-          <form onSubmit={handleCreateRestaurant} className="mb-6 p-4 bg-gray-50 rounded-lg animate-[slideDown_0.3s_ease-out]">
-            <h3 className="text-lg font-semibold text-[#1d5030] mb-4">Nuevo Restaurante</h3>
+          <form 
+            onSubmit={handleCreateRestaurant} 
+            className="mb-6 p-4 bg-gray-50 rounded-lg animate-[slideDown_0.3s_ease-out] select-none"
+          >
+            <h3 className="text-lg font-semibold text-[#1d5030] mb-4 flex items-center gap-2">
+              <Store className="w-5 h-5" />
+              Nuevo Restaurante
+            </h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
@@ -239,7 +245,7 @@ const RestaurantManagement = ({
                     type="text"
                     value={formData.nombre}
                     onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-[#1d5030] focus:border-[#1d5030]"
+                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-[#1d5030] focus:border-[#1d5030] min-h-[48px]"
                     placeholder="Ej: Restaurante Centro"
                     required
                     maxLength={20}
@@ -251,7 +257,7 @@ const RestaurantManagement = ({
                   type="text"
                   value={formData.direccion}
                   onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
-                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-[#1d5030] focus:border-[#1d5030]"
+                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-[#1d5030] focus:border-[#1d5030] min-h-[48px]"
                   placeholder="Ej: Av. Principal 123"
                   required
                   maxLength={120}
@@ -261,14 +267,20 @@ const RestaurantManagement = ({
                 <button
                   type="button"
                   onClick={() => setShowCreateForm(false)}
-                  className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+                  className="px-4 py-3 min-h-[48px] min-w-[100px] text-sm font-medium text-gray-700
+                    bg-gray-100 hover:bg-gray-200
+                    rounded-md transition-colors flex items-center justify-center"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-4 py-2 text-white bg-[#1d5030] rounded-md hover:bg-[#1d5030]/90 disabled:opacity-50"
+                  className="px-4 py-3 min-h-[48px] min-w-[120px] text-sm font-medium text-white
+                    bg-[#1d5030] hover:bg-[#1d5030]/90
+                    rounded-md transition-colors
+                    disabled:opacity-50 disabled:cursor-not-allowed
+                    flex items-center justify-center gap-2"
                 >
                   {isSubmitting ? "Guardando..." : "Guardar"}
                 </button>

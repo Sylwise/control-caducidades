@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Users, UserPlus, Trash2, Eye, EyeOff, RefreshCw, WifiOff, Edit, Save } from "lucide-react";
+import { Users, UserPlus, Trash2, Eye, EyeOff, RefreshCw, WifiOff, Edit, Save, ChevronDown } from "lucide-react";
 import PropTypes from "prop-types";
 import config from "../config";
 import usePreventScroll from "../hooks/usePreventScroll";
@@ -206,6 +206,8 @@ const UserManagement = ({
     [formData, validateForm]
   );
 
+  const [lastCreatedUserId, setLastCreatedUserId] = useState(null);
+
   // Crear usuario
   const handleCreateUser = async (e) => {
     e.preventDefault();
@@ -249,6 +251,21 @@ const UserManagement = ({
       await loadUsers();
       setShowCreateForm(false);
       setSelectedUserId(null); // Deseleccionar usuario al crear uno nuevo exitosamente
+      
+      // Highlight del nuevo usuario
+      if (data.user && data.user._id) {
+        setLastCreatedUserId(data.user._id);
+        // Scroll al nuevo usuario (opcional, pero recomendado)
+        const userElement = document.getElementById(`user-${data.user._id}`);
+        if (userElement) {
+          userElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        
+        setTimeout(() => {
+          setLastCreatedUserId(null);
+        }, 3000); // 3 segundos coincide con la duración de la animación en CSS
+      }
+
       setFormData({
         username: "",
         password: "",
@@ -604,23 +621,24 @@ const UserManagement = ({
                   </div>
                 </div>
 
-                <div className="mb-5">
-                  <label className="block text-sm font-medium text-gray-700 mb-2 select-none">
-                    Restaurante
-                  </label>
-                  <select
-                    value={formData.restaurante}
-                    onChange={(e) => setFormData({ ...formData, restaurante: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-[#1d5030] focus:border-[#1d5030]"
-                  >
-                    <option value="">Seleccionar Restaurante</option>
-                    {restaurants.map((r) => (
-                      <option key={r._id} value={r._id}>
-                        {r.nombre}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                  <div className="mb-5 relative">
+                    <label className="block text-sm font-medium text-gray-700 mb-2 select-none">
+                      Restaurante
+                    </label>
+                    <select
+                      value={formData.restaurante}
+                      onChange={(e) => setFormData({ ...formData, restaurante: e.target.value })}
+                      className="w-full h-12 bg-white border border-gray-300 rounded-lg pl-4 pr-10 text-gray-700 font-medium focus:ring-2 focus:ring-gray-200 focus:border-gray-400 outline-none appearance-none"
+                    >
+                      <option value="">Seleccionar Restaurante</option>
+                      {restaurants.map((r) => (
+                        <option key={r._id} value={r._id}>
+                          {r.nombre}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-[42px] w-5 h-5 text-gray-500 pointer-events-none" />
+                  </div>
               </>
             )}
 
@@ -667,11 +685,11 @@ const UserManagement = ({
         
         {/* Filtro de restaurante (solo admin) */}
         {currentUser?.role === "admin" && !isOffline && (
-          <div className="mb-4">
+          <div className="mb-4 relative">
             <select
               value={selectedRestaurantFilter}
               onChange={(e) => setSelectedRestaurantFilter(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-[#1d5030] focus:border-[#1d5030] text-sm"
+              className="w-full h-12 bg-white border border-gray-300 rounded-lg pl-4 pr-10 text-gray-700 font-medium focus:ring-2 focus:ring-gray-200 focus:border-gray-400 outline-none appearance-none"
             >
               <option value="">Todos los restaurantes</option>
               {restaurants.map((r) => (
@@ -680,6 +698,7 @@ const UserManagement = ({
                 </option>
               ))}
             </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" />
           </div>
         )}
 
@@ -700,10 +719,13 @@ const UserManagement = ({
                 .map((user) => (
                 <div
                   key={user._id}
+                  id={`user-${user._id}`}
                   className={`p-3 bg-white border border-gray-200 rounded-lg
                     flex items-center justify-between gap-4
                     hover:border-[#1d5030]/20 transition-colors
-                    ${selectedUserId === user._id ? "bg-gray-50" : ""} select-none`}
+                    ${selectedUserId === user._id ? "bg-gray-50" : ""} 
+                    ${lastCreatedUserId === user._id ? "animate-highlight bg-[#1d5030]/5" : ""}
+                    select-none`}
                   onClick={() => setSelectedUserId(selectedUserId === user._id ? null : user._id)}
                 >
                   <div className="flex-1 min-w-0">
@@ -936,14 +958,14 @@ const UserManagement = ({
                       </div>
                     </div>
 
-                    <div className="mb-5">
+                    <div className="mb-5 relative">
                       <label className="block text-sm font-medium text-gray-700 mb-2 select-none">
                         Restaurante
                       </label>
                       <select
                         value={editFormData.restaurante}
                         onChange={(e) => setEditFormData({ ...editFormData, restaurante: e.target.value })}
-                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-[#1d5030] focus:border-[#1d5030]"
+                        className="w-full h-12 bg-white border border-gray-300 rounded-lg pl-4 pr-10 text-gray-700 font-medium focus:ring-2 focus:ring-gray-200 focus:border-gray-400 outline-none appearance-none"
                       >
                         <option value="">Seleccionar Restaurante</option>
                         {restaurants.map((r) => (
@@ -952,6 +974,7 @@ const UserManagement = ({
                           </option>
                         ))}
                       </select>
+                      <ChevronDown className="absolute right-3 top-[42px] w-5 h-5 text-gray-500 pointer-events-none" />
                     </div>
                   </>
                 )}
