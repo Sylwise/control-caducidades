@@ -436,12 +436,23 @@ const CatalogManagement = ({ isOpen, onClose }) => {
                       setSearchTerm(value);
                     }
                   }}
-                  className="w-full pl-3 pr-10 py-3 min-h-[48px] border border-gray-300 rounded-md
+                  className="w-full pl-10 pr-12 py-3 min-h-[48px] border border-gray-300 rounded-md
                     focus:outline-none focus:ring-2 focus:ring-[#1d5030]/50 focus:border-transparent
                     text-gray-900 placeholder-gray-500 select-none"
                   maxLength={20}
                 />
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm("")}
+                    className="absolute right-0 top-0 h-full w-12 flex items-center justify-center
+                      text-gray-400 hover:text-gray-600
+                      hover:bg-gray-100/50 rounded-r-md
+                      transition-all duration-200"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                )}
               </div>
 
               {/* Botón Añadir */}

@@ -23,7 +23,7 @@ function SearchBar({
               onSearchChange(value);
             }
           }}
-          className="w-full h-12 pl-10 pr-10 rounded-lg border-0 
+          className="w-full h-12 pl-10 pr-12 rounded-lg border-0 
             focus:outline-none focus:ring-2 focus:ring-[#1d5030]/50 focus:border-transparent
             font-['Noto Sans'] text-sm font-medium placeholder:text-gray-400
             bg-white shadow-sm"
@@ -33,9 +33,9 @@ function SearchBar({
         {searchTerm && (
           <button
             onClick={() => onSearchChange("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1
+            className="absolute right-0 top-0 h-full w-12 flex items-center justify-center
               text-gray-400 hover:text-gray-600
-              rounded-full hover:bg-gray-100
+              hover:bg-gray-100/50 rounded-r-lg
               transition-all duration-200"
           >
             <X className="w-5 h-5" />
