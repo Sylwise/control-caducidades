@@ -224,14 +224,8 @@ exports.createUser = async (req, res) => {
 // Actualizar usuario (solo supervisor)
 exports.updateUser = async (req, res) => {
   try {
-    const { username, role } = req.body;
+    const { username, role, restaurante, password } = req.body;
     const userId = req.params.id;
-
-    if (!username || !role) {
-      return res.status(400).json({
-        error: "Nombre de usuario y rol son requeridos",
-      });
-    }
 
     const user = await User.findById(userId);
     if (!user) {
@@ -240,16 +234,28 @@ exports.updateUser = async (req, res) => {
       });
     }
 
-    user.username = username;
-    user.role = role;
+    // Actualizar campos si vienen en el body
+    if (username) user.username = username;
+    if (role) user.role = role;
+    if (restaurante) user.restaurante = restaurante;
+
+    // Gestión de contraseña
+    if (password && password.trim() !== '') {
+      user.password = password;
+      // Mongoose detectará el cambio y ejecutará el middleware pre('save') para hashear
+    }
+
     await user.save();
-    logger.info(`Usuario actualizado: ${username}`);
+    logger.info(`Usuario actualizado: ${user.username}`);
 
     const io = req.app.get('io');
-    io.to(user.restaurante.toString()).emit("userUpdate", {
-      type: "update",
-      user: user.toJSON(),
-    });
+    // Notificar al restaurante del usuario (o al nuevo si cambió, pero simplificamos al actual)
+    if (user.restaurante) {
+        io.to(user.restaurante.toString()).emit("userUpdate", {
+            type: "update",
+            user: user.toJSON(),
+        });
+    }
 
     res.json({
       message: "Usuario actualizado correctamente",
