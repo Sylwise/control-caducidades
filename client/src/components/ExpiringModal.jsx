@@ -1,4 +1,4 @@
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Calendar } from "lucide-react";
 import PropTypes from "prop-types";
 import ModalContainer from "./ModalContainer";
 
@@ -31,7 +31,12 @@ const ExpiringModal = ({
       isOpen={isOpen}
       isClosing={isClosing}
       onClose={onClose}
-      title="Próximas Caducidades"
+      title={
+        <div className="flex items-center gap-2">
+          <Calendar className="w-5 h-5 text-[#1d5030]" />
+          <span>Próximas Caducidades</span>
+        </div>
+      }
       containerClassName="max-h-[70vh] min-h-[320px]"
     >
       {/* Lista de productos agrupada */}

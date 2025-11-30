@@ -8,7 +8,7 @@ import RestaurantManagement from "./RestaurantManagement";
 import { useSocket } from "../hooks/useSocket";
 import usePreventScroll from "../hooks/usePreventScroll";
 import useToasts from "../hooks/useToasts";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, ClipboardList } from "lucide-react";
 import SearchBar from "./SearchBar";
 import UpdateModal from "./UpdateModal";
 import ExpiringModal from "./ExpiringModal";
@@ -298,7 +298,12 @@ const ProductList = () => {
             isOpen={showUnclassified}
             isClosing={isClosingUnclassified}
             onClose={handleCloseUnclassified}
-            title="Productos Pendientes"
+            title={
+              <div className="flex items-center gap-2">
+                <ClipboardList className="w-5 h-5 text-[#1d5030]" />
+                <span>Productos Pendientes</span>
+              </div>
+            }
           >
             <div className="flex-1 overflow-y-auto overscroll-contain p-4">
               {products["sin-clasificar"].length === 0 ? (
