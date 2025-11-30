@@ -1,5 +1,5 @@
-import { memo } from "react";
-import { Box, Clock, Edit3, Trash2, Package } from "lucide-react";
+import { memo, useMemo } from "react";
+import { Box, Clock, Edit3, Trash2, Package, Hourglass } from "lucide-react";
 import PropTypes from "prop-types";
 
 const formatDate = (dateString) => {
@@ -30,6 +30,11 @@ const ProductCard = memo(({
   viewMode = 'card',
 }) => {
 
+  const isStale = useMemo(() => {
+    if (!product.updatedAt) return false;
+    const daysDiff = (new Date() - new Date(product.updatedAt)) / (1000 * 60 * 60 * 24);
+    return daysDiff > 7;
+  }, [product.updatedAt]);
 
   return (
     <div
@@ -37,10 +42,13 @@ const ProductCard = memo(({
       onClick={() => onProductClick(product)}
       className={`
         w-full text-left 
-        bg-white hover:bg-gray-50
         rounded-lg
+        ${isStale 
+          ? "bg-orange-50/40 hover:bg-orange-50/60 border border-[#c17817]/30" 
+          : "bg-white hover:bg-gray-50"
+        }
         ${viewMode === 'compact' 
-          ? 'p-3 sm:p-2 border-b border-gray-100 hover:bg-gray-50' 
+          ? 'p-3 sm:p-2 border-b border-gray-100' 
           : 'p-4 shadow-sm hover:shadow mb-4'}
         transition-all duration-300
         ${isSelected ? "ring-1 ring-[#1d5030]/30 bg-[#1d5030]/5" : ""}
@@ -64,6 +72,15 @@ const ProductCard = memo(({
               w-2.5 h-2.5 rounded-full flex-shrink-0
               ${isExpiringSoon(product.fechaFrente) ? 'bg-[#ffb81c] animate-pulse' : 'bg-gray-300'}
             `} />
+
+            {isStale && (
+              <div 
+                className="flex items-center justify-center p-1.5 bg-[#c17817]/10 rounded-full flex-shrink-0"
+                title="Pendiente de revisar"
+              >
+                <Hourglass size={14} className="text-[#c17817]" />
+              </div>
+            )}
 
             {/* Nombre del producto */}
             <span className="font-['Noto Sans'] font-medium text-[#2d3748] text-sm sm:text-sm truncate block w-full">
@@ -138,6 +155,14 @@ const ProductCard = memo(({
             <span className="font-['Noto Sans'] font-semibold text-[#2d3748] text-base flex-1 select-none">
               {product.producto?.nombre}
             </span>
+            {isStale && (
+              <div 
+                className="flex items-center justify-center p-1.5 bg-[#c17817]/10 rounded-full ml-2"
+                title="Pendiente de revisar"
+              >
+                <Hourglass size={16} className="text-[#c17817]" />
+              </div>
+            )}
             {isExpiringSoon(product.fechaFrente) && (
               <div
                 className="

@@ -64,6 +64,9 @@ exports.updateStatus = async (req, res) => {
       });
     }
 
+    // Forzamos la actualización de la fecha para confirmar la revisión manual
+    productStatus.updatedAt = new Date();
+
     const savedStatus = await productStatus.save();
     const populatedStatus = await ProductStatus.findById(
       savedStatus._id
