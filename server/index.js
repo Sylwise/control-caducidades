@@ -5,6 +5,8 @@ const path = require("path");
 const http = require("http");
 const { setupSocket } = require("./socket");
 const rateLimit = require("express-rate-limit");
+const helmet = require("helmet");
+const mongoSanitize = require("express-mongo-sanitize");
 const logger = require("./logger");
 
 // Cargar variables de entorno según el entorno
@@ -37,6 +39,10 @@ const authRoutes = require("./routes/authRoutes");
 const restaurantRoutes = require("./routes/restaurantRoutes");
 
 const app = express();
+
+// Configuración de Proxy (Vital para Railway y Rate Limit)
+app.set('trust proxy', 1);
+
 const server = http.createServer(app);
 
 // ... (CORS config)
@@ -79,6 +85,8 @@ const io = setupSocket(server, allowedOrigins);
 app.set('io', io);
 
 // Middleware
+app.use(helmet()); // Security Headers
+app.use(mongoSanitize()); // Prevent NoSQL Injection
 app.use(express.json());
 
 // Middleware de logging de peticiones
@@ -95,7 +103,7 @@ if (process.env.NODE_ENV === "production") {
 // Configurar rate limiter
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 1000, // Límite de 1000 solicitudes por ventana por IP
+  max: 100, // Límite de 100 solicitudes por ventana por IP
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -114,12 +122,12 @@ const limiter = rateLimit({
 // Configurar rate limiter específico para autenticación
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // Límite de 100 intentos de login por ventana por IP
+  max: 5, // Límite de 5 intentos de login por ventana por IP
   standardHeaders: true,
   legacyHeaders: false,
   message: {
     error: "Demasiados intentos de inicio de sesión.",
-    details: "Por favor, espere antes de intentar nuevamente.",
+    details: "Demasiados intentos de inicio de sesión, por favor intente de nuevo en 15 minutos",
   },
   handler: (req, res) => {
     logger.warn(`Rate limit de autenticación excedido para la IP: ${req.ip}`);
