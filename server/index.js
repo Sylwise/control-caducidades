@@ -37,6 +37,7 @@ const catalogRoutes = require("./routes/catalogRoutes");
 const statusRoutes = require("./routes/statusRoutes");
 const authRoutes = require("./routes/authRoutes");
 const restaurantRoutes = require("./routes/restaurantRoutes");
+const employeeRoutes = require("./routes/employeeRoutes");
 
 const app = express();
 
@@ -149,6 +150,7 @@ app.use("/api/catalog", catalogRoutes);
 app.use("/api/status", statusRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/restaurants", restaurantRoutes);
+app.use("/api/employees", employeeRoutes);
 
 // En producción, todas las rutas no-API sirven el index.html
 if (process.env.NODE_ENV === "production") {

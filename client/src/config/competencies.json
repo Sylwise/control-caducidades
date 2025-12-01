@@ -1,0 +1,164 @@
+[
+  {
+    "id": "salon",
+    "label": "Salón",
+    "icon": "Armchair",
+    "tasks": [
+      { "id": "saludar", "text": "Saludar a clientes y Hospitalidad" },
+      { "id": "dudas", "text": "Resolver dudas" },
+      { "id": "pide_paga", "text": "Ofrecer Pide y Paga" },
+      { "id": "limpieza_mesas", "text": "Limpiar mesas (conocer trapos)" },
+      { "id": "biologicos", "text": "Limpiar restos biológicos (Sirafan)" },
+      { "id": "barrer", "text": "Barrer (escoba correcta)" },
+      { "id": "basuras", "text": "Vaciar basuras y compactar" },
+      { "id": "bandejas", "text": "Recoger y limpiar bandejas" },
+      { "id": "banos", "text": "Limpiar baños (productos)" },
+      { "id": "reposicion_salon", "text": "Reposición general" }
+    ]
+  },
+  {
+    "id": "batch_cooker",
+    "label": "Batch Cooker",
+    "icon": "Flame",
+    "tasks": [
+      { "id": "fritos_tipos", "text": "Conocer fritos (tipos, congelador)" },
+      { "id": "freidoras", "text": "Conocer freidoras (tinas, tiempos)" },
+      { "id": "carnes", "text": "Conocer carnes" },
+      { "id": "proc_carnes", "text": "Procedimiento 'Mira, borra, mete'" },
+      { "id": "eproduction", "text": "Conoce pantalla eProduction" },
+      { "id": "uhc", "text": "Conocer UHC (tiempos, rotación)" },
+      { "id": "saleros", "text": "Montar y reponer saleros" }
+    ]
+  },
+  {
+    "id": "condimentar",
+    "label": "Condimentar",
+    "icon": "Sandwich",
+    "tasks": [
+      { "id": "condimentos", "text": "Conoce condimentos y guardado" },
+      { "id": "salsas", "text": "Conoce salsas y guardado" },
+      { "id": "cajitas", "text": "Conoce cajitas y envoltorios" },
+      { "id": "panes", "text": "Conoce los panes" },
+      { "id": "best_burger", "text": "Práctica 'Best Burger'" },
+      { "id": "hoja_caducidades", "text": "Uso de App/Hoja Caducidades", "description": "Sabe consultar y actualizar la web app de caducidades" },
+      { "id": "priorizar", "text": "Priorizar tareas" }
+    ]
+  },
+  {
+    "id": "patatas",
+    "label": "Patatas",
+    "icon": "Thermometer",
+    "tasks": [
+      { "id": "freir_patatas", "text": "Meter a freír (tipos, tamaños)" },
+      { "id": "rotar", "text": "Rotar (caducidad, tinas)" },
+      { "id": "montaje_patatas", "text": "Montaje y ensamblaje" },
+      { "id": "repo_patatas", "text": "Reposición (fries, congelado)" }
+    ]
+  },
+  {
+    "id": "bebidas_postres",
+    "label": "Bebidas y Postres",
+    "icon": "IceCream",
+    "tasks": [
+      { "id": "bebidas", "text": "Poner bebidas (vasos, pantalla)" },
+      { "id": "foster", "text": "Conocer foster" },
+      { "id": "cafe", "text": "Café (tipos, cafetera)" },
+      { "id": "bolleria", "text": "Bollería (pinzas, fechas)" },
+      { "id": "helados", "text": "Helados (toppings, batido)" },
+      { "id": "repo_postres", "text": "Reposición (hielo, mix, vasos)" }
+    ]
+  },
+  {
+    "id": "ensamblar",
+    "label": "Ensamblar",
+    "icon": "PackageCheck",
+    "tasks": [
+      { "id": "proteina", "text": "Conoce la proteína" },
+      { "id": "cajitas_ens", "text": "Conoce las cajitas" },
+      { "id": "proc_ensamblaje", "text": "Procedimiento ensamblaje (palas)" },
+      { "id": "basura_contable", "text": "Basura contable (cubos)" }
+    ]
+  },
+  {
+    "id": "iniciar",
+    "label": "Iniciar",
+    "icon": "PlayCircle",
+    "tasks": [
+      { "id": "panes_ini", "text": "Conoce panes (coronas, bases)" },
+      { "id": "envoltorios", "text": "Conoce envoltorios" },
+      { "id": "tostadora", "text": "Funcionamiento tostadora" },
+      { "id": "pantalla_ini", "text": "Conoce pantalla (borrar pedidos)" },
+      { "id": "proc_iniciar", "text": "Procedimiento iniciar (orden)" },
+      { "id": "mira_proteina", "text": "Mira proteína antes de iniciar" }
+    ]
+  },
+  {
+    "id": "mcauto",
+    "label": "McAuto",
+    "icon": "Car",
+    "tasks": [
+      { "id": "cobrar", "text": "Sabe cobrar (tarjeta, billetes)" },
+      { "id": "responder", "text": "Sabe saludar y responder" },
+      { "id": "coger_ordenes", "text": "Conoce pantalla y coger órdenes" },
+      { "id": "preguntas_cerradas", "text": "Hace preguntas cerradas" },
+      { "id": "empatia_auto", "text": "Empatía con cliente" },
+      { "id": "pide_paga_auto", "text": "Ofrece Pide y Paga" },
+      { "id": "sugerencia", "text": "Venta sugerida (complementos)" }
+    ]
+  },
+  {
+    "id": "expeditar",
+    "label": "Expeditar / Mostrador",
+    "icon": "ShoppingBag",
+    "tasks": [
+      { "id": "oatt", "text": "Conocer OATT (bolsas, salsas)" },
+      { "id": "montar_bandejas", "text": "Montar pedidos en bandejas" },
+      { "id": "revisar_pedido", "text": "Sabe dónde empieza/acaba pedido" },
+      { "id": "repo_expeditar", "text": "Reposición mostrador" }
+    ]
+  },
+  {
+    "id": "general_frente",
+    "label": "Tareas Generales Frente",
+    "icon": "Store",
+    "tasks": [
+      { "id": "repo_congelado", "text": "Reponer (congelado, pan)" },
+      { "id": "tomate", "text": "Cortar y fechar tomate" },
+      { "id": "limpieza_gral", "text": "Barrer y fregar" },
+      { "id": "pan_fechar", "text": "Sacar y fechar pan" },
+      { "id": "planchas_limpieza", "text": "Limpiar planchas con trapo" },
+      { "id": "tempering", "text": "Tempering" },
+      { "id": "cambio_basura", "text": "Cambiar basura contable" },
+      { "id": "compactar", "text": "Compactar cartón/basura" },
+      { "id": "fregado", "text": "Utilizar zona de fregado" }
+    ]
+  },
+  {
+    "id": "apertura",
+    "label": "Apertura Cocina",
+    "icon": "Sunrise",
+    "tasks": [
+      { "id": "fichar_lavar", "text": "Fichar y lavarse manos" },
+      { "id": "cubos", "text": "Hacer los cubos" },
+      { "id": "trapos_teflones", "text": "Montar cubos trapos y teflones" },
+      { "id": "saleros_mesa", "text": "Montar saleros y mesa" },
+      { "id": "ensaladas", "text": "Hacer ensaladas (timer)" },
+      { "id": "bacon", "text": "Hacer bacon" }
+    ]
+  },
+  {
+    "id": "cierre",
+    "label": "Cierre Cocina",
+    "icon": "Moon",
+    "tasks": [
+      { "id": "filtrar", "text": "Filtrar aceite (EPIs)" },
+      { "id": "limpieza_cierre", "text": "Cocina limpia y plancha" },
+      { "id": "maquinaria_off", "text": "Encender/Apagar maquinaria" },
+      { "id": "lavado", "text": "Meter trapos y utensilios a lavar" },
+      { "id": "ram", "text": "Hacer la RAM (Stock)" },
+      { "id": "desmontar", "text": "Desmontar mesa y salsas" },
+      { "id": "contable", "text": "Hacer la contable" },
+      { "id": "guardar_frio", "text": "Guardar refrigerado/congelado" }
+    ]
+  }
+]

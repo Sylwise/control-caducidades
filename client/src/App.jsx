@@ -7,6 +7,8 @@ import {
 import PropTypes from "prop-types";
 import ProductList from "./components/ProductList";
 import Login from "./components/Login";
+import MainLayout from "./components/MainLayout";
+import TrainingDashboard from "./components/TrainingDashboard";
 import AuthProvider from "./contexts/providers/AuthProvider";
 import { SocketProvider } from "./contexts/providers/SocketProvider";
 import { SyncProvider } from "./contexts/providers/SyncProvider";
@@ -34,14 +36,19 @@ const App = () => {
           <Router>
             <Routes>
               <Route path="/login" element={<Login />} />
+              
               <Route
                 path="/"
                 element={
                   <PrivateRoute>
-                    <ProductList />
+                    <MainLayout />
                   </PrivateRoute>
                 }
-              />
+              >
+                <Route index element={<Navigate to="/inventory" replace />} />
+                <Route path="inventory" element={<ProductList />} />
+                <Route path="training" element={<TrainingDashboard />} />
+              </Route>
             </Routes>
           </Router>
         </SyncProvider>

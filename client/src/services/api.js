@@ -1,5 +1,6 @@
 import OfflineDebugger from "../utils/debugger";
 import OfflineManager from "./offlineManager";
+import axios from 'axios';
 
 // API Base URL basada en el entorno
 const API_BASE_URL = import.meta.env.PROD
@@ -14,6 +15,30 @@ const API_BASE_URL = import.meta.env.PROD
 const getAuthToken = () => {
   return localStorage.getItem("token") || sessionStorage.getItem("token");
 };
+
+// Instancia de Axios configurada
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Interceptor para añadir el token a las peticiones
+api.interceptors.request.use(
+  (config) => {
+    const token = getAuthToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+export default api;
 
 // Función auxiliar para obtener los headers comunes
 const getHeaders = (contentType = false) => {

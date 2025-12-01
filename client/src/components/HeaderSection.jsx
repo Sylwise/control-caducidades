@@ -1,4 +1,4 @@
-import { LogOut, Users, Package, CloudOff, Store } from "lucide-react";
+import { LogOut, Users, Package, CloudOff, Store, GraduationCap } from "lucide-react";
 import PropTypes from "prop-types";
 import { useSyncContext } from "../hooks/useSyncContext";
 
@@ -11,6 +11,8 @@ const HeaderSection = ({
   onCatalogManagementClick,
   onExpiringClick,
   onRestaurantManagementClick,
+  activeModule,
+  onModuleChange,
 }) => {
   const { pendingChanges } = useSyncContext();
 
@@ -79,12 +81,44 @@ const HeaderSection = ({
           </button>
         </div>
       </div>
+
+      {/* Module Switcher - Segmented Control */}
+      <div className="bg-gray-100 p-1 rounded-lg flex items-center justify-center w-full max-w-md mb-6">
+        <button
+          onClick={() => onModuleChange('inventory')}
+          className={`
+            flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium transition-all duration-200
+            ${activeModule === 'inventory'
+              ? 'bg-white text-[#1d5030] shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
+            }
+          `}
+        >
+          <Package className="w-4 h-4" />
+          Caducidades
+        </button>
+
+        <button
+          onClick={() => onModuleChange('training')}
+          className={`
+            flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium transition-all duration-200
+            ${activeModule === 'training'
+              ? 'bg-white text-[#1d5030] shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
+            }
+          `}
+        >
+          <GraduationCap className="w-4 h-4" />
+          Formación
+        </button>
+      </div>
+
       <div className="flex flex-col items-center gap-1">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold text-[#1d5030] font-['Noto Sans'] tracking-tight select-none">
-            Lista de Caducidades
+            {activeModule === 'inventory' ? 'Lista de Caducidades' : 'Formación y Competencias'}
           </h1>
-          {expiringCount > 0 && (
+          {activeModule === 'inventory' && expiringCount > 0 && (
             <button
               onClick={onExpiringClick}
               className={`
@@ -134,6 +168,8 @@ HeaderSection.propTypes = {
   onCatalogManagementClick: PropTypes.func.isRequired,
   onExpiringClick: PropTypes.func.isRequired,
   onRestaurantManagementClick: PropTypes.func,
+  activeModule: PropTypes.string,
+  onModuleChange: PropTypes.func,
 };
 
 export default HeaderSection;
