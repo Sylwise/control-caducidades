@@ -105,7 +105,7 @@ exports.toggleCompetence = async (req, res) => {
     if (completed) {
       currentCompetencies[areaId][taskId] = {
         completed: true,
-        certifiedBy: userId,
+        certifiedBy: req.user.username,
         date: new Date()
       };
     } else {

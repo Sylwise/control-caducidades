@@ -10,7 +10,7 @@ function SearchBar({
   onViewModeChange,
 }) {
   return (
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6">
+    <div className="flex flex-col md:flex-row md:items-center gap-3 mb-6">
       {/* Buscador */}
       <div className="relative w-full md:flex-1">
         <input
@@ -23,7 +23,7 @@ function SearchBar({
               onSearchChange(value);
             }
           }}
-          className="w-full h-12 pl-10 pr-12 rounded-lg border-0 
+          className="w-full h-12 pl-10 pr-12 rounded-lg border border-gray-300 
             focus:outline-none focus:ring-2 focus:ring-[#1d5030]/50 focus:border-transparent
             font-['Noto Sans'] text-sm font-medium placeholder:text-gray-400
             bg-white shadow-sm"
@@ -55,7 +55,7 @@ function SearchBar({
             transition-colors duration-200
             flex items-center justify-center gap-2
             bg-white text-[#1d5030] hover:bg-[#1d5030]/10
-            shadow-sm
+            shadow-sm border border-gray-300
           `}
         >
           Sin Clasificar
@@ -65,7 +65,7 @@ function SearchBar({
         </button>
 
         {/* Selector de Vista */}
-        <div className="flex bg-white rounded-lg shadow-sm border border-gray-100 p-1 h-12">
+        <div className="flex bg-white rounded-lg shadow-sm border border-gray-300 p-1 h-12">
           <button
             onClick={() => onViewModeChange('card')}
             className={`

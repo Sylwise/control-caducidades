@@ -11,6 +11,11 @@ const CreateEmployeeModal = ({ isOpen, onClose, onCreate }) => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  
+  // Calculate date limits
+  const today = new Date();
+  const fiveYearsAgo = new Date();
+  fiveYearsAgo.setFullYear(today.getFullYear() - 5);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -80,9 +85,11 @@ const CreateEmployeeModal = ({ isOpen, onClose, onCreate }) => {
                 Fecha de Entrada
               </h3>
               <CustomDateInput
-                label="Seleccionar fecha"
+                label="fecha de inicio"
                 value={formData.fechaEntrada}
                 onChange={(value) => setFormData({ ...formData, fechaEntrada: value })}
+                minDate={fiveYearsAgo}
+                maxDate={today}
                 className="w-full py-2.5 px-4 rounded-lg transition-all duration-200 font-medium text-sm select-none flex items-center justify-between shadow-sm hover:shadow-md"
               />
             </div>

@@ -89,14 +89,24 @@ const AreaCard = ({ area, competencies, onToggle, Icon }) => {
                           )}
                         </div>
                         
-                        {isCompleted && competenceData && (
-                          <div className="mt-1 text-xs text-gray-500 flex items-center gap-1">
-                            <Check size={10} className="text-[#1d5030]" />
-                            <span>
-                              Validado {competenceData.date && `el ${new Date(competenceData.date).toLocaleDateString()}`}
-                            </span>
-                          </div>
-                        )}
+                        <AnimatePresence initial={false}>
+                          {isCompleted && competenceData && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                                <Check size={12} />
+                                <span>
+                                  Validado por {competenceData.certifiedBy || 'Sistema'} el {competenceData.date ? new Date(competenceData.date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) : ''}
+                                </span>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
 
                       <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">

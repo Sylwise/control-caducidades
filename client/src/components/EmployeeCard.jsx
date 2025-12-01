@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import { Trash2, Calendar, ChevronRight, Utensils, Store, Sun, Moon } from 'lucide-react';
+import { Trash2, Calendar, ChevronRight, Utensils, Store, Sun, Moon, Award } from 'lucide-react';
 import { calculateEmployeeProgress } from '../utils/progressCalculator';
 
 const CircularProgress = ({ percentage, icon: Icon, label, color }) => {
@@ -42,7 +42,7 @@ const CircularProgress = ({ percentage, icon: Icon, label, color }) => {
         </div>
       </div>
       <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">{label}</span>
-      <span className="text-xs font-bold text-gray-700">{percentage}%</span>
+      <span className="text-xs font-bold text-gray-600">{percentage}%</span>
     </div>
   );
 };
@@ -54,7 +54,7 @@ CircularProgress.propTypes = {
   color: PropTypes.string.isRequired,
 };
 
-const EmployeeCard = ({ employee, onDelete }) => {
+const EmployeeCard = ({ employee, onDelete, isSelected, onSelect }) => {
   // Calculate seniority
   const seniority = useMemo(() => {
     if (!employee.fechaEntrada) return 'N/A';
@@ -74,6 +74,10 @@ const EmployeeCard = ({ employee, onDelete }) => {
   const progressData = useMemo(() => {
     return calculateEmployeeProgress(employee);
   }, [employee]);
+
+  const isExpert = useMemo(() => {
+    return Object.values(progressData).every(val => val === 100);
+  }, [progressData]);
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
@@ -115,7 +119,19 @@ const EmployeeCard = ({ employee, onDelete }) => {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 border border-gray-100 flex flex-col h-full overflow-hidden group">
+    <div 
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect();
+      }}
+      className={`bg-white rounded-xl shadow hover:shadow-md transition-all duration-200 border flex flex-col h-full overflow-hidden group cursor-pointer ${
+        isSelected 
+          ? 'ring-2 ring-[#1d5030]/50 bg-[#1d5030]/5 border-[#1d5030]/50' 
+          : isExpert
+            ? 'border-yellow-400/50 bg-yellow-50/50 shadow-yellow-100 hover:border-yellow-400'
+            : 'border-gray-300/50 hover:border-gray-300'
+      }`}
+    >
       {/* Header */}
       <div className="p-4 flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -123,9 +139,14 @@ const EmployeeCard = ({ employee, onDelete }) => {
             {getInitials(employee.nombre)}
           </div>
           <div>
-            <h3 className="font-bold text-gray-900 text-base leading-tight truncate max-w-[140px]" title={employee.nombre}>
-              {employee.nombre}
-            </h3>
+            <div className="flex items-center gap-1.5">
+              <h3 className="font-bold text-gray-800 text-base leading-tight truncate max-w-[140px]" title={employee.nombre}>
+                {employee.nombre}
+              </h3>
+              {isExpert && (
+                <Award size={18} className="text-yellow-500 fill-yellow-500/20" />
+              )}
+            </div>
             <div className="flex items-center gap-1 text-[10px] text-gray-500 mt-0.5">
               <Calendar size={10} className="text-gray-400" />
               <span>{formatDate(employee.fechaEntrada)}</span>
@@ -141,7 +162,9 @@ const EmployeeCard = ({ employee, onDelete }) => {
               e.stopPropagation();
               onDelete(employee);
             }}
-            className="text-gray-300 hover:text-red-500 p-1.5 rounded-full hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+            className={`text-gray-300 hover:text-red-500 p-1.5 rounded-full hover:bg-red-50 transition-colors focus:opacity-100 ${
+              isSelected ? 'opacity-100 text-red-500' : 'opacity-0 group-hover:opacity-100'
+            }`}
             title="Eliminar empleado"
             aria-label="Eliminar empleado"
           >
@@ -182,7 +205,7 @@ const EmployeeCard = ({ employee, onDelete }) => {
 
       {/* Footer */}
       <div className="bg-gray-50 px-4 py-2.5 border-t border-gray-100 mt-auto">
-        <Link to={`/training/${employee._id}`} className="w-full flex items-center justify-center gap-1.5 text-xs font-medium text-[#1d5030] hover:text-[#153a23] transition-colors group/btn">
+        <Link to={`/training/${employee._id}`} className="w-full flex items-center justify-center gap-1.5 text-xs font-medium text-[#1d5030] hover:text-[#153a23] transition-all active:scale-95 group/btn">
           Ver Ficha Completa
           <ChevronRight size={14} className="transition-transform group-hover/btn:translate-x-1" />
         </Link>
@@ -198,7 +221,9 @@ EmployeeCard.propTypes = {
     fechaEntrada: PropTypes.string.isRequired,
     competencias: PropTypes.object
   }).isRequired,
-  onDelete: PropTypes.func
+  onDelete: PropTypes.func,
+  isSelected: PropTypes.bool,
+  onSelect: PropTypes.func
 };
 
 export default EmployeeCard;

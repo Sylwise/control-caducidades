@@ -45,11 +45,11 @@ const ProductCard = memo(({
         rounded-lg
         ${isStale 
           ? "bg-orange-50/40 hover:bg-orange-50/60 border border-[#c17817]/30" 
-          : "bg-white hover:bg-gray-50"
+          : "bg-white hover:bg-gray-50 border border-gray-300/50 hover:border-gray-300"
         }
         ${viewMode === 'compact' 
           ? 'p-3 sm:p-2 border-b border-gray-100' 
-          : 'p-4 shadow-sm hover:shadow mb-4'}
+          : 'p-4 shadow hover:shadow-md mb-4'}
         transition-all duration-300
         ${isSelected ? "ring-1 ring-[#1d5030]/30 bg-[#1d5030]/5" : ""}
         ${
@@ -83,7 +83,7 @@ const ProductCard = memo(({
             )}
 
             {/* Nombre del producto */}
-            <span className="font-['Noto Sans'] font-medium text-[#2d3748] text-sm sm:text-sm truncate block w-full">
+            <span className="font-['Noto Sans'] font-medium text-gray-900 text-sm sm:text-sm truncate block w-full">
               {product.producto?.nombre}
             </span>
           </div>
@@ -95,13 +95,13 @@ const ProductCard = memo(({
               {product.fechaFrente && (
                 <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded border border-gray-100">
                   <span className="text-[#1d5030] font-semibold">F:</span>
-                  <span className="font-medium text-gray-700">{formatDate(product.fechaFrente)}</span>
+                  <span className="font-medium text-gray-600">{formatDate(product.fechaFrente)}</span>
                 </div>
               )}
               {product.fechaAlmacen && (
                 <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded border border-gray-100">
                   <span className="text-[#1d5030] font-semibold">A:</span>
-                  <span className="font-medium text-gray-700">{formatDate(product.fechaAlmacen)}</span>
+                  <span className="font-medium text-gray-600">{formatDate(product.fechaAlmacen)}</span>
                   {product.cajasAlmacen > 0 && (
                     <span className="ml-1 px-1.5 py-0.5 bg-[#1d5030]/10 text-[#1d5030] rounded-full text-[10px] font-bold">
                       {product.cajasAlmacen}
@@ -152,7 +152,7 @@ const ProductCard = memo(({
         // VISTA TARJETA (Original)
         <>
           <div className="flex items-center gap-2">
-            <span className="font-['Noto Sans'] font-semibold text-[#2d3748] text-base flex-1 select-none">
+            <span className="font-['Noto Sans'] font-semibold text-gray-900 text-base flex-1 select-none">
               {product.producto?.nombre}
             </span>
             {isStale && (
@@ -197,7 +197,7 @@ const ProductCard = memo(({
                         </span>
                       </div>
                       <div className="p-2 text-center">
-                        <div className="text-lg font-bold text-[#1a1a1a] leading-tight select-none">
+                        <div className="text-lg font-bold text-gray-900 leading-tight select-none">
                           {formatDate(product.fechaFrente)}
                         </div>
                       </div>

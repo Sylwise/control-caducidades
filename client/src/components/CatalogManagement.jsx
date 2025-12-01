@@ -423,9 +423,9 @@ const CatalogManagement = ({ isOpen, onClose }) => {
             )}
 
             {/* Acciones */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 mb-4 select-none">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-4 select-none">
               {/* Buscador */}
-              <div className="flex-1 relative">
+              <div className="w-full sm:flex-1 relative">
                 <input
                   type="text"
                   placeholder="Buscar producto..."
@@ -436,7 +436,7 @@ const CatalogManagement = ({ isOpen, onClose }) => {
                       setSearchTerm(value);
                     }
                   }}
-                  className="w-full pl-10 pr-12 py-3 min-h-[48px] border border-gray-300 rounded-md
+                  className="w-full pl-10 pr-12 h-12 border border-gray-300 rounded-md
                     focus:outline-none focus:ring-2 focus:ring-[#1d5030]/50 focus:border-transparent
                     text-gray-900 placeholder-gray-500 select-none"
                   maxLength={20}
@@ -461,7 +461,7 @@ const CatalogManagement = ({ isOpen, onClose }) => {
                   setShowCreateModal(true);
                   setSearchTerm(""); // Limpiar el buscador al pulsar "Añadir Producto"
                 }}
-                className="flex items-center justify-center gap-2 px-4 py-3 min-h-[48px] bg-[#1d5030] text-white rounded-md
+                className="flex items-center justify-center gap-2 px-4 h-12 bg-[#1d5030] text-white rounded-md
                   hover:bg-[#1d5030]/90 transition-colors font-medium select-none w-full sm:w-auto"
               >
                 <PackagePlus className="w-5 h-5" />

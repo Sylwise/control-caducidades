@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import AuthContext from '../contexts/AuthContext';
 import { 
   Armchair, 
   Flame, 
@@ -18,6 +19,7 @@ import {
   Calendar,
   Award
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import api from '../services/api';
 import competenciesConfig from '../config/competencies.json';
 import AreaCard from './AreaCard';
@@ -39,6 +41,7 @@ const ICON_MAP = {
 };
 
 const EmployeeDetail = () => {
+  const { user } = useContext(AuthContext);
   const { employeeId } = useParams();
   const navigate = useNavigate();
   const [employee, setEmployee] = useState(null);
@@ -77,9 +80,7 @@ const EmployeeDetail = () => {
         newCompetencies[areaId][taskId] = {
           completed: true,
           date: new Date().toISOString(),
-          // We don't have the user initials here easily without context, 
-          // but the backend will set the certifiedBy. 
-          // For optimistic UI, we can just show it's done.
+          certifiedBy: user?.username || 'Sistema',
         };
       } else {
         if (newCompetencies[areaId][taskId]) {
@@ -156,7 +157,13 @@ const EmployeeDetail = () => {
   const globalProgress = calculateGlobalProgress();
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-12">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.3 }}
+      className="min-h-screen bg-gray-50 pb-12"
+    >
       {/* Header */}
       <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm shadow-sm transition-all duration-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -168,7 +175,7 @@ const EmployeeDetail = () => {
               <ArrowLeft size={24} className="text-gray-600" />
             </button>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">{employee.nombre}</h1>
+              <h1 className="text-2xl font-bold text-gray-800">{employee.nombre}</h1>
               <div className="flex items-center gap-4 text-sm text-gray-500">
                 <span className="flex items-center gap-1">
                   <User size={14} />
@@ -200,19 +207,49 @@ const EmployeeDetail = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        {/* Mobile View (Single Column, Natural Order) */}
+        <div className="flex flex-col gap-6 lg:hidden">
           {competenciesConfig.map(area => (
             <AreaCard
               key={area.id}
               area={area}
               competencies={employee.competencias?.[area.id]}
               onToggle={handleToggleCompetence}
-              Icon={ICON_MAP[area.icon] || Store} // Fallback icon
+              Icon={ICON_MAP[area.icon] || Store}
             />
           ))}
         </div>
+
+        {/* Desktop View (Two Independent Flex Columns) */}
+        <div className="hidden lg:flex gap-6 items-start">
+          {/* Left Column (Even Indices: 0, 2, 4...) */}
+          <div className="flex flex-col gap-6 flex-1 w-full">
+            {competenciesConfig.filter((_, i) => i % 2 === 0).map(area => (
+              <AreaCard
+                key={area.id}
+                area={area}
+                competencies={employee.competencias?.[area.id]}
+                onToggle={handleToggleCompetence}
+                Icon={ICON_MAP[area.icon] || Store}
+              />
+            ))}
+          </div>
+
+          {/* Right Column (Odd Indices: 1, 3, 5...) */}
+          <div className="flex flex-col gap-6 flex-1 w-full">
+            {competenciesConfig.filter((_, i) => i % 2 !== 0).map(area => (
+              <AreaCard
+                key={area.id}
+                area={area}
+                competencies={employee.competencias?.[area.id]}
+                onToggle={handleToggleCompetence}
+                Icon={ICON_MAP[area.icon] || Store}
+              />
+            ))}
+          </div>
+        </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

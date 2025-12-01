@@ -13,6 +13,8 @@ const CustomDateInput = ({
   "data-date-input": dataDateInput,
   onCancel,
   RemoveIcon = X,
+  minDate,
+  maxDate,
 }) => {
   const [inputValue, setInputValue] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -20,8 +22,21 @@ const CustomDateInput = ({
   const modalRef = useRef(null);
   const keypadRef = useRef(null);
 
-  // Usar el hook para prevenir scroll
-  usePreventScroll(isOpen);
+  // Default ranges if not provided
+  const effectiveMinDate = useMemo(() => {
+    if (minDate) return new Date(minDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today;
+  }, [minDate]);
+
+  const effectiveMaxDate = useMemo(() => {
+    if (maxDate) return new Date(maxDate);
+    const d = new Date();
+    d.setFullYear(d.getFullYear() + 5);
+    d.setHours(23, 59, 59, 999);
+    return d;
+  }, [maxDate]);
 
   // Formatear fecha inicial si existe
   useEffect(() => {
@@ -59,7 +74,7 @@ const CustomDateInput = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen, value, onCancel]);
 
-  // Validar fecha y que no sea más de 5 años en el futuro
+  // Validar fecha y rango
   const isValidDate = useCallback((day, month, year) => {
     const date = new Date(year, month - 1, day);
     const isValidFormat =
@@ -67,24 +82,23 @@ const CustomDateInput = ({
       date.getMonth() === month - 1 &&
       date.getFullYear() === parseInt(year);
 
-    const currentYear = new Date().getFullYear();
-    const isValidYear = year <= currentYear + 5;
-
-    return isValidFormat && isValidYear;
+    return isValidFormat;
   }, []);
 
-  // Validar que la fecha no sea anterior a hoy ni posterior a 5 años
-  const isDateAfterToday = useCallback((day, month, year) => {
+  const isDateInRange = useCallback((day, month, year) => {
     const inputDate = new Date(year, month - 1, day);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Set time to check only date part if needed, but effective dates usually handle this.
+    // However, inputDate defaults to 00:00:00.
+    
+    // Normalize effective dates for comparison to avoid time issues if passed with time
+    const min = new Date(effectiveMinDate);
+    min.setHours(0, 0, 0, 0);
+    
+    const max = new Date(effectiveMaxDate);
+    max.setHours(23, 59, 59, 999);
 
-    const maxDate = new Date();
-    maxDate.setFullYear(maxDate.getFullYear() + 5);
-    maxDate.setHours(23, 59, 59, 999);
-
-    return inputDate >= today && inputDate <= maxDate;
-  }, []);
+    return inputDate >= min && inputDate <= max;
+  }, [effectiveMinDate, effectiveMaxDate]);
 
   // Formatear entrada mientras se escribe
   const formatInput = useCallback((input) => {
@@ -111,29 +125,22 @@ const CustomDateInput = ({
 
       if (dateString.length === 10) {
         if (!isValidDate(day, month, year)) {
-          const currentYear = new Date().getFullYear();
-          if (year > currentYear + 5) {
-            setError(`El año no puede ser posterior a ${currentYear + 5}`);
-          } else {
-            setError("Fecha inválida");
-          }
+          setError("Fecha inválida");
           return;
         }
 
-        if (!isDateAfterToday(day, month, year)) {
-          const maxDate = new Date();
-          maxDate.setFullYear(maxDate.getFullYear() + 5);
-          if (new Date(year, month - 1, day) > maxDate) {
-            setError(
-              `La fecha no puede ser posterior a ${maxDate
-                .getDate()
-                .toString()
-                .padStart(2, "0")}/${(maxDate.getMonth() + 1)
-                .toString()
-                .padStart(2, "0")}/${maxDate.getFullYear()}`
+        if (!isDateInRange(day, month, year)) {
+          const min = new Date(effectiveMinDate);
+          const max = new Date(effectiveMaxDate);
+          
+          if (new Date(year, month - 1, day) > max) {
+             setError(
+              `La fecha no puede ser posterior a ${max.toLocaleDateString('es-ES')}`
             );
           } else {
-            setError("La fecha no puede ser anterior a hoy");
+             setError(
+              `La fecha no puede ser anterior a ${min.toLocaleDateString('es-ES')}`
+            );
           }
           return;
         }
@@ -146,7 +153,7 @@ const CustomDateInput = ({
         setIsOpen(false);
       }
     },
-    [isValidDate, isDateAfterToday, onChange]
+    [isValidDate, isDateInRange, onChange, effectiveMinDate, effectiveMaxDate]
   );
 
   // Manejar entrada de teclado
@@ -475,6 +482,8 @@ CustomDateInput.propTypes = {
   showRemoveWhenEmpty: PropTypes.bool,
   "data-date-input": PropTypes.string,
   onCancel: PropTypes.func,
+  minDate: PropTypes.oneOfType([PropTypes.string, PropTypes.instanceOf(Date)]),
+  maxDate: PropTypes.oneOfType([PropTypes.string, PropTypes.instanceOf(Date)]),
 };
 
 export default CustomDateInput;

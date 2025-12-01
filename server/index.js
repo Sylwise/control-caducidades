@@ -104,7 +104,7 @@ if (process.env.NODE_ENV === "production") {
 // Configurar rate limiter
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // Límite de 100 solicitudes por ventana por IP
+  max: 1000, // Límite de 1000 solicitudes por ventana por IP
   standardHeaders: true,
   legacyHeaders: false,
   message: {

@@ -201,7 +201,7 @@ const ProductList = () => {
       error={error}
       onRetry={loadAllProducts}
     >
-      <div className="max-w-md mx-auto">
+      <div className="max-w-md md:max-w-xl mx-auto">
         {/* Note: ToastContainer is kept here for local feedback. 
             Ideally should be global but we lack a ToastContext. */}
         {/* <ToastContainer

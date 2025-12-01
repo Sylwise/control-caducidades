@@ -78,7 +78,7 @@ const Login = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-[#1d5030] font-['Noto Sans'] mb-2 select-none">
-            Control de Caducidades
+            Gestión Operativa
           </h1>
           <p className="text-gray-600 select-none">
             Inicia sesión para continuar

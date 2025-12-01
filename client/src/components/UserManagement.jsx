@@ -720,9 +720,9 @@ const UserManagement = ({
                 <div
                   key={user._id}
                   id={`user-${user._id}`}
-                  className={`p-3 bg-white border border-gray-200 rounded-lg
+                  className={`p-3 bg-white border border-gray-300/50 rounded-lg shadow hover:shadow-md
                     flex items-center justify-between gap-4
-                    hover:border-[#1d5030]/20 transition-colors
+                    hover:border-gray-300 transition-all
                     ${selectedUserId === user._id ? "bg-gray-50" : ""} 
                     ${lastCreatedUserId === user._id ? "animate-highlight bg-[#1d5030]/5" : ""}
                     select-none`}

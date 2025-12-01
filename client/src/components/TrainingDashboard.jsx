@@ -4,6 +4,7 @@ import { Users, Plus, GraduationCap } from 'lucide-react';
 import useEmployees from '../hooks/useEmployees';
 import EmployeeCard from './EmployeeCard';
 import CreateEmployeeModal from './CreateEmployeeModal';
+import DeleteConfirmationModal from './DeleteConfirmationModal';
 import { useOutletContext } from 'react-router-dom';
 
 const TrainingDashboard = () => {
@@ -31,6 +32,8 @@ const TrainingDashboardContent = () => {
   const { user: currentUser } = useContext(AuthContext);
   const { isCreateEmployeeModalOpen, setIsCreateEmployeeModalOpen } = useOutletContext();
   const { employees, loading, error, loadEmployees, createEmployee, deleteEmployee } = useEmployees();
+  const [employeeToDelete, setEmployeeToDelete] = useState(null);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
 
   useEffect(() => {
     loadEmployees();
@@ -43,16 +46,25 @@ const TrainingDashboardContent = () => {
     });
   };
 
-  const handleDeleteEmployee = async (employee) => {
-    if (window.confirm(`¿Estás seguro de eliminar a ${employee.nombre}?`)) {
-      await deleteEmployee(employee._id);
+  const handleDeleteClick = (employee) => {
+    setEmployeeToDelete(employee);
+  };
+
+  const handleCardSelect = (id) => {
+    setSelectedEmployeeId(prev => prev === id ? null : id);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (employeeToDelete) {
+      await deleteEmployee(employeeToDelete._id);
+      setEmployeeToDelete(null);
     }
   };
 
   const canManage = currentUser?.role === 'admin' || currentUser?.role === 'supervisor';
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen" onClick={() => setSelectedEmployeeId(null)}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* Header Actions */}
         {/* Header Actions - Removed as it's now in HeaderSection */}
@@ -77,7 +89,9 @@ const TrainingDashboardContent = () => {
               <EmployeeCard
                 key={employee._id}
                 employee={employee}
-                onDelete={canManage ? handleDeleteEmployee : undefined}
+                onDelete={canManage ? handleDeleteClick : undefined}
+                isSelected={selectedEmployeeId === employee._id}
+                onSelect={() => handleCardSelect(employee._id)}
               />
             ))}
             
@@ -86,7 +100,7 @@ const TrainingDashboardContent = () => {
                 <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6">
                   <Users className="h-12 w-12 text-gray-400" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">No hay empleados registrados</h3>
+                <h3 className="text-xl font-bold text-[#1d5030] mb-2">No hay empleados registrados</h3>
                 <p className="text-gray-500 text-center max-w-md mb-8">
                   Comienza añadiendo a los miembros de tu equipo para realizar un seguimiento de su formación y competencias.
                 </p>
@@ -109,6 +123,15 @@ const TrainingDashboardContent = () => {
           isOpen={isCreateEmployeeModalOpen}
           onClose={() => setIsCreateEmployeeModalOpen(false)}
           onCreate={handleCreateEmployee}
+        />
+
+        <DeleteConfirmationModal
+          isOpen={!!employeeToDelete}
+          onClose={() => setEmployeeToDelete(null)}
+          onConfirm={handleConfirmDelete}
+          title="Eliminar Empleado"
+          message="¿Estás seguro de que quieres eliminar a este empleado del sistema?"
+          itemName={employeeToDelete?.nombre}
         />
       </div>
     </div>
