@@ -1,6 +1,7 @@
 import { memo } from "react";
 import PropTypes from "prop-types";
 import CategorySection from "./CategorySection";
+import { Search, ClipboardList } from "lucide-react";
 
 const ProductListContainer = memo(({
   filteredProducts,
@@ -20,15 +21,36 @@ const ProductListContainer = memo(({
 
   if (!hasProducts) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-500 text-lg px-4 break-words">
-          {searchTerm
-            ? `No se encontraron productos que coincidan con "${searchTerm.slice(
-                0,
-                15
-              )}"`
-            : "Selecciona los artículos sin clasificar para gestionar sus caducidades."}
-        </p>
+      <div className="flex flex-col items-center justify-center py-16 px-4 text-center space-y-4">
+        {searchTerm ? (
+          <>
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+              <Search className="w-8 h-8 text-gray-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                No se encontraron resultados
+              </h3>
+              <p className="text-gray-500 max-w-xs mx-auto">
+                No hay productos que coincidan con "{searchTerm.slice(0, 20)}{searchTerm.length > 20 ? '...' : ''}"
+              </p>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="w-16 h-16 bg-[#1d5030]/10 rounded-full flex items-center justify-center">
+              <ClipboardList className="w-8 h-8 text-[#1d5030]" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                Lista de caducidades vacía
+              </h3>
+              <p className="text-gray-500 max-w-xs mx-auto">
+                Selecciona los artículos en <span className="font-medium text-[#1d5030]">"Sin Clasificar"</span> para comenzar a gestionar sus fechas.
+              </p>
+            </div>
+          </>
+        )}
       </div>
     );
   }

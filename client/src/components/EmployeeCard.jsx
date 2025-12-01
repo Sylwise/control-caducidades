@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { Trash2, Calendar, ChevronRight, Utensils, Store, Sun, Moon } from 'lucide-react';
 import { calculateEmployeeProgress } from '../utils/progressCalculator';
@@ -93,12 +94,12 @@ const EmployeeCard = ({ employee, onDelete }) => {
   // Generate a consistent color based on name
   const getAvatarColor = (name) => {
     const colors = [
-      'bg-blue-100 text-blue-700',
-      'bg-green-100 text-green-700',
-      'bg-purple-100 text-purple-700',
-      'bg-yellow-100 text-yellow-700',
-      'bg-pink-100 text-pink-700',
-      'bg-indigo-100 text-indigo-700'
+      'bg-[#1d5030]/10 text-[#1d5030]',
+      'bg-[#c17817]/10 text-[#c17817]',
+      'bg-gray-100 text-gray-700',
+      'bg-[#1d5030]/20 text-[#1d5030]',
+      'bg-[#c17817]/20 text-[#c17817]',
+      'bg-gray-200 text-gray-800'
     ];
     let hash = 0;
     for (let i = 0; i < name.length; i++) {
@@ -181,10 +182,10 @@ const EmployeeCard = ({ employee, onDelete }) => {
 
       {/* Footer */}
       <div className="bg-gray-50 px-4 py-2.5 border-t border-gray-100 mt-auto">
-        <button className="w-full flex items-center justify-center gap-1.5 text-xs font-medium text-[#1d5030] hover:text-[#153a23] transition-colors group/btn">
+        <Link to={`/training/${employee._id}`} className="w-full flex items-center justify-center gap-1.5 text-xs font-medium text-[#1d5030] hover:text-[#153a23] transition-colors group/btn">
           Ver Ficha Completa
           <ChevronRight size={14} className="transition-transform group-hover/btn:translate-x-1" />
-        </button>
+        </Link>
       </div>
     </div>
   );

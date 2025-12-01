@@ -1,4 +1,4 @@
-import { LogOut, Users, Package, CloudOff, Store, GraduationCap } from "lucide-react";
+import { LogOut, Users, Package, CloudOff, Store, GraduationCap, Plus } from "lucide-react";
 import PropTypes from "prop-types";
 import { useSyncContext } from "../hooks/useSyncContext";
 
@@ -13,6 +13,8 @@ const HeaderSection = ({
   onRestaurantManagementClick,
   activeModule,
   onModuleChange,
+  onAddEmployeeClick,
+  showAddEmployeeButton,
 }) => {
   const { pendingChanges } = useSyncContext();
 
@@ -143,6 +145,15 @@ const HeaderSection = ({
             </button>
           )}
         </div>
+        {activeModule === 'training' && showAddEmployeeButton && (
+          <button
+            onClick={onAddEmployeeClick}
+            className="flex items-center gap-2 px-4 py-2 mt-2 text-sm font-medium text-white bg-[#1d5030] hover:bg-[#153a23] rounded-lg transition-colors shadow-sm"
+          >
+            <Plus className="w-4 h-4" />
+            Añadir Empleado
+          </button>
+        )}
         {user?.restaurante?.nombre && (
           <span className="text-sm font-medium text-gray-500 select-none">
             {user.restaurante.nombre}
@@ -170,6 +181,8 @@ HeaderSection.propTypes = {
   onRestaurantManagementClick: PropTypes.func,
   activeModule: PropTypes.string,
   onModuleChange: PropTypes.func,
+  onAddEmployeeClick: PropTypes.func,
+  showAddEmployeeButton: PropTypes.bool,
 };
 
 export default HeaderSection;

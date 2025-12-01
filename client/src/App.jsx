@@ -9,6 +9,7 @@ import ProductList from "./components/ProductList";
 import Login from "./components/Login";
 import MainLayout from "./components/MainLayout";
 import TrainingDashboard from "./components/TrainingDashboard";
+import EmployeeDetail from "./components/EmployeeDetail";
 import AuthProvider from "./contexts/providers/AuthProvider";
 import { SocketProvider } from "./contexts/providers/SocketProvider";
 import { SyncProvider } from "./contexts/providers/SyncProvider";
@@ -48,6 +49,7 @@ const App = () => {
                 <Route index element={<Navigate to="/inventory" replace />} />
                 <Route path="inventory" element={<ProductList />} />
                 <Route path="training" element={<TrainingDashboard />} />
+                <Route path="training/:employeeId" element={<EmployeeDetail />} />
               </Route>
             </Routes>
           </Router>

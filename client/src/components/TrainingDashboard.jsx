@@ -29,8 +29,8 @@ import AuthContext from '../contexts/AuthContext';
 
 const TrainingDashboardContent = () => {
   const { user: currentUser } = useContext(AuthContext);
+  const { isCreateEmployeeModalOpen, setIsCreateEmployeeModalOpen } = useOutletContext();
   const { employees, loading, error, loadEmployees, createEmployee, deleteEmployee } = useEmployees();
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   useEffect(() => {
     loadEmployees();
@@ -55,17 +55,7 @@ const TrainingDashboardContent = () => {
     <div className="min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* Header Actions */}
-        {canManage && (
-          <div className="flex justify-end pb-2">
-            <button
-              onClick={() => setIsCreateModalOpen(true)}
-              className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-[#1d5030] hover:bg-[#153a23] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1d5030] transition-all transform hover:scale-105"
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              Añadir Empleado
-            </button>
-          </div>
-        )}
+        {/* Header Actions - Removed as it's now in HeaderSection */}
 
         {/* Content */}
         {loading && employees.length === 0 ? (
@@ -102,7 +92,7 @@ const TrainingDashboardContent = () => {
                 </p>
                 {canManage && (
                   <button
-                    onClick={() => setIsCreateModalOpen(true)}
+                    onClick={() => setIsCreateEmployeeModalOpen(true)}
                     className="inline-flex items-center px-6 py-3 border border-transparent shadow-sm text-base font-medium rounded-lg text-white bg-[#1d5030] hover:bg-[#153a23] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1d5030] transition-all"
                   >
                     <Plus className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
@@ -116,8 +106,8 @@ const TrainingDashboardContent = () => {
 
         {/* Modal */}
         <CreateEmployeeModal
-          isOpen={isCreateModalOpen}
-          onClose={() => setIsCreateModalOpen(false)}
+          isOpen={isCreateEmployeeModalOpen}
+          onClose={() => setIsCreateEmployeeModalOpen(false)}
           onCreate={handleCreateEmployee}
         />
       </div>

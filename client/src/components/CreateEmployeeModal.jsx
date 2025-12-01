@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import { UserPlus, Calendar, User } from 'lucide-react';
+import { Plus, RefreshCw, AlertCircle } from 'lucide-react';
 import ModalContainer from './ModalContainer';
+import CustomDateInput from './CustomDateInput';
 
 const CreateEmployeeModal = ({ isOpen, onClose, onCreate }) => {
   const [formData, setFormData] = useState({
@@ -9,95 +10,120 @@ const CreateEmployeeModal = ({ isOpen, onClose, onCreate }) => {
     fechaEntrada: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.nombre || !formData.fechaEntrada) {
+      setError('Por favor completa todos los campos');
+      return;
+    }
+
     setIsSubmitting(true);
+    setError('');
     try {
       await onCreate(formData);
-      setFormData({ nombre: '', fechaEntrada: '' }); // Reset form
+      setFormData({ nombre: '', fechaEntrada: '' });
       onClose();
-    } catch (error) {
-      console.error('Error creating employee:', error);
+    } catch (err) {
+      setError('Error al crear empleado');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+  const title = (
+    <div className="text-[#2d3748]">
+      <span className="font-medium">Añadir Nuevo</span>
+      <span className="block text-[#1d5030] font-semibold mt-1">
+        Empleado
+      </span>
+    </div>
+  );
 
   return (
     <ModalContainer
       isOpen={isOpen}
-      isClosing={false} // Simple handling for now
       onClose={onClose}
-      title={
-        <div className="flex items-center gap-2">
-          <UserPlus size={20} />
-          <span>Añadir Empleado</span>
-        </div>
-      }
+      title={title}
     >
-      <form onSubmit={handleSubmit} className="p-4 space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Nombre Completo
-          </label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <User size={16} className="text-gray-400" />
+      <div className="flex flex-col h-full">
+        <div className="flex-1 p-5 space-y-6">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2 text-sm">
+              <AlertCircle className="w-4 h-4" />
+              {error}
             </div>
-            <input
-              type="text"
-              name="nombre"
-              required
-              value={formData.nombre}
-              onChange={handleChange}
-              className="pl-10 w-full rounded-md border-gray-300 shadow-sm focus:border-[#1d5030] focus:ring focus:ring-[#1d5030]/20 py-2 border"
-              placeholder="Ej. Juan Pérez"
-            />
+          )}
+
+          <div className="space-y-4">
+            {/* Nombre Input - Styled like CustomDateInput */}
+            <div className="relative">
+              <label className="block text-sm font-medium text-gray-500 mb-2">
+                Nombre del Empleado
+              </label>
+              <input
+                type="text"
+                value={formData.nombre}
+                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                placeholder="Ej. Juan Pérez"
+                className="w-full py-2.5 px-4 rounded-lg border border-gray-300 
+                  text-gray-900 placeholder-gray-400
+                  focus:outline-none focus:ring-2 focus:ring-[#1d5030]/50 focus:border-transparent
+                  transition-all duration-200 shadow-sm hover:shadow-md"
+              />
+            </div>
+
+            {/* Fecha Entrada - Using CustomDateInput */}
+            <div className="relative">
+              <h3 className="text-sm font-medium text-gray-500 mb-2">
+                Fecha de Entrada
+              </h3>
+              <CustomDateInput
+                label="Seleccionar fecha"
+                value={formData.fechaEntrada}
+                onChange={(value) => setFormData({ ...formData, fechaEntrada: value })}
+                className="w-full py-2.5 px-4 rounded-lg transition-all duration-200 font-medium text-sm select-none flex items-center justify-between shadow-sm hover:shadow-md"
+              />
+            </div>
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Fecha de Entrada
-          </label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Calendar size={16} className="text-gray-400" />
-            </div>
-            <input
-              type="date"
-              name="fechaEntrada"
-              required
-              value={formData.fechaEntrada}
-              onChange={handleChange}
-              className="pl-10 w-full rounded-md border-gray-300 shadow-sm focus:border-[#1d5030] focus:ring focus:ring-[#1d5030]/20 py-2 border"
-            />
-          </div>
-        </div>
-
-        <div className="pt-4 flex justify-end gap-3">
+        <div className="flex justify-end gap-3 p-5 pt-3 border-t border-gray-200">
           <button
-            type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1d5030]"
+            className="min-h-[48px] px-5 text-sm font-medium 
+              text-[#1d5030] border border-[#1d5030]/30
+              bg-white hover:bg-[#1d5030]/5
+              rounded-md transition-colors duration-200
+              shadow-sm"
           >
             Cancelar
           </button>
           <button
-            type="submit"
+            onClick={handleSubmit}
             disabled={isSubmitting}
-            className="px-4 py-2 text-sm font-medium text-white bg-[#1d5030] border border-transparent rounded-md hover:bg-[#1d5030]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1d5030] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="min-h-[48px] px-5 text-sm font-medium text-white
+              bg-[#1d5030] hover:bg-[#1d5030]/90
+              rounded-md transition-colors duration-200
+              disabled:opacity-50 disabled:cursor-not-allowed
+              flex items-center gap-2
+              shadow-sm"
           >
-            {isSubmitting ? 'Guardando...' : 'Guardar Empleado'}
+            {isSubmitting ? (
+              <>
+                <RefreshCw className="w-5 h-5 animate-spin" />
+                Creando...
+              </>
+            ) : (
+              <>
+                <Plus className="w-5 h-5" />
+                Crear Empleado
+              </>
+            )}
           </button>
         </div>
-      </form>
+      </div>
     </ModalContainer>
   );
 };

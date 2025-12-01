@@ -36,6 +36,7 @@ const MainLayout = () => {
   } = useModalManagement();
 
   const [isRestaurantManagementOpen, setIsRestaurantManagementOpen] = useState(false);
+  const [isCreateEmployeeModalOpen, setIsCreateEmployeeModalOpen] = useState(false);
 
   // Product Management (for Header Stats and Expiring Modal)
   const { products, loadAllProducts } = useProductManagement((message, type) =>
@@ -93,10 +94,22 @@ const MainLayout = () => {
             onRestaurantManagementClick={() => setIsRestaurantManagementOpen(true)}
             activeModule={activeModule}
             onModuleChange={handleModuleChange}
+            showAddEmployeeButton={activeModule === 'training' && (user?.role === 'admin' || user?.role === 'supervisor')}
+            onAddEmployeeClick={() => {
+              if (location.pathname !== '/training') {
+                navigate('/training');
+              }
+              setIsCreateEmployeeModalOpen(true);
+            }}
           />
 
           <main>
-            <Outlet context={{ products, loadAllProducts }} />
+            <Outlet context={{ 
+              products, 
+              loadAllProducts,
+              isCreateEmployeeModalOpen,
+              setIsCreateEmployeeModalOpen 
+            }} />
           </main>
         </div>
       </div>
