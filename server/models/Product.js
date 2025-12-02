@@ -33,9 +33,7 @@ const productStatusSchema = new mongoose.Schema(
       ],
       default: [],
     },
-    // cajaUnica y hayUnicaCajaActual ya no son necesarios como inputs manuales,
-    // pero los mantenemos por compatibilidad o para lógica interna si se requiere,
-    // aunque la lógica principal ahora se basará en contadores.
+    // Flags de compatibilidad o lógica interna
     cajaUnica: {
       type: Boolean,
       default: false,
@@ -63,65 +61,51 @@ const productStatusSchema = new mongoose.Schema(
 );
 
 // Índices para optimización multi-tenant
-productStatusSchema.index({ restaurante: 1 }); // Búsquedas generales por restaurante
-productStatusSchema.index({ restaurante: 1, estado: 1 }); // Filtrado por estado dentro de un restaurante
-productStatusSchema.index({ restaurante: 1, producto: 1 }, { unique: true }); // Unicidad y búsquedas rápidas por producto
+productStatusSchema.index({ restaurante: 1 });
+productStatusSchema.index({ restaurante: 1, estado: 1 });
+productStatusSchema.index({ restaurante: 1, producto: 1 }, { unique: true });
 
+// Middleware pre-save: Lógica de negocio para determinar el estado
 productStatusSchema.pre("save", function (next) {
-  console.log("Pre-save middleware ejecutándose con datos:", {
-    fechaFrente: this.fechaFrente,
-    fechaAlmacen: this.fechaAlmacen,
-    cajasAlmacen: this.cajasAlmacen,
-    fechasAlmacen: this.fechasAlmacen,
-    estado: this.estado,
-  });
-
   try {
-    // Si el estado es "sin-clasificar" y no hay fechas, mantenerlo así
+    // 1. Caso base: Sin clasificar y sin fechas
     if (this.estado === "sin-clasificar" && !this.fechaFrente && !this.fechaAlmacen) {
-      console.log("Manteniendo estado: sin-clasificar (nuevo producto)");
       return next();
     }
 
-    // Si no hay fecha de almacén, es "frente-agota"
+    // 2. Si no hay fecha de almacén -> frente-agota
     if (!this.fechaAlmacen) {
-      console.log("Estableciendo estado: frente-agota (sin fecha almacén)");
       this.estado = "frente-agota";
       return next();
     }
 
-    // Convertir fechas a timestamps para comparación
+    // Normalización de fechas para comparación
     const frontDate = new Date(this.fechaFrente).setHours(0, 0, 0, 0);
     const storageDate = new Date(this.fechaAlmacen).setHours(0, 0, 0, 0);
 
-    // Si las fechas son diferentes, es "frente-cambia"
+    // 3. Si las fechas son diferentes -> frente-cambia
     if (frontDate !== storageDate) {
-      console.log("Estableciendo estado: frente-cambia (fechas diferentes)");
       this.estado = "frente-cambia";
       return next();
     }
 
-    // Si las fechas coinciden
+    // 4. Si las fechas coinciden (Lógica basada en CAJAS)
     if (frontDate === storageDate) {
-      // Lógica basada en CAJAS
-      // Si solo queda 1 caja en almacén (la actual) y NO hay más fechas detrás -> abierto-agota
-      if (this.cajasAlmacen === 1 && (!this.fechasAlmacen || this.fechasAlmacen.length === 0)) {
-        console.log("Estableciendo estado: abierto-agota (última caja y no hay más fechas)");
+      
+      const hasMoreDates = this.fechasAlmacen && this.fechasAlmacen.length > 0;
+
+      // Caso: Última caja y NO hay más fechas detrás -> abierto-agota
+      if (this.cajasAlmacen === 1 && !hasMoreDates) {
         this.estado = "abierto-agota";
-        this.cajaUnica = true; // Mantener compatibilidad
+        this.cajaUnica = true;
       } 
-      // Si solo queda 1 caja en almacén (la actual) y SÍ hay más fechas detrás -> abierto-cambia
-      else if (this.cajasAlmacen === 1 && this.fechasAlmacen && this.fechasAlmacen.length > 0) {
-        console.log("Estableciendo estado: abierto-cambia (última caja de esta fecha, pero hay más fechas)");
+      // Caso: Última caja de esta fecha, pero SÍ hay más fechas detrás -> abierto-cambia
+      else if (this.cajasAlmacen === 1 && hasMoreDates) {
         this.estado = "abierto-cambia";
-        this.hayUnicaCajaActual = true; // Mantener compatibilidad
+        this.hayUnicaCajaActual = true;
       } 
-      // En cualquier otro caso (más de 1 caja), es sin-clasificar (o el estado por defecto)
-      // Nota: Antes usábamos "sin-clasificar" para esto, pero semánticamente es "tengo stock de sobra"
+      // Caso: Stock suficiente -> sin-clasificar
       else {
-        console.log(
-          "Estableciendo estado: sin-clasificar (fechas iguales, stock suficiente)"
-        );
         this.estado = "sin-clasificar";
         this.cajaUnica = false;
         this.hayUnicaCajaActual = false;
@@ -130,7 +114,7 @@ productStatusSchema.pre("save", function (next) {
 
     next();
   } catch (error) {
-    console.error("Error en pre-save middleware:", error);
+    // TODO: Integrar aquí logger.error(error) cuando sea posible
     next(error);
   }
 });
