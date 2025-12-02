@@ -119,8 +119,8 @@
   },
   {
     "id": "general_frente",
-    "label": "Tareas Generales Frente",
-    "icon": "Store",
+    "label": "Tareas Generales Cocina",
+    "icon": "ChefHat",
     "tasks": [
       { "id": "repo_congelado", "text": "Reponer (congelado, pan)" },
       { "id": "tomate", "text": "Cortar y fechar tomate" },

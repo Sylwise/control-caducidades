@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
 import PropTypes from "prop-types";
 import { X, Calendar, AlertCircle } from "lucide-react";
 import usePreventScroll from "../hooks/usePreventScroll";
