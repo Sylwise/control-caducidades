@@ -92,7 +92,7 @@ const MainLayout = () => {
             onRestaurantManagementClick={() => setIsRestaurantManagementOpen(true)}
             activeModule={activeModule}
             onModuleChange={handleModuleChange}
-            showAddEmployeeButton={activeModule === 'training' && (user?.role === 'admin' || user?.role === 'supervisor')}
+            showAddEmployeeButton={false}
             onAddEmployeeClick={() => {
               if (location.pathname !== '/training') {
                 navigate('/training');

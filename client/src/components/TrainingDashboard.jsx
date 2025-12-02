@@ -5,6 +5,7 @@ import useEmployees from '../hooks/useEmployees';
 import EmployeeCard from './EmployeeCard';
 import CreateEmployeeModal from './CreateEmployeeModal';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
+import OfflineState from './ui/OfflineState';
 import { useOutletContext } from 'react-router-dom';
 
 const TrainingDashboard = () => {
@@ -36,10 +37,26 @@ const TrainingDashboardContent = () => {
   const { employees, loading, error, loadEmployees, createEmployee, deleteEmployee } = useEmployees();
   const [employeeToDelete, setEmployeeToDelete] = useState(null);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
   useEffect(() => {
-    loadEmployees();
-  }, [loadEmployees]);
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isOffline) {
+      loadEmployees();
+    }
+  }, [loadEmployees, isOffline]);
 
   const handleCreateEmployee = async (data) => {
     try {
@@ -76,11 +93,37 @@ const TrainingDashboardContent = () => {
 
   const canManage = currentUser?.role === 'admin' || currentUser?.role === 'supervisor';
 
+  // Early return for Offline State - CRITICAL: Prevents rendering of "Add Employee" button
+  // Early return for Offline State - CRITICAL: Prevents rendering of "Add Employee" button
+  // if (isOffline) {
+  //   return (
+  //     <div className="min-h-screen">
+  //       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  //          <OfflineState />
+  //       </div>
+  //     </div>
+  //   );
+  // }
+
   return (
     <div className="min-h-screen" onClick={() => setSelectedEmployeeId(null)}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        {/* Header Actions */}
-        {/* Header Actions - Removed as it's now in HeaderSection */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-8 space-y-8">
+        {isOffline ? (
+          <OfflineState />
+        ) : (
+          <>
+            {/* Header Actions - Moved here from HeaderSection to control visibility */}
+            <div className="flex flex-col items-center gap-4 mb-4">
+              {canManage && (
+                <button
+                  onClick={() => setIsCreateEmployeeModalOpen(true)}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#1d5030] hover:bg-[#153a23] rounded-lg transition-colors shadow-sm"
+                >
+                  <Plus className="w-4 h-4" />
+                  Añadir Empleado
+                </button>
+              )}
+            </div>
 
         {/* Content */}
         {loading && employees.length === 0 ? (
@@ -146,6 +189,8 @@ const TrainingDashboardContent = () => {
           message="¿Estás seguro de que quieres eliminar a este empleado del sistema?"
           itemName={employeeToDelete?.nombre}
         />
+          </>
+        )}
       </div>
     </div>
   );

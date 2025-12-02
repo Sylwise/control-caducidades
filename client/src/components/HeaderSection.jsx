@@ -19,7 +19,7 @@ const HeaderSection = ({
   const { pendingChanges } = useSyncContext();
 
   return (
-    <div className="flex flex-col items-center justify-center gap-1 mb-8">
+    <div className="flex flex-col items-center justify-center gap-1 mb-4">
       {/* Información del usuario y botones */}
       <div className="flex items-center gap-3 text-sm text-gray-500 font-medium mb-3">
         <div className="flex items-center gap-2">
@@ -147,15 +147,7 @@ const HeaderSection = ({
             </button>
           )}
         </div>
-        {activeModule === 'training' && showAddEmployeeButton && (
-          <button
-            onClick={onAddEmployeeClick}
-            className="flex items-center gap-2 px-4 py-2 mt-2 text-sm font-medium text-white bg-[#1d5030] hover:bg-[#153a23] rounded-lg transition-colors shadow-sm"
-          >
-            <Plus className="w-4 h-4" />
-            Añadir Empleado
-          </button>
-        )}
+        {/* Add Employee button moved to TrainingDashboard */}
         {user?.restaurante?.nombre && (
           <span className="text-sm font-medium text-gray-500 select-none">
             {user.restaurante.nombre}
