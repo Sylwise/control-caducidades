@@ -23,6 +23,12 @@ function SearchBar({
               onSearchChange(value);
             }
           }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.target.blur();
+            }
+          }}
+          enterKeyHint="search"
           className="w-full h-12 pl-10 pr-12 rounded-lg border border-gray-300 
             focus:outline-none focus:ring-2 focus:ring-[#1d5030]/50 focus:border-transparent
             font-['Noto Sans'] text-sm font-medium placeholder:text-gray-400

@@ -436,6 +436,12 @@ const CatalogManagement = ({ isOpen, onClose }) => {
                       setSearchTerm(value);
                     }
                   }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.target.blur();
+                    }
+                  }}
+                  enterKeyHint="search"
                   className="w-full pl-10 pr-12 h-12 border border-gray-300 rounded-md
                     focus:outline-none focus:ring-2 focus:ring-[#1d5030]/50 focus:border-transparent
                     text-gray-900 placeholder-gray-500 select-none"
