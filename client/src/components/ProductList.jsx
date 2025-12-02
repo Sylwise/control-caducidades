@@ -16,6 +16,8 @@ import { useSocket } from "../hooks/useSocket";
 import usePreventScroll from "../hooks/usePreventScroll";
 import useToasts from "../hooks/useToasts";
 
+import ToastContainer from "./ToastContainer";
+
 const ProductList = () => {
   // Use context from MainLayout if available, or fallback to local fetching (though MainLayout should provide it)
   // Actually, for simplicity and to ensure full functionality of useProductManagement hooks (like update/delete),
@@ -23,7 +25,7 @@ const ProductList = () => {
   // Ideally, we would pass all handlers from MainLayout, but that's a larger refactor.
   
   const { socket } = useSocket();
-  const { addToast } = useToasts(); // We use local toast hook, but MainLayout has its own container.
+  const { addToast, toasts, removeToast } = useToasts(); // We use local toast hook, but MainLayout has its own container.
   // Wait, if MainLayout has ToastContainer, we should probably use that one?
   // But useToasts is a hook, it doesn't share state unless via Context.
   // The app doesn't seem to have a ToastContext.
@@ -204,11 +206,11 @@ const ProductList = () => {
       <div className="max-w-md md:max-w-xl mx-auto">
         {/* Note: ToastContainer is kept here for local feedback. 
             Ideally should be global but we lack a ToastContext. */}
-        {/* <ToastContainer
+        <ToastContainer
           toasts={toasts}
           removeToast={removeToast}
           onUndo={handleUndoDelete}
-        /> */}
+        />
         {/* Actually, let's try to rely on MainLayout's ToastContainer? 
             No, we can't emit to it. 
             So we MUST render a ToastContainer here if we want to see toasts from this component.

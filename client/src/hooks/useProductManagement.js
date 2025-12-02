@@ -227,6 +227,7 @@ export const useProductManagement = (addToast) => {
         estado: productToDelete.estado,
         fechaFrente: productToDelete.fechaFrente,
         fechaAlmacen: productToDelete.fechaAlmacen,
+        cajasAlmacen: productToDelete.cajasAlmacen || 0,
         fechasAlmacen: productToDelete.fechasAlmacen ? [...productToDelete.fechasAlmacen] : [],
         cajaUnica: Boolean(productToDelete.cajaUnica),
         hayUnicaCajaActual: Boolean(productToDelete.hayUnicaCajaActual),
@@ -274,14 +275,16 @@ export const useProductManagement = (addToast) => {
       const updateData = {
         fechaFrente: productToRestore.fechaFrente,
         fechaAlmacen: productToRestore.fechaAlmacen,
+        cajasAlmacen: productToRestore.cajasAlmacen,
         fechasAlmacen: productToRestore.fechasAlmacen || [],
         cajaUnica: productToRestore.cajaUnica || false,
         hayUnicaCajaActual: productToRestore.hayUnicaCajaActual || false,
         estado: productToRestore.estado,
       };
 
-      await updateProductStatus(productId, updateData);
-      await loadAllProducts();
+      const restoredProduct = await updateProductStatus(productId, updateData);
+      updateProductInState(restoredProduct);
+      // await loadAllProducts();
 
       // Limpiar del historial una vez restaurado
       removeFromHistory(productId);
