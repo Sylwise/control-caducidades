@@ -18,7 +18,9 @@ import {
   User,
   Calendar,
   Award,
-  ChefHat
+  ChefHat,
+  UtensilsCrossed,
+  Leaf
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import api from '../services/api';
@@ -40,7 +42,9 @@ const ICON_MAP = {
   Store,
   Sunrise,
   Moon,
-  ChefHat
+  ChefHat,
+  UtensilsCrossed,
+  Leaf
 };
 
 const EmployeeDetail = () => {

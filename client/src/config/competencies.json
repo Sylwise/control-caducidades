@@ -33,7 +33,7 @@
   {
     "id": "condimentar",
     "label": "Condimentar",
-    "icon": "Sandwich",
+    "icon": "Leaf",
     "tasks": [
       { "id": "condimentos", "text": "Conoce condimentos y guardado" },
       { "id": "salsas", "text": "Conoce salsas y guardado" },
@@ -47,7 +47,7 @@
   {
     "id": "patatas",
     "label": "Patatas",
-    "icon": "Thermometer",
+    "icon": "UtensilsCrossed",
     "tasks": [
       { "id": "freir_patatas", "text": "Meter a freír (tipos, tamaños)" },
       { "id": "rotar", "text": "Rotar (caducidad, tinas)" },
