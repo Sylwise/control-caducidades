@@ -3,6 +3,33 @@ import PropTypes from "prop-types";
 import { X, Calendar, AlertCircle } from "lucide-react";
 import usePreventScroll from "../hooks/usePreventScroll";
 
+const KeypadButton = memo(({ value, label, onClick, variant = "primary", disabled = false }) => (
+  <button
+    onClick={(e) => onClick(e, value)}
+    disabled={disabled}
+    className={`
+      min-h-[56px] flex items-center justify-center
+      ${
+        variant === "secondary"
+          ? "text-gray-600 bg-gray-100 active:bg-gray-300"
+          : "text-gray-700 bg-gray-50 active:bg-gray-200"
+      }
+      ${typeof value === "number" ? "text-2xl" : "text-lg"}
+      font-medium rounded-lg
+      border border-gray-100
+      transition-colors duration-75
+      active:scale-[0.98]
+      focus:outline-none
+      disabled:opacity-50 disabled:cursor-not-allowed
+      select-none touch-manipulation
+    `}
+  >
+    {label}
+  </button>
+));
+
+KeypadButton.displayName = "KeypadButton";
+
 const CustomDateInput = ({
   label,
   value,
@@ -20,7 +47,6 @@ const CustomDateInput = ({
   const [isOpen, setIsOpen] = useState(false);
   const [error, setError] = useState("");
   const modalRef = useRef(null);
-  const keypadRef = useRef(null);
 
   // Default ranges if not provided
   const effectiveMinDate = useMemo(() => {
@@ -59,7 +85,7 @@ const CustomDateInput = ({
       if (
         modalRef.current &&
         !modalRef.current.contains(event.target) &&
-        event.target.closest("[data-modal-backdrop]") // Solo cerrar si el click fue en el backdrop
+        event.target.closest("[data-modal-backdrop]")
       ) {
         setIsOpen(false);
         if (!value && onCancel) {
@@ -77,44 +103,29 @@ const CustomDateInput = ({
   // Validar fecha y rango
   const isValidDate = useCallback((day, month, year) => {
     const date = new Date(year, month - 1, day);
-    const isValidFormat =
+    return (
       date.getDate() === parseInt(day) &&
       date.getMonth() === month - 1 &&
-      date.getFullYear() === parseInt(year);
-
-    return isValidFormat;
+      date.getFullYear() === parseInt(year)
+    );
   }, []);
 
   const isDateInRange = useCallback((day, month, year) => {
     const inputDate = new Date(year, month - 1, day);
-    // Set time to check only date part if needed, but effective dates usually handle this.
-    // However, inputDate defaults to 00:00:00.
-    
-    // Normalize effective dates for comparison to avoid time issues if passed with time
     const min = new Date(effectiveMinDate);
     min.setHours(0, 0, 0, 0);
-    
     const max = new Date(effectiveMaxDate);
     max.setHours(23, 59, 59, 999);
-
     return inputDate >= min && inputDate <= max;
   }, [effectiveMinDate, effectiveMaxDate]);
 
-  // Formatear entrada mientras se escribe
+  // Formatear entrada
   const formatInput = useCallback((input) => {
     const numbers = input.replace(/\D/g, "");
     let formatted = "";
-
-    if (numbers.length > 0) {
-      formatted += numbers.substring(0, 2);
-    }
-    if (numbers.length > 2) {
-      formatted += "/" + numbers.substring(2, 4);
-    }
-    if (numbers.length > 4) {
-      formatted += "/" + numbers.substring(4, 8);
-    }
-
+    if (numbers.length > 0) formatted += numbers.substring(0, 2);
+    if (numbers.length > 2) formatted += "/" + numbers.substring(2, 4);
+    if (numbers.length > 4) formatted += "/" + numbers.substring(4, 8);
     return formatted;
   }, []);
 
@@ -132,23 +143,16 @@ const CustomDateInput = ({
         if (!isDateInRange(day, month, year)) {
           const min = new Date(effectiveMinDate);
           const max = new Date(effectiveMaxDate);
-          
           if (new Date(year, month - 1, day) > max) {
-             setError(
-              `La fecha no puede ser posterior a ${max.toLocaleDateString('es-ES')}`
-            );
+             setError(`La fecha no puede ser posterior a ${max.toLocaleDateString('es-ES')}`);
           } else {
-             setError(
-              `La fecha no puede ser anterior a ${min.toLocaleDateString('es-ES')}`
-            );
+             setError(`La fecha no puede ser anterior a ${min.toLocaleDateString('es-ES')}`);
           }
           return;
         }
 
         setError("");
-        const formattedDate = `${year}-${month
-          .toString()
-          .padStart(2, "0")}-${day.toString().padStart(2, "0")}`;
+        const formattedDate = `${year}-${month.toString().padStart(2, "0")}-${day.toString().padStart(2, "0")}`;
         onChange(formattedDate);
         setIsOpen(false);
       }
@@ -156,7 +160,7 @@ const CustomDateInput = ({
     [isValidDate, isDateInRange, onChange, effectiveMinDate, effectiveMaxDate]
   );
 
-  // Manejar entrada de teclado
+  // Manejar entrada de teclado físico
   const handleInputChange = useCallback(
     (e) => {
       const formatted = formatInput(e.target.value);
@@ -170,148 +174,79 @@ const CustomDateInput = ({
     [formatInput, validateAndUpdate]
   );
 
-  // Debounce function
-  const debounce = (func, wait) => {
-    let timeout;
-    return (...args) => {
-      clearTimeout(timeout);
-      timeout = setTimeout(() => func(...args), wait);
-    };
-  };
+  // Manejar clic en número del teclado (OPTIMIZADO: Sin debounce, lógica directa)
+  const handleKeypadClick = useCallback((e, num) => {
+    e.stopPropagation();
+    
+    setInputValue(prev => {
+      // Si ya está lleno, reiniciar con el nuevo número
+      if (prev.length === 10) {
+        setError("");
+        return num.toString();
+      }
 
-  // Manejar clic en número del teclado con debounce
-  const debouncedKeypadClick = useMemo(
-    () =>
-      debounce(
-        (
-          e,
-          num,
-          currentInputValue,
-          onSetInputValue,
-          onSetError,
-          onValidateAndUpdate
-        ) => {
-          e.stopPropagation();
+      // Añadir número y formatear
+      const rawNumbers = prev.replace(/\D/g, "") + num;
+      const newValue = formatInput(rawNumbers);
+      
+      // Validar si está completo
+      if (newValue.length === 10) {
+        // Necesitamos validar asíncronamente o en un efecto, pero para inmediatez visual
+        // actualizamos el estado y dejamos que un efecto o la siguiente renderización maneje la validación final
+        // OJO: validateAndUpdate depende de inputValue, pero aquí tenemos el newValue.
+        // Llamamos directamente a validateAndUpdate con el nuevo valor.
+        // Usamos setTimeout para permitir que el renderizado de UI ocurra primero (snappy feel)
+        setTimeout(() => validateAndUpdate(newValue), 0);
+      }
+      
+      return newValue;
+    });
+  }, [formatInput, validateAndUpdate]);
 
-          // Si ya hay una fecha completa (10 caracteres), borrar todo y empezar de nuevo
-          if (currentInputValue.length === 10) {
-            onSetInputValue(num.toString());
-            onSetError("");
-            return;
-          }
-
-          if (currentInputValue.length < 10) {
-            const newValue = formatInput(
-              currentInputValue.replace(/\D/g, "") + num
-            );
-            onSetInputValue(newValue);
-            if (newValue.length === 10) {
-              onValidateAndUpdate(newValue);
-            }
-          }
-        },
-        50
-      ),
-    [formatInput]
-  );
-
-  const handleKeypadClick = useCallback(
-    (e, num) => {
-      debouncedKeypadClick(
-        e,
-        num,
-        inputValue,
-        setInputValue,
-        setError,
-        validateAndUpdate
-      );
-    },
-    [debouncedKeypadClick, inputValue, validateAndUpdate]
-  );
-
-  // Manejar borrado
   const handleDelete = useCallback((e) => {
-    e.stopPropagation(); // Evitar que el click se propague
+    e.stopPropagation();
     setInputValue((prev) => {
       const newValue = prev.slice(0, -1);
-      if (newValue.length < 10) {
-        setError("");
-      }
+      if (newValue.length < 10) setError("");
       return newValue;
     });
   }, []);
 
-  // Manejar limpieza
   const handleClear = useCallback((e) => {
-    e.stopPropagation(); // Evitar que el click se propague
+    e.stopPropagation();
     setInputValue("");
     setError("");
   }, []);
 
-  // Memoizar los botones del teclado para evitar re-renders innecesarios
-  const keypadButtons = useMemo(
-    () => [
-      ...Array(9)
-        .fill(null)
-        .map((_, i) => ({
-          value: i + 1,
-          label: (i + 1).toString(),
-          action: handleKeypadClick,
-        })),
-      {
-        value: "clear",
-        label: "C",
-        action: handleClear,
-        variant: "secondary",
-      },
-      {
-        value: 0,
-        label: "0",
-        action: handleKeypadClick,
-      },
-      {
-        value: "delete",
-        label: "←",
-        action: handleDelete,
-        variant: "secondary",
-      },
-    ],
-    [handleKeypadClick, handleClear, handleDelete]
-  );
+  // Configuración de botones memorizada
+  const keypadButtons = useMemo(() => [
+    ...Array(9).fill(null).map((_, i) => ({
+      value: i + 1,
+      label: (i + 1).toString(),
+      action: handleKeypadClick,
+    })),
+    { value: "clear", label: "C", action: handleClear, variant: "secondary" },
+    { value: 0, label: "0", action: handleKeypadClick },
+    { value: "delete", label: "←", action: handleDelete, variant: "secondary" },
+  ], [handleKeypadClick, handleClear, handleDelete]);
 
-  // Manejar entrada de teclado físico
+  // Manejar teclado físico
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (!isOpen) return;
-
-      // Números del 0-9
       if (/^\d$/.test(e.key)) {
         e.preventDefault();
         handleKeypadClick(e, parseInt(e.key));
-      }
-      // Borrar con Backspace o Delete
-      else if (e.key === "Backspace" || e.key === "Delete") {
+      } else if (e.key === "Backspace" || e.key === "Delete") {
         e.preventDefault();
         handleDelete(e);
-      }
-      // Escape: limpiar si hay input, cerrar si no hay
-      else if (e.key === "Escape") {
+      } else if (e.key === "Escape") {
         e.preventDefault();
-        if (inputValue) {
-          handleClear(e);
-        } else {
-          setIsOpen(false);
-        }
+        inputValue ? handleClear(e) : setIsOpen(false);
       }
     };
-
-    if (isOpen) {
-      window.addEventListener("keydown", handleKeyDown);
-    }
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
+    if (isOpen) window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, handleKeypadClick, handleDelete, handleClear, inputValue]);
 
   return (
@@ -325,38 +260,30 @@ const CustomDateInput = ({
           className={`
             flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg w-full
             font-medium text-sm transition-all duration-200
-            ${
-              disabled
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                : "bg-white text-[#2d3748] hover:bg-gray-50 active:bg-gray-100"
+            ${disabled
+              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+              : "bg-white text-[#2d3748] hover:bg-gray-50 active:bg-gray-100"
             }
             border border-gray-200 shadow-sm hover:border-[#1d5030]/20
           `}
         >
           <Calendar className="w-4.5 h-4.5 text-[#1d5030]" />
-          {value ? (
-            <span>{inputValue}</span>
-          ) : (
-            <span className="text-gray-500">Seleccionar {label}</span>
-          )}
+          {value ? <span>{inputValue}</span> : <span className="text-gray-500">Seleccionar {label}</span>}
         </button>
-        {onRemove && ((value && !disabled) ||
-          (!value && showRemoveWhenEmpty)) && (
+        {onRemove && ((value && !disabled) || (!value && showRemoveWhenEmpty)) && (
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               onRemove();
             }}
-            className="p-2.5 text-gray-400 hover:text-gray-600
-              hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <RemoveIcon className="w-4.5 h-4.5" />
           </button>
         )}
       </div>
 
-      {/* Modal con teclado numérico */}
       {isOpen && !disabled && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
           <div
@@ -364,42 +291,30 @@ const CustomDateInput = ({
             className="fixed inset-0 bg-black/50"
             onClick={() => {
               setIsOpen(false);
-              if (!value && onCancel) {
-                onCancel();
-              }
+              if (!value && onCancel) onCancel();
             }}
           />
           <div
             ref={modalRef}
             data-modal-content
-            className="relative bg-white rounded-lg shadow-xl
-              max-w-sm w-full mx-auto z-10 animate-slide-down
-              overflow-hidden"
+            className="relative bg-white rounded-lg shadow-xl max-w-sm w-full mx-auto z-10 animate-slide-down overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-[#2d3748]">
-                Seleccionar {label}
-              </h3>
+              <h3 className="text-lg font-semibold text-[#2d3748]">Seleccionar {label}</h3>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsOpen(false);
-                  if (!value && onCancel) {
-                    onCancel();
-                  }
+                  if (!value && onCancel) onCancel();
                 }}
-                className="p-2 text-gray-400 hover:text-gray-600
-                  hover:bg-gray-100 rounded-full transition-colors"
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Contenido scrolleable */}
             <div className="max-h-[calc(100vh-8rem)] overflow-y-auto">
-              {/* Input y error */}
               <div className="px-4">
                 <div className="flex flex-col items-center space-y-3 py-4">
                   <input
@@ -410,18 +325,10 @@ const CustomDateInput = ({
                     autoComplete="off"
                     inputMode="none"
                     readOnly
-                    className="w-full text-2xl text-center py-4 text-gray-800
-                      rounded-md shadow-sm px-3
-                      border border-gray-300 focus:border-[#1d5030] focus:ring-[#1d5030]
-                      transition-colors duration-200
-                      outline-none select-none pointer-events-none"
+                    className="w-full text-2xl text-center py-4 text-gray-800 rounded-md shadow-sm px-3 border border-gray-300 focus:border-[#1d5030] focus:ring-[#1d5030] transition-colors duration-200 outline-none select-none pointer-events-none"
                   />
                   {error && (
-                    <div
-                      className="w-full bg-red-50 rounded-md px-3 py-2
-                      flex items-center justify-center gap-2
-                      animate-[slideDown_0.2s_ease-out]"
-                    >
+                    <div className="w-full bg-red-50 rounded-md px-3 py-2 flex items-center justify-center gap-2 animate-[slideDown_0.2s_ease-out]">
                       <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
                       <p className="text-base text-red-600">{error}</p>
                     </div>
@@ -429,39 +336,18 @@ const CustomDateInput = ({
                 </div>
               </div>
 
-              {/* Separador */}
               <div className="border-t border-gray-200 my-2" />
 
-              {/* Teclado numérico */}
               <div className="p-4">
-                <div ref={keypadRef} className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   {keypadButtons.map((button) => (
-                    <button
+                    <KeypadButton
                       key={button.value}
-                      onClick={(e) => button.action(e, button.value)}
-                      className={`
-                        min-h-[56px] flex items-center justify-center
-                        ${
-                          button.variant === "secondary"
-                            ? "text-gray-600 bg-gray-100 hover:bg-gray-200 active:bg-gray-300"
-                            : "text-gray-700 bg-gray-50 hover:bg-gray-100 active:bg-gray-200"
-                        }
-                        ${
-                          typeof button.value === "number"
-                            ? "text-2xl"
-                            : "text-lg"
-                        }
-                        font-medium rounded-lg
-                        border border-gray-100
-                        transition-transform duration-100
-                        active:scale-[0.97]
-                        focus:outline-none
-                        disabled:opacity-50 disabled:cursor-not-allowed
-                        select-none
-                      `}
-                    >
-                      {button.label}
-                    </button>
+                      value={button.value}
+                      label={button.label}
+                      onClick={button.action}
+                      variant={button.variant}
+                    />
                   ))}
                 </div>
               </div>
