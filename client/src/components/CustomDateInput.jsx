@@ -185,11 +185,22 @@ const CustomDateInput = ({
         return num.toString();
       }
 
-      // Añadir número y formatear
-      const rawNumbers = prev.replace(/\D/g, "") + num;
+      // Añadir número
+      let rawNumbers = prev.replace(/\D/g, "") + num;
+
+      // DETECCIÓN DE SHORTHAND (6 dígitos)
+      // Si llegamos a 6 números, asumimos formato DDMMYY y expandimos a DDMM20YY
+      if (rawNumbers.length === 6) {
+        const day = rawNumbers.substring(0, 2);
+        const month = rawNumbers.substring(2, 4);
+        const year = rawNumbers.substring(4, 6);
+        rawNumbers = `${day}${month}20${year}`;
+      }
+
+      // Formatear
       const newValue = formatInput(rawNumbers);
       
-      // Validar si está completo
+      // Validar si está completo (ahora será 10 chars si se expandió o si se escribió completo)
       if (newValue.length === 10) {
         // Necesitamos validar asíncronamente o en un efecto, pero para inmediatez visual
         // actualizamos el estado y dejamos que un efecto o la siguiente renderización maneje la validación final
