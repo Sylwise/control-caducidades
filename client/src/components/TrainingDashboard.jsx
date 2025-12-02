@@ -27,9 +27,11 @@ const TrainingDashboard = () => {
 // Inner component to use hooks
 import { useContext } from 'react';
 import AuthContext from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 
 const TrainingDashboardContent = () => {
   const { user: currentUser } = useContext(AuthContext);
+  const { addToast } = useToast();
   const { isCreateEmployeeModalOpen, setIsCreateEmployeeModalOpen } = useOutletContext();
   const { employees, loading, error, loadEmployees, createEmployee, deleteEmployee } = useEmployees();
   const [employeeToDelete, setEmployeeToDelete] = useState(null);
@@ -40,10 +42,16 @@ const TrainingDashboardContent = () => {
   }, [loadEmployees]);
 
   const handleCreateEmployee = async (data) => {
-    await createEmployee({
-      ...data,
-      restaurante: currentUser?.restaurante?._id || currentUser?.restaurante
-    });
+    try {
+      await createEmployee({
+        ...data,
+        restaurante: currentUser?.restaurante?._id || currentUser?.restaurante
+      });
+      addToast("Empleado creado correctamente", "success");
+      setIsCreateEmployeeModalOpen(false);
+    } catch (err) {
+      addToast(err.response?.data?.message || "Error al crear empleado", "error");
+    }
   };
 
   const handleDeleteClick = (employee) => {
@@ -56,8 +64,13 @@ const TrainingDashboardContent = () => {
 
   const handleConfirmDelete = async () => {
     if (employeeToDelete) {
-      await deleteEmployee(employeeToDelete._id);
-      setEmployeeToDelete(null);
+      try {
+        await deleteEmployee(employeeToDelete._id);
+        addToast("Empleado eliminado correctamente", "success");
+        setEmployeeToDelete(null);
+      } catch (err) {
+        addToast("Error al eliminar empleado", "error");
+      }
     }
   };
 

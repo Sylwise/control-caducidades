@@ -6,6 +6,7 @@ import usePreventScroll from "../hooks/usePreventScroll";
 import ModalContainer from "./ModalContainer";
 import { useSocket } from "../hooks/useSocket";
 import OfflineManager from "../services/offlineManager";
+import { useToast } from "../contexts/ToastContext";
 
 const UserManagement = ({
   isOpen = false,
@@ -13,8 +14,10 @@ const UserManagement = ({
   currentUser = null,
 }) => {
   // Usar el hook para prevenir scroll
+  // Usar el hook para prevenir scroll
   usePreventScroll(isOpen);
   const { socket } = useSocket();
+  const { addToast } = useToast();
 
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -273,11 +276,13 @@ const UserManagement = ({
         restaurante: "",
       });
       setError(null);
+      addToast("Usuario creado correctamente", "success");
     } catch (err) {
       console.error("Error completo:", err);
       setError(
         err.message || "Error al crear usuario. Por favor, intenta de nuevo."
       );
+      addToast(err.message || "Error al crear usuario", "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -301,8 +306,10 @@ const UserManagement = ({
       await loadUsers();
       setDeleteConfirm(null);
       setSelectedUserId(null); // Deseleccionar usuario después de eliminarlo
+      addToast("Usuario eliminado correctamente", "success");
     } catch (err) {
       setError(err.message);
+      addToast(err.message || "Error al eliminar usuario", "error");
     } finally {
       setLoading(false);
     }
@@ -436,11 +443,13 @@ const UserManagement = ({
         role: ""
       });
       setError(null);
+      addToast("Usuario actualizado correctamente", "success");
     } catch (err) {
       console.error("Error al actualizar usuario:", err);
       setError(
         err.message || "Error al actualizar usuario. Por favor, intenta de nuevo."
       );
+      addToast(err.message || "Error al actualizar usuario", "error");
     } finally {
       setIsSubmitting(false);
     }

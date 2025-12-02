@@ -5,12 +5,14 @@ import config from "../config";
 import usePreventScroll from "../hooks/usePreventScroll";
 import ModalContainer from "./ModalContainer";
 import OfflineManager from "../services/offlineManager";
+import { useToast } from "../contexts/ToastContext";
 
 const RestaurantManagement = ({
   isOpen = false,
   onClose = () => {},
 }) => {
   usePreventScroll(isOpen);
+  const { addToast } = useToast();
 
   const [restaurants, setRestaurants] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -116,8 +118,10 @@ const RestaurantManagement = ({
       await loadRestaurants();
       setShowCreateForm(false);
       setFormData({ nombre: "", direccion: "" });
+      addToast("Restaurante creado correctamente", "success");
     } catch (err) {
       setError(err.message);
+      addToast(err.message || "Error al crear restaurante", "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -141,8 +145,10 @@ const RestaurantManagement = ({
 
       await loadRestaurants();
       setDeleteConfirm(null);
+      addToast("Restaurante eliminado correctamente", "success");
     } catch (err) {
       setError(err.message);
+      addToast(err.message || "Error al eliminar restaurante", "error");
     }
   };
 
@@ -174,8 +180,10 @@ const RestaurantManagement = ({
 
       await loadRestaurants();
       setEditingRestaurant(null);
+      addToast("Restaurante actualizado correctamente", "success");
     } catch (err) {
       setError(err.message);
+      addToast(err.message || "Error al actualizar restaurante", "error");
     } finally {
       setIsSubmitting(false);
     }

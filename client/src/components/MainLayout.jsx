@@ -9,14 +9,13 @@ import ExpiringModal from "./ExpiringModal";
 import { useModalManagement } from "../hooks/useModalManagement";
 import { useProductManagement } from "../hooks/useProductManagement";
 import { useExpiringProducts } from "../hooks/useExpiringProducts";
-import useToasts from "../hooks/useToasts";
-import ToastContainer from "./ToastContainer";
+import { useToast } from "../contexts/ToastContext";
 
 const MainLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, setIsAuthenticated, setUser } = useContext(AuthContext);
-  const { toasts, addToast, removeToast } = useToasts();
+  const { addToast } = useToast();
 
   // Determine active module based on current path
   const activeModule = location.pathname.includes("training")
@@ -81,7 +80,6 @@ const MainLayout = () => {
     <div className="min-h-screen bg-[#f8f8f8]">
       <div className="max-w-7xl mx-auto bg-white min-h-screen shadow-sm">
         <div className="p-4">
-          <ToastContainer toasts={toasts} removeToast={removeToast} />
           
           <HeaderSection
             user={user}

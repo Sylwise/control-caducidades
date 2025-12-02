@@ -14,6 +14,7 @@ import AuthProvider from "./contexts/providers/AuthProvider";
 import { SocketProvider } from "./contexts/providers/SocketProvider";
 import { SyncProvider } from "./contexts/providers/SyncProvider";
 import { DeletedProductsProvider } from "./contexts/DeletedProductsContext";
+import { ToastProvider } from "./contexts/ToastContext";
 
 const PrivateRoute = ({ children }) => {
   const token =
@@ -33,31 +34,33 @@ PrivateRoute.propTypes = {
 const App = () => {
   return (
     <AuthProvider>
-      <SocketProvider>
-        <SyncProvider>
-          <DeletedProductsProvider>
-            <Router>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              
-              <Route
-                path="/"
-                element={
-                  <PrivateRoute>
-                    <MainLayout />
-                  </PrivateRoute>
-                }
-              >
-                <Route index element={<Navigate to="/inventory" replace />} />
-                <Route path="inventory" element={<ProductList />} />
-                <Route path="training" element={<TrainingDashboard />} />
-                <Route path="training/:employeeId" element={<EmployeeDetail />} />
-              </Route>
-            </Routes>
-            </Router>
-          </DeletedProductsProvider>
-        </SyncProvider>
-      </SocketProvider>
+      <ToastProvider>
+        <SocketProvider>
+          <SyncProvider>
+            <DeletedProductsProvider>
+              <Router>
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                
+                <Route
+                  path="/"
+                  element={
+                    <PrivateRoute>
+                      <MainLayout />
+                    </PrivateRoute>
+                  }
+                >
+                  <Route index element={<Navigate to="/inventory" replace />} />
+                  <Route path="inventory" element={<ProductList />} />
+                  <Route path="training" element={<TrainingDashboard />} />
+                  <Route path="training/:employeeId" element={<EmployeeDetail />} />
+                </Route>
+              </Routes>
+              </Router>
+            </DeletedProductsProvider>
+          </SyncProvider>
+        </SocketProvider>
+      </ToastProvider>
     </AuthProvider>
   );
 };
