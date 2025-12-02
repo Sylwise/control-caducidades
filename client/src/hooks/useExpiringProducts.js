@@ -4,8 +4,20 @@ import { getDaysUntilExpiry, isExpiringSoon } from "../utils/dateUtils";
 export const useExpiringProducts = (products) => {
   const calculateExpiringProducts = useCallback(() => {
     let count = 0;
+    
+    // Leer lista negra offline
+    let offlineModifiedIds = [];
+    try {
+      offlineModifiedIds = JSON.parse(localStorage.getItem('offline_modified_ids') || '[]');
+    } catch (e) {
+      console.error("Error reading offline_modified_ids", e);
+    }
+
     Object.values(products).forEach((productList) => {
       productList.forEach((product) => {
+        // Filtrar si está en lista negra
+        if (offlineModifiedIds.includes(product.producto._id)) return;
+
         if (isExpiringSoon(product.fechaFrente)) {
           count++;
         }
@@ -16,8 +28,20 @@ export const useExpiringProducts = (products) => {
 
   const getExpiringProducts = useCallback(() => {
     const expiringProducts = [];
+    
+    // Leer lista negra offline
+    let offlineModifiedIds = [];
+    try {
+      offlineModifiedIds = JSON.parse(localStorage.getItem('offline_modified_ids') || '[]');
+    } catch (e) {
+      console.error("Error reading offline_modified_ids", e);
+    }
+
     Object.values(products).forEach((productList) => {
       productList.forEach((product) => {
+        // Filtrar si está en lista negra
+        if (offlineModifiedIds.includes(product.producto._id)) return;
+
         const daysUntil = getDaysUntilExpiry(product.fechaFrente);
         if (daysUntil <= 14) {
           expiringProducts.push({

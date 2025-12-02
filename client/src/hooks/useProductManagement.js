@@ -1,4 +1,5 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { useSocket } from "./useSocket";
 import { INITIAL_PRODUCTS_STATE } from "../constants/productConstants";
 import { useDeletedProducts } from "../contexts/DeletedProductsContext";
 import {
@@ -9,6 +10,7 @@ import {
 } from "../services/api";
 
 export const useProductManagement = (addToast) => {
+  const { socket } = useSocket();
   const [products, setProducts] = useState(INITIAL_PRODUCTS_STATE);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -68,6 +70,66 @@ export const useProductManagement = (addToast) => {
       setLoading(false);
     }
   }, []);
+
+  // Escuchar eventos del catálogo en tiempo real
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleCatalogUpdate = (data) => {
+      if (data.type === "delete") {
+        removeProductFromState(data.productId);
+      } else if (data.type === "create" && data.productStatus) {
+        addProductToState(data.productStatus);
+      } else if (data.type === "update" && data.product) {
+        setProducts((prevProducts) => {
+          const newProducts = { ...prevProducts };
+          
+          Object.keys(newProducts).forEach((category) => {
+            newProducts[category] = newProducts[category].map((item) => {
+              if (item.producto._id === data.product._id) {
+                return {
+                  ...item,
+                  producto: data.product
+                };
+              }
+              return item;
+            });
+          });
+          
+          return newProducts;
+        });
+      }
+    };
+
+    socket.on("catalogUpdate", handleCatalogUpdate);
+
+    const handleStatusUpdate = (data) => {
+      if (data.type === "delete") {
+        removeProductFromState(data.productId);
+        if (data.product) {
+             const unclassifiedProduct = {
+                producto: data.product,
+                estado: "sin-clasificar",
+                fechaFrente: null,
+                fechaAlmacen: null,
+                fechasAlmacen: [],
+                cajaUnica: false,
+                hayUnicaCajaActual: false
+              };
+              addProductToState(unclassifiedProduct);
+        }
+      } else if ((data.type === "create" || data.type === "update") && data.productStatus) {
+        updateProductInState(data.productStatus);
+      }
+    };
+
+    socket.on("productStatusUpdate", handleStatusUpdate);
+
+    return () => {
+      socket.off("catalogUpdate", handleCatalogUpdate);
+      socket.off("productStatusUpdate", handleStatusUpdate);
+    };
+  }, [socket]);
 
   const updateProductInState = useCallback((productData) => {
     if (!productData) return;
@@ -186,6 +248,28 @@ export const useProductManagement = (addToast) => {
     });
   }, []);
 
+  // Helpers para gestión offline
+  const addToOfflineBlacklist = (id) => {
+    try {
+      const ids = JSON.parse(localStorage.getItem('offline_modified_ids') || '[]');
+      if (!ids.includes(id)) {
+        localStorage.setItem('offline_modified_ids', JSON.stringify([...ids, id]));
+      }
+    } catch (e) {
+      console.error('Error accessing localStorage', e);
+    }
+  };
+
+  const removeFromOfflineBlacklist = (id) => {
+    try {
+      const ids = JSON.parse(localStorage.getItem('offline_modified_ids') || '[]');
+      const newIds = ids.filter(existingId => existingId !== id);
+      localStorage.setItem('offline_modified_ids', JSON.stringify(newIds));
+    } catch (e) {
+      console.error('Error accessing localStorage', e);
+    }
+  };
+
   const handleUpdateProduct = async (productId, updateData) => {
     try {
       const productToUpdate = Object.values(products)
@@ -196,6 +280,9 @@ export const useProductManagement = (addToast) => {
 
       const updatedProduct = await updateProductStatus(productId, updateData);
       updateProductInState(updatedProduct);
+      
+      // Si actualizamos, quitamos de la lista negra (por si acaso estaba ahí)
+      removeFromOfflineBlacklist(productId);
 
       addToast(
         `${productToUpdate.producto.nombre} actualizado correctamente.`,
@@ -236,6 +323,9 @@ export const useProductManagement = (addToast) => {
       
       // Guardar en Context (reemplaza a window y localStorage manual)
       addToHistory(savedProduct);
+      
+      // AGREGAR A LISTA NEGRA LOCAL (Offline Support)
+      addToOfflineBlacklist(productId);
 
       await deleteProductStatus(productId);
       removeProductFromState(productId);
@@ -288,6 +378,9 @@ export const useProductManagement = (addToast) => {
 
       // Limpiar del historial una vez restaurado
       removeFromHistory(productId);
+      
+      // QUITAR DE LISTA NEGRA LOCAL
+      removeFromOfflineBlacklist(productId);
 
       addToast(`${productToRestore.producto.nombre} restaurado correctamente.`, "success");
       return true;
