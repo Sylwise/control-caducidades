@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import { Trash2, Calendar, ChevronRight, Utensils, Store, Sun, Moon, Award } from 'lucide-react';
 import { calculateEmployeeProgress } from '../utils/progressCalculator';
 
-const CircularProgress = ({ percentage, icon: Icon, label, color }) => {
+const CircularProgress = ({ percentage, icon: Icon, label, color, labelClassName, iconClassName }) => {
   const radius = 18;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
@@ -38,10 +38,10 @@ const CircularProgress = ({ percentage, icon: Icon, label, color }) => {
         </svg>
         {/* Icon in center */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <Icon size={16} className="text-gray-500" />
+          <Icon size={16} className={iconClassName || "text-gray-500"} />
         </div>
       </div>
-      <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">{label}</span>
+      <span className={`text-[10px] uppercase tracking-wide ${labelClassName || "font-medium text-gray-500"}`}>{label}</span>
       <span className="text-xs font-bold text-gray-600">{percentage}%</span>
     </div>
   );
@@ -52,6 +52,8 @@ CircularProgress.propTypes = {
   icon: PropTypes.elementType.isRequired,
   label: PropTypes.string.isRequired,
   color: PropTypes.string.isRequired,
+  labelClassName: PropTypes.string,
+  iconClassName: PropTypes.string,
 };
 
 const EmployeeCard = ({ employee, onDelete, isSelected, onSelect }) => {
@@ -118,6 +120,18 @@ const EmployeeCard = ({ employee, onDelete, isSelected, onSelect }) => {
     return '#9ca3af'; // Gray
   };
 
+  const styles = useMemo(() => {
+    // Usamos los mismos estilos de alto contraste para ambos estados
+    // para garantizar la legibilidad
+    return {
+      subtitle: "text-gray-600",
+      subtitleIcon: "text-gray-500",
+      separator: "text-gray-400",
+      progressLabel: "font-medium text-gray-600",
+      progressIcon: "text-gray-600"
+    };
+  }, []);
+
   return (
     <div 
       onClick={(e) => {
@@ -147,10 +161,10 @@ const EmployeeCard = ({ employee, onDelete, isSelected, onSelect }) => {
                 <Award size={18} className="text-yellow-500 fill-yellow-500/20" />
               )}
             </div>
-            <div className="flex items-center gap-1 text-[10px] text-gray-500 mt-0.5">
-              <Calendar size={10} className="text-gray-400" />
+            <div className={`flex items-center gap-1 text-[10px] mt-0.5 ${styles.subtitle}`}>
+              <Calendar size={10} className={styles.subtitleIcon} />
               <span>{formatDate(employee.fechaEntrada)}</span>
-              <span className="text-gray-300">•</span>
+              <span className={styles.separator}>•</span>
               <span>{seniority}</span>
             </div>
           </div>
@@ -181,24 +195,32 @@ const EmployeeCard = ({ employee, onDelete, isSelected, onSelect }) => {
             icon={Utensils} 
             label="Cocina" 
             color={getProgressColor(progressData.COCINA)} 
+            labelClassName={styles.progressLabel}
+            iconClassName={styles.progressIcon}
           />
           <CircularProgress 
             percentage={progressData.FRENTE} 
             icon={Store} 
             label="Frente" 
             color={getProgressColor(progressData.FRENTE)} 
+            labelClassName={styles.progressLabel}
+            iconClassName={styles.progressIcon}
           />
           <CircularProgress 
             percentage={progressData.APERTURA} 
             icon={Sun} 
             label="Apertura" 
             color={getProgressColor(progressData.APERTURA)} 
+            labelClassName={styles.progressLabel}
+            iconClassName={styles.progressIcon}
           />
           <CircularProgress 
             percentage={progressData.CIERRE} 
             icon={Moon} 
             label="Cierre" 
             color={getProgressColor(progressData.CIERRE)} 
+            labelClassName={styles.progressLabel}
+            iconClassName={styles.progressIcon}
           />
         </div>
       </div>

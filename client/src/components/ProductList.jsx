@@ -19,27 +19,8 @@ import useToasts from "../hooks/useToasts";
 import ToastContainer from "./ToastContainer";
 
 const ProductList = () => {
-  // Use context from MainLayout if available, or fallback to local fetching (though MainLayout should provide it)
-  // Actually, for simplicity and to ensure full functionality of useProductManagement hooks (like update/delete),
-  // we will use the hook locally as well. The double fetch is acceptable for now.
-  // Ideally, we would pass all handlers from MainLayout, but that's a larger refactor.
-  
   const { socket } = useSocket();
-  const { addToast, toasts, removeToast } = useToasts(); // We use local toast hook, but MainLayout has its own container.
-  // Wait, if MainLayout has ToastContainer, we should probably use that one?
-  // But useToasts is a hook, it doesn't share state unless via Context.
-  // The app doesn't seem to have a ToastContext.
-  // So we might have double toasts if we are not careful.
-  // MainLayout has ToastContainer. ProductList had ToastContainer.
-  // I should REMOVE ToastContainer from ProductList if MainLayout has it.
-  // But how does ProductList trigger toasts in MainLayout?
-  // It can't unless we use a Context.
-  // For now, I will leave ToastContainer in ProductList too? No, that's ugly.
-  // I'll assume I should leave it in ProductList for the product actions, 
-  // and MainLayout uses it for global actions?
-  // Actually, let's look at App.jsx. There is no ToastProvider.
-  // So I will keep ToastContainer in ProductList for now to ensure feedback works.
-  // MainLayout's ToastContainer will handle MainLayout's toasts.
+  const { addToast, toasts, removeToast } = useToasts();
   
   // Estados locales
   const [searchTerm, setSearchTerm] = useState("");
@@ -204,23 +185,11 @@ const ProductList = () => {
       onRetry={loadAllProducts}
     >
       <div className="max-w-md md:max-w-xl mx-auto">
-        {/* Note: ToastContainer is kept here for local feedback. 
-            Ideally should be global but we lack a ToastContext. */}
         <ToastContainer
           toasts={toasts}
           removeToast={removeToast}
           onUndo={handleUndoDelete}
         />
-        {/* Actually, let's try to rely on MainLayout's ToastContainer? 
-            No, we can't emit to it. 
-            So we MUST render a ToastContainer here if we want to see toasts from this component.
-            BUT, MainLayout also renders one. 
-            This might cause overlapping toasts if both are active.
-            However, MainLayout's toasts are driven by MainLayout's useToasts hook.
-            ProductList's toasts are driven by ProductList's useToasts hook.
-            They are independent.
-            So it's fine to have both.
-        */}
         
         <SearchBar
           searchTerm={searchTerm}
