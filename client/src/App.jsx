@@ -13,6 +13,7 @@ import EmployeeDetail from "./components/EmployeeDetail";
 import AuthProvider from "./contexts/providers/AuthProvider";
 import { SocketProvider } from "./contexts/providers/SocketProvider";
 import { SyncProvider } from "./contexts/providers/SyncProvider";
+import { DeletedProductsProvider } from "./contexts/DeletedProductsContext";
 
 const PrivateRoute = ({ children }) => {
   const token =
@@ -34,7 +35,8 @@ const App = () => {
     <AuthProvider>
       <SocketProvider>
         <SyncProvider>
-          <Router>
+          <DeletedProductsProvider>
+            <Router>
             <Routes>
               <Route path="/login" element={<Login />} />
               
@@ -52,7 +54,8 @@ const App = () => {
                 <Route path="training/:employeeId" element={<EmployeeDetail />} />
               </Route>
             </Routes>
-          </Router>
+            </Router>
+          </DeletedProductsProvider>
         </SyncProvider>
       </SocketProvider>
     </AuthProvider>
