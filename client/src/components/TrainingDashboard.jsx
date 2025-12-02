@@ -96,18 +96,18 @@ const TrainingDashboardContent = () => {
             ))}
             
             {employees.length === 0 && (
-              <div className="col-span-full flex flex-col items-center justify-center py-24 bg-white rounded-2xl border-2 border-dashed border-gray-200 shadow-sm">
+              <div className="col-span-full flex flex-col items-center justify-center py-24 px-4 bg-white rounded-2xl border-2 border-dashed border-gray-200 shadow-sm">
                 <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6">
                   <Users className="h-12 w-12 text-gray-400" />
                 </div>
-                <h3 className="text-xl font-bold text-[#1d5030] mb-2">No hay empleados registrados</h3>
+                <h3 className="text-xl font-bold text-[#1d5030] mb-2 text-center">No hay empleados registrados</h3>
                 <p className="text-gray-500 text-center max-w-md mb-8">
                   Comienza añadiendo a los miembros de tu equipo para realizar un seguimiento de su formación y competencias.
                 </p>
                 {canManage && (
                   <button
                     onClick={() => setIsCreateEmployeeModalOpen(true)}
-                    className="inline-flex items-center px-6 py-3 border border-transparent shadow-sm text-base font-medium rounded-lg text-white bg-[#1d5030] hover:bg-[#153a23] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1d5030] transition-all"
+                    className="inline-flex items-center px-4 py-2.5 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-[#1d5030] hover:bg-[#153a23] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1d5030] transition-all"
                   >
                     <Plus className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
                     Añadir Primer Empleado
