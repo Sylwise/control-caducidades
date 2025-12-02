@@ -117,8 +117,8 @@ const HeaderSection = ({
 
       <div className="flex flex-col items-center gap-1">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-[#1d5030] font-['Noto Sans'] tracking-tight select-none">
-            {activeModule === 'inventory' ? 'Lista de Caducidades' : 'Formación y Competencias'}
+          <h1 className="text-2xl font-bold text-[#1d5030] font-['Noto Sans'] tracking-tight select-none text-center">
+            {activeModule === 'inventory' ? 'Lista de Caducidades' : 'Formación'}
           </h1>
           {activeModule === 'inventory' && expiringCount > 0 && (
             <button

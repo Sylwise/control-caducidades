@@ -12,6 +12,14 @@ exports.createEmployee = async (req, res) => {
     });
 
     await employee.save();
+
+    const io = req.app.get('io');
+    io.to(req.user.restaurante).emit('employeesUpdate', {
+      type: 'create',
+      action: 'create_employee',
+      employeeId: employee._id
+    });
+
     res.status(201).json(employee);
   } catch (error) {
     res.status(500).json({ message: 'Error al crear empleado', error: error.message });
@@ -67,6 +75,14 @@ exports.updateEmployee = async (req, res) => {
     if (!employee) {
       return res.status(404).json({ message: 'Empleado no encontrado' });
     }
+
+    const io = req.app.get('io');
+    io.to(req.user.restaurante).emit('employeesUpdate', {
+      type: 'update',
+      action: 'update_employee',
+      employeeId: employee._id
+    });
+
     res.json(employee);
   } catch (error) {
     res.status(500).json({ message: 'Error al actualizar empleado', error: error.message });
@@ -79,6 +95,14 @@ exports.deleteEmployee = async (req, res) => {
     if (!employee) {
       return res.status(404).json({ message: 'Empleado no encontrado' });
     }
+
+    const io = req.app.get('io');
+    io.to(req.user.restaurante).emit('employeesUpdate', {
+      type: 'delete',
+      action: 'delete_employee',
+      employeeId: req.params.id
+    });
+
     res.json({ message: 'Empleado eliminado correctamente' });
   } catch (error) {
     res.status(500).json({ message: 'Error al eliminar empleado', error: error.message });
@@ -119,6 +143,13 @@ exports.toggleCompetence = async (req, res) => {
 
     employee.markModified('competencias');
     await employee.save();
+
+    const io = req.app.get('io');
+    io.to(req.user.restaurante).emit('employeesUpdate', {
+      type: 'update',
+      action: 'competence_change',
+      employeeId: employee._id
+    });
 
     res.json(employee);
   } catch (error) {

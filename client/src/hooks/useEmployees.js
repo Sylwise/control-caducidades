@@ -1,7 +1,9 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import api from '../services/api';
+import { useSocket } from './useSocket';
 
 const useEmployees = () => {
+  const { socket } = useSocket();
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -26,6 +28,21 @@ const useEmployees = () => {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleUpdate = (data) => {
+      // console.log('Socket update received:', data);
+      loadEmployees();
+    };
+
+    socket.on('employeesUpdate', handleUpdate);
+
+    return () => {
+      socket.off('employeesUpdate', handleUpdate);
+    };
+  }, [socket, loadEmployees]);
 
   const createEmployee = useCallback(async (employeeData) => {
     setLoading(true);

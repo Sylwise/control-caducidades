@@ -23,6 +23,7 @@ import { motion } from 'framer-motion';
 import api from '../services/api';
 import competenciesConfig from '../config/competencies.json';
 import AreaCard from './AreaCard';
+import { useSocket } from '../hooks/useSocket';
 
 // Icon Mapping
 const ICON_MAP = {
@@ -42,6 +43,7 @@ const ICON_MAP = {
 
 const EmployeeDetail = () => {
   const { user } = useContext(AuthContext);
+  const { socket } = useSocket();
   const { employeeId } = useParams();
   const navigate = useNavigate();
   const [employee, setEmployee] = useState(null);
@@ -52,18 +54,40 @@ const EmployeeDetail = () => {
     fetchEmployee();
   }, [employeeId]);
 
-  const fetchEmployee = async () => {
+  const fetchEmployee = async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       const response = await api.get(`/employees/${employeeId}`);
       setEmployee(response.data);
     } catch (err) {
       console.error('Error fetching employee:', err);
       setError('Error al cargar los datos del empleado');
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleUpdate = (data) => {
+      if (data.employeeId === employeeId) {
+        if (data.type === 'delete') {
+          alert('Este empleado ha sido eliminado por otro usuario.');
+          navigate('/training');
+        } else {
+          // Silent update for other changes
+          fetchEmployee(false);
+        }
+      }
+    };
+
+    socket.on('employeesUpdate', handleUpdate);
+
+    return () => {
+      socket.off('employeesUpdate', handleUpdate);
+    };
+  }, [socket, employeeId, navigate]);
 
   const handleToggleCompetence = async (areaId, taskId, completed) => {
     // 1. Optimistic Update
