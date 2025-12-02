@@ -35,7 +35,7 @@ const CategorySection = memo(({
       </h2>
 
       {/* Lista de productos */}
-      <div className="space-y-2 ml-2">
+      <div className={`ml-2 ${viewMode === 'compact' ? 'space-y-2' : 'space-y-3'}`}>
         {products.map((product) => (
           <ProductCard
             key={product.producto?._id}

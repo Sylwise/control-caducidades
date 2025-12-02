@@ -1,3 +1,4 @@
+const { calculateProductStatus } = require("../services/productStateService");
 const ProductStatus = require("../models/Product");
 const logger = require("../logger");
 const socketService = require("../services/socketService");
@@ -38,36 +39,50 @@ exports.updateStatus = async (req, res) => {
       fechaAlmacen,
       cajasAlmacen,
       fechasAlmacen = [],
-      cajaUnica,
-      hayUnicaCajaActual,
+      // cajaUnica y hayUnicaCajaActual ya NO se leen del body, se calculan
     } = req.body;
 
-    const updateData = {
+    // 1. Preparamos los datos básicos que vienen del usuario
+    const incomingData = {
       fechaFrente,
       fechaAlmacen,
       cajasAlmacen,
       fechasAlmacen,
-      cajaUnica: Boolean(cajaUnica),
-      hayUnicaCajaActual: Boolean(hayUnicaCajaActual),
     };
 
     let productStatus = await ProductStatus.findOne({ producto: productoId, restaurante: req.user.restaurante });
     const isNew = !productStatus;
 
-    if (productStatus) {
-      Object.assign(productStatus, updateData);
-    } else {
+    if (!productStatus) {
       productStatus = new ProductStatus({
         producto: productoId,
         restaurante: req.user.restaurante,
-        ...updateData,
       });
     }
 
-    // Forzamos la actualización de la fecha para confirmar la revisión manual
+    // 2. Fusionamos datos: Lo que había en DB + Lo nuevo que llega
+    // Esto es crucial para que el cálculo tenga todos los datos necesarios
+    Object.assign(productStatus, incomingData);
+
+    // 3. INVOCAMOS AL SERVICIO: Calculamos el estado basado en la fusión
+    // Pasamos productStatus porque ahora ya contiene los datos mezclados
+    const calculatedState = calculateProductStatus({
+        fechaFrente: productStatus.fechaFrente,
+        fechaAlmacen: productStatus.fechaAlmacen,
+        cajasAlmacen: productStatus.cajasAlmacen,
+        fechasAlmacen: productStatus.fechasAlmacen,
+        estadoActual: productStatus.estado // Pasamos el estado actual por si acaso
+    });
+
+    // 4. Aplicamos los campos calculados al documento
+    Object.assign(productStatus, calculatedState);
+
+    // Forzamos la actualización de la fecha
     productStatus.updatedAt = new Date();
 
     const savedStatus = await productStatus.save();
+    
+    // ... resto del código (populate, socket, response) igual que antes ...
     const populatedStatus = await ProductStatus.findById(
       savedStatus._id
     ).populate("producto", "nombre tipo activo");
@@ -84,6 +99,7 @@ exports.updateStatus = async (req, res) => {
 
     res.json(populatedStatus);
   } catch (error) {
+    // ... tu manejo de errores existente ...
     logger.error({ error, params: req.params, body: req.body }, "Error al actualizar el estado del producto");
     if (error.name === "ValidationError") {
       const validationErrors = Object.keys(error.errors).map((key) => ({

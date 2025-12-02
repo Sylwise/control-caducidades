@@ -49,7 +49,7 @@ const ProductCard = memo(({
         }
         ${viewMode === 'compact' 
           ? 'p-3 sm:p-2 border-b border-gray-100' 
-          : 'p-4 shadow hover:shadow-md mb-4'}
+          : 'p-3 md:p-4 shadow hover:shadow-md'}
         transition-all duration-300
         ${isSelected ? "ring-1 ring-[#1d5030]/30 bg-[#1d5030]/5" : ""}
         ${
