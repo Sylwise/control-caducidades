@@ -103,7 +103,7 @@ const EmployeeCard = ({ employee, onDelete, isSelected, onSelect }) => {
       'bg-gray-100 text-gray-700',
       'bg-[#1d5030]/20 text-[#1d5030]',
       'bg-[#c17817]/20 text-[#c17817]',
-      'bg-gray-200 text-gray-800'
+      'bg-gray-200 text-gray-700'
     ];
     let hash = 0;
     for (let i = 0; i < name.length; i++) {
@@ -140,7 +140,7 @@ const EmployeeCard = ({ employee, onDelete, isSelected, onSelect }) => {
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <h3 className="font-bold text-gray-800 text-base leading-tight truncate max-w-[140px]" title={employee.nombre}>
+              <h3 className="font-bold text-gray-700 text-base leading-tight truncate max-w-[140px]" title={employee.nombre}>
                 {employee.nombre}
               </h3>
               {isExpert && (

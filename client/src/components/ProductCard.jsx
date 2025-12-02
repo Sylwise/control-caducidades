@@ -83,7 +83,7 @@ const ProductCard = memo(({
             )}
 
             {/* Nombre del producto */}
-            <span className="font-['Noto Sans'] font-medium text-gray-900 text-sm sm:text-sm truncate block w-full">
+            <span className="font-['Noto Sans'] font-medium text-gray-700 text-sm sm:text-sm truncate block w-full">
               {product.producto?.nombre}
             </span>
           </div>
@@ -152,7 +152,7 @@ const ProductCard = memo(({
         // VISTA TARJETA (Original)
         <>
           <div className="flex items-center gap-2">
-            <span className="font-['Noto Sans'] font-semibold text-gray-900 text-base flex-1 select-none">
+            <span className="font-['Noto Sans'] font-semibold text-gray-700 text-base flex-1 select-none">
               {product.producto?.nombre}
             </span>
             {isStale && (
