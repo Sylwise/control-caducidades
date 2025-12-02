@@ -100,19 +100,21 @@ const HeaderSection = ({
           Caducidades
         </button>
 
-        <button
-          onClick={() => onModuleChange('training')}
-          className={`
-            flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium transition-all duration-200
-            ${activeModule === 'training'
-              ? 'bg-white text-[#1d5030] shadow-sm'
-              : 'text-gray-500 hover:text-gray-700'
-            }
-          `}
-        >
-          <GraduationCap className="w-4 h-4" />
-          Formación
-        </button>
+        {['admin', 'supervisor', 'encargado'].includes(user?.role) && (
+          <button
+            onClick={() => onModuleChange('training')}
+            className={`
+              flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium transition-all duration-200
+              ${activeModule === 'training'
+                ? 'bg-white text-[#1d5030] shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+              }
+            `}
+          >
+            <GraduationCap className="w-4 h-4" />
+            Formación
+          </button>
+        )}
       </div>
 
       <div className="flex flex-col items-center gap-1">

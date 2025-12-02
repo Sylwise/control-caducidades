@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 
 const ModalContainer = ({
   isOpen,
-  isClosing,
+  isClosing = false,
   onClose,
   title,
   children,
@@ -57,7 +57,7 @@ const ModalContainer = ({
 
 ModalContainer.propTypes = {
   isOpen: PropTypes.bool.isRequired,
-  isClosing: PropTypes.bool.isRequired,
+  isClosing: PropTypes.bool,
   onClose: PropTypes.func.isRequired,
   title: PropTypes.oneOfType([PropTypes.string, PropTypes.node]),
   children: PropTypes.node.isRequired,
