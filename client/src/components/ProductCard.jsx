@@ -89,9 +89,9 @@ const ProductCard = memo(({
           </div>
 
           {/* FILA INFERIOR (Móvil) / DERECHA (Desktop): Fechas y Acciones */}
-          <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4 sm:gap-6 pl-5 sm:pl-0">
+          <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-2 sm:gap-6 pl-5 sm:pl-0">
             {/* Fechas Compactas */}
-            <div className="flex items-center gap-3 text-xs">
+            <div className="flex flex-wrap items-center gap-2 text-xs flex-1 min-w-0">
               {product.fechaFrente && (
                 <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded border border-gray-100">
                   <span className="text-[#1d5030] font-semibold">F:</span>
@@ -112,7 +112,7 @@ const ProductCard = memo(({
             </div>
 
             {/* Acciones Rápidas - Touch Friendly */}
-            <div className="flex items-center gap-4 sm:gap-1">
+            <div className="flex items-center gap-4 sm:gap-1 flex-shrink-0 ml-2">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -120,7 +120,7 @@ const ProductCard = memo(({
                 }}
                 className="
                   flex items-center justify-center
-                  min-w-[40px] min-h-[40px] sm:min-w-[32px] sm:min-h-[32px]
+                  min-w-[36px] min-h-[36px] sm:min-w-[32px] sm:min-h-[32px]
                   text-gray-400 hover:text-[#1d5030] hover:bg-[#1d5030]/10 
                   rounded-full sm:rounded transition-colors
                 "
@@ -136,7 +136,7 @@ const ProductCard = memo(({
                   }}
                   className="
                     flex items-center justify-center
-                    min-w-[40px] min-h-[40px] sm:min-w-[32px] sm:min-h-[32px]
+                    min-w-[36px] min-h-[36px] sm:min-w-[32px] sm:min-h-[32px]
                     text-gray-400 hover:text-red-500 hover:bg-red-50 
                     rounded-full sm:rounded transition-colors
                   "
