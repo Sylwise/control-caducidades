@@ -34,10 +34,14 @@ exports.getEmployees = async (req, res) => {
     // Pero por ahora, mantengamos la lógica simple: filtrar por el restaurante del usuario si no se especifica otro (o forzarlo).
     
     let query = {};
-    if (req.user.role !== 'admin') {
-        query.restaurante = req.user.restaurante;
-    } else if (restaurantId) {
-        query.restaurante = restaurantId;
+    
+    // Si se especifica un restaurante (filtro explícito), usarlo
+    if (restaurantId) {
+      query.restaurante = restaurantId;
+    } else {
+      // Por defecto (para todos, incluidos admins), mostrar solo su propio restaurante
+      // Esto "rectifica" el comportamiento de que el Admin vea todo mezclado
+      query.restaurante = req.user.restaurante;
     }
     
     const employees = await Employee.find(query)
