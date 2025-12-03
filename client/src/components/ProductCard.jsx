@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react";
-import { Box, Clock, Edit3, Trash2, Package, Hourglass } from "lucide-react";
+import { Box, Clock, Edit3, Trash2, Package, History } from "lucide-react";
 import PropTypes from "prop-types";
 
 const formatDate = (dateString) => {
@@ -33,7 +33,7 @@ const ProductCard = memo(({
   const isStale = useMemo(() => {
     if (!product.updatedAt) return false;
     const daysDiff = (new Date() - new Date(product.updatedAt)) / (1000 * 60 * 60 * 24);
-    return daysDiff > 7;
+    return daysDiff > 4;
   }, [product.updatedAt]);
 
   return (
@@ -44,8 +44,8 @@ const ProductCard = memo(({
         w-full text-left 
         rounded-lg
         ${isStale 
-          ? "bg-orange-50/40 hover:bg-orange-50/60 border border-[#c17817]/30" 
-          : "bg-white hover:bg-gray-50 border border-gray-300/50 hover:border-gray-300"
+          ? "bg-white hover:bg-gray-50 border border-amber-200/60 shadow-sm" 
+          : "bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300"
         }
         ${viewMode === 'compact' 
           ? 'p-3 sm:p-2 border-b border-gray-100' 
@@ -75,10 +75,10 @@ const ProductCard = memo(({
 
             {isStale && (
               <div 
-                className="flex items-center justify-center p-1.5 bg-[#c17817]/10 rounded-full flex-shrink-0"
+                className="flex items-center justify-center p-1.5 bg-amber-50 rounded-full flex-shrink-0 ring-1 ring-amber-100/50"
                 title="Pendiente de revisar"
               >
-                <Hourglass size={14} className="text-[#c17817]" />
+                <History size={14} className="text-amber-500/80" />
               </div>
             )}
 
@@ -157,10 +157,10 @@ const ProductCard = memo(({
             </span>
             {isStale && (
               <div 
-                className="flex items-center justify-center p-1.5 bg-[#c17817]/10 rounded-full ml-2"
+                className="flex items-center justify-center p-1.5 bg-amber-50 rounded-full ml-2 ring-1 ring-amber-100/50"
                 title="Pendiente de revisar"
               >
-                <Hourglass size={16} className="text-[#c17817]" />
+                <History size={16} className="text-amber-500/80" />
               </div>
             )}
             {isExpiringSoon(product.fechaFrente) && (
@@ -303,6 +303,7 @@ ProductCard.propTypes = {
     cajasAlmacen: PropTypes.number,
     cajaUnica: PropTypes.bool,
     hayOtrasFechas: PropTypes.bool,
+    updatedAt: PropTypes.string,
   }).isRequired,
   isSelected: PropTypes.bool.isRequired,
   isExpiringSoon: PropTypes.func.isRequired,
