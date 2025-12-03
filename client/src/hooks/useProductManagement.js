@@ -13,6 +13,76 @@ export const useProductManagement = (addToast) => {
   const { socket } = useSocket();
   const [products, setProducts] = useState(INITIAL_PRODUCTS_STATE);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [lastUpdatedProductId, setLastUpdatedProductId] = useState(null);
+  
+  // Usamos el contexto en lugar de window
+  const { addToHistory, getFromHistory, removeFromHistory } = useDeletedProducts();
+
+  const loadAllProducts = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const [statusData, catalogData] = await Promise.all([
+        getAllProductStatus(),
+        getAllCatalogProducts(),
+      ]);
+
+      // Filtrar estados huérfanos (donde el producto es null) para evitar errores
+      const validStatusData = statusData.filter(
+        (product) => product.producto && product.producto._id
+      );
+
+      const classifiedProductIds = new Set(
+        validStatusData.map((product) => product.producto._id)
+      );
+
+      const unclassifiedProducts = catalogData
+        .filter((product) => !classifiedProductIds.has(product._id))
+        .map((product) => ({
+          producto: product,
+          estado: "sin-clasificar",
+        }));
+
+      const combinedUnclassifiedProducts = [
+        ...unclassifiedProducts,
+        ...validStatusData.filter(
+          (product) => product.estado === "sin-clasificar"
+        )
+      ].sort((a, b) => {
+        const nameA = a.producto?.nombre || "";
+        const nameB = b.producto?.nombre || "";
+        return nameA.localeCompare(nameB);
+      });
+
+      const organizedProducts = {
+        "sin-clasificar": combinedUnclassifiedProducts,
+        "frente-cambia": validStatusData.filter(
+          (product) => product.estado === "frente-cambia"
+        ),
+        "frente-agota": validStatusData.filter(
+          (product) => product.estado === "frente-agota"
+        ),
+        "abierto-cambia": validStatusData.filter(
+          (product) => product.estado === "abierto-cambia"
+        ),
+        "abierto-agota": validStatusData.filter(
+          (product) => product.estado === "abierto-agota"
+        ),
+      };
+
+      setProducts(organizedProducts);
+    } catch (err) {
+      setError(err.message || "Error al cargar los productos");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Escuchar eventos del catálogo en tiempo real
+  useEffect(() => {
+    if (!socket) return;
 
     const handleCatalogUpdate = (data) => {
       if (data.type === "delete") {
