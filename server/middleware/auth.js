@@ -18,7 +18,7 @@ exports.verifyToken = async (req, res, next) => {
 
     const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
     
-    // Verificar si el usuario aún existe
+    // Verificar si el usuario aún existe y obtener sus datos actualizados
     const currentUser = await User.findById(decoded.id);
     if (!currentUser) {
       return res.status(401).json({
@@ -26,7 +26,8 @@ exports.verifyToken = async (req, res, next) => {
       });
     }
 
-    req.user = decoded;
+    // Asignar el usuario completo a la request, no solo el payload del token
+    req.user = currentUser;
     next();
   } catch (error) {
     logger.warn({ error }, "Error al verificar token");
