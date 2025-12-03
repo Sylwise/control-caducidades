@@ -125,7 +125,7 @@ const CreateEmployeeModal = ({ isOpen, onClose, onCreate }) => {
             ) : (
               <>
                 <Plus className="w-5 h-5" />
-                Crear Empleado
+                Crear
               </>
             )}
           </button>
