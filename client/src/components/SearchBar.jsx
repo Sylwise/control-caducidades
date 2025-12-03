@@ -39,7 +39,7 @@ function SearchBar({
           className="w-full h-12 pl-10 pr-12 rounded-lg border border-gray-300 
             focus:outline-none focus:ring-2 focus:ring-[#1d5030]/50 focus:border-transparent
             font-['Noto Sans'] text-sm font-medium placeholder:text-gray-400
-            bg-white shadow-sm"
+            bg-white shadow-sm [&::-webkit-search-cancel-button]:appearance-none"
           maxLength={20}
         />
         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#1d5030] w-5 h-5" />
