@@ -14,7 +14,14 @@ function SearchBar({
       {/* Buscador */}
       <div className="relative w-full md:flex-1">
         <input
-          type="text"
+          type="search"
+          name="search_query_nocache_123"
+          id="input_busqueda_random"
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
+          data-1p-ignore
           placeholder="Buscar producto..."
           value={searchTerm}
           onChange={(e) => {

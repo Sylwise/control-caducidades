@@ -4,34 +4,39 @@ import { useEffect, useCallback } from 'react';
  * Hook para manejar el scroll hacia productos
  * Elimina la necesidad de usar setTimeout arbitrarios
  */
-export const useProductScroll = (selectedProduct) => {
+export const useProductScroll = (selectedProduct, attributeName = 'data-product-id') => {
   
   const scrollToProductId = useCallback((productId) => {
     if (!productId) return;
 
-    // Usar requestAnimationFrame para asegurar que el DOM se ha actualizado
-    requestAnimationFrame(() => {
-      const element = document.querySelector(`[data-product-id="${productId}"]`);
+    // Intentar encontrar el elemento inmediatamente
+    const tryScroll = (attempts = 0) => {
+      const element = document.querySelector(`[${attributeName}="${productId}"]`);
+      
       if (element) {
-        element.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-          inline: "nearest",
-        });
-      } else {
-        // Un segundo intento por si acaso el renderizado es muy pesado
-        requestAnimationFrame(() => {
-            const el = document.querySelector(`[data-product-id="${productId}"]`);
-            if (el) {
-                el.scrollIntoView({
-                    behavior: "smooth",
-                    block: "center",
-                    inline: "nearest",
-                });
-            }
-        });
+        // Pequeño delay para asegurar que el layout está estable
+        setTimeout(() => {
+          element.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+            inline: "nearest",
+          });
+          // Resaltar visualmente
+          element.classList.add('ring-2', 'ring-[#1d5030]', 'ring-offset-2');
+          setTimeout(() => {
+            element.classList.remove('ring-2', 'ring-[#1d5030]', 'ring-offset-2');
+          }, 2000);
+        }, 100);
+        return true;
       }
-    });
+
+      // Si no lo encuentra y no hemos excedido los intentos (aprox 1.5 segundos)
+      if (attempts < 15) {
+        setTimeout(() => tryScroll(attempts + 1), 100);
+      }
+    };
+
+    tryScroll();
   }, []);
 
   // Efecto para hacer scroll cuando cambia el producto seleccionado

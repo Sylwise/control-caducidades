@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef, memo } from "react";
+import { useState, useEffect, useCallback, useMemo, memo } from "react";
 import {
   Package,
   PackagePlus,
@@ -7,7 +7,6 @@ import {
   RefreshCw,
   Tag,
   Search,
-
   Edit,
   PackageOpen,
 } from "lucide-react";
@@ -17,6 +16,7 @@ import { useSocket } from "../hooks/useSocket";
 import OfflineManager from "../services/offlineManager";
 import usePreventScroll from "../hooks/usePreventScroll";
 import EditProductModal from "./EditProductModal";
+import { useProductScroll } from "../hooks/useProductScroll";
 
 const TYPE_STYLES = {
   permanente: {
@@ -29,8 +29,136 @@ const TYPE_STYLES = {
   },
 };
 
+// Componente extraído para evitar re-renderizados
+const ProductItem = memo(({ 
+  product, 
+  selectedProductId, 
+  deleteConfirm, 
+  highlightedProductId,
+  onSelect,
+  onEdit,
+  onDeleteRequest,
+  onDeleteConfirm,
+  onDeleteCancel
+}) => {
+  if (!product || !product._id) return null;
+
+  const isDeleteConfirm = deleteConfirm === product._id;
+  const isSelected = selectedProductId === product._id;
+  const isHighlighted = highlightedProductId === product._id;
+
+  return (
+    <div
+      data-catalog-product-id={product._id}
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect(product._id);
+      }}
+      className={`
+        w-full text-left rounded-lg transition-all duration-300 select-none
+        p-3 md:p-4
+        ${isDeleteConfirm 
+          ? "bg-red-50 border border-red-100" 
+          : `${isSelected 
+               ? "bg-[#1d5030]/5 border border-[#1d5030]/30 ring-1 ring-[#1d5030]/30" 
+               : "bg-white border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md hover:bg-gray-50"
+             }`
+        }
+        ${isHighlighted ? "ring-2 ring-[#1d5030] ring-offset-2 animate-highlight" : ""}
+        active:scale-[0.995] cursor-pointer
+      `}
+    >
+      {isDeleteConfirm ? (
+        <div className="w-full flex justify-center items-center gap-3 animate-[fadeIn_0.2s_ease-out]">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDeleteConfirm(product._id);
+            }}
+            className="flex-1 max-w-[120px] py-2 bg-red-600 text-white text-sm font-medium rounded-md
+              hover:bg-red-700 active:bg-red-800 transition-colors shadow-sm
+              flex items-center justify-center"
+          >
+            Confirmar
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDeleteCancel();
+            }}
+            className="flex-1 max-w-[120px] py-2 bg-white text-gray-700 text-sm font-medium rounded-md border border-gray-300
+              hover:bg-gray-50 active:bg-gray-100 transition-colors shadow-sm
+              flex items-center justify-center"
+          >
+            Cancelar
+          </button>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between w-full gap-3">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className={`p-1.5 rounded-full flex-shrink-0 ${TYPE_STYLES[product.tipo]?.bg || "bg-gray-100"}`}>
+              <Tag
+                className={`w-5 h-5 ${
+                  TYPE_STYLES[product.tipo]?.color || "text-gray-400"
+                }`}
+              />
+            </div>
+            <span className="text-gray-900 font-medium truncate select-none text-base">
+              {product.nombre}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {isSelected ? (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(product._id);
+                  }}
+                  className="p-2 text-[#1d5030] hover:bg-[#1d5030]/10 active:bg-[#1d5030]/20 transition-colors
+                  rounded-lg select-none"
+                  aria-label="Editar producto"
+                >
+                  <Edit className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteRequest(product._id);
+                  }}
+                  className="p-2 text-red-500 hover:bg-red-50 active:bg-red-100 transition-colors
+                  rounded-lg select-none"
+                  aria-label="Eliminar producto"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              </>
+            ) : (
+               <div className="w-[80px]"></div> 
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+});
+
+ProductItem.displayName = 'ProductItem';
+
+ProductItem.propTypes = {
+  product: PropTypes.object.isRequired,
+  selectedProductId: PropTypes.string,
+  deleteConfirm: PropTypes.string,
+  highlightedProductId: PropTypes.string,
+  onSelect: PropTypes.func.isRequired,
+  onEdit: PropTypes.func.isRequired,
+  onDeleteRequest: PropTypes.func.isRequired,
+  onDeleteConfirm: PropTypes.func.isRequired,
+  onDeleteCancel: PropTypes.func.isRequired,
+};
+
 const CatalogManagement = ({ isOpen, onClose }) => {
-  // Usar el hook para prevenir scroll
   usePreventScroll(isOpen);
 
   const [products, setProducts] = useState([]);
@@ -44,17 +172,12 @@ const CatalogManagement = ({ isOpen, onClose }) => {
   const [highlightedProductId, setHighlightedProductId] = useState(null);
   const { socket } = useSocket();
   
-  // Refs para elementos de producto
-  const productRefs = useRef({});
-  const scrollContainerRef = useRef(null);
+  const { scrollToProductId } = useProductScroll(null, 'data-catalog-product-id');
 
-  // Agrupar productos por tipo
   const groupedProducts = useMemo(() => {
-    // Filtrar duplicados y clasificar productos
     const uniqueProducts = [];
     const seen = new Set();
     
-    // Eliminar duplicados basados en ID
     products.forEach(product => {
       if (!seen.has(product._id)) {
         seen.add(product._id);
@@ -62,12 +185,10 @@ const CatalogManagement = ({ isOpen, onClose }) => {
       }
     });
     
-    // Aplicar filtro de búsqueda
     const filtered = uniqueProducts.filter((product) =>
       product.nombre && product.nombre.toLowerCase().includes(searchTerm.toLowerCase())
     );
     
-    // Clasificar productos únicos por tipo
     return {
       permanentes: filtered
         .filter((p) => p.tipo === "permanente")
@@ -78,7 +199,6 @@ const CatalogManagement = ({ isOpen, onClose }) => {
     };
   }, [products, searchTerm]);
 
-  // Cargar productos
   const loadProducts = useCallback(async () => {
     try {
       setLoading(true);
@@ -93,55 +213,18 @@ const CatalogManagement = ({ isOpen, onClose }) => {
     }
   }, []);
 
-  // Scroll a producto y resaltado
-  const scrollToProduct = useCallback((productId) => {
-    if (!productId || !productRefs.current[productId]) return;
-    
-    // Obtener el elemento del producto
-    const productElement = productRefs.current[productId];
-    
-    // Hacer scroll
-    if (productElement && scrollContainerRef.current) {
-      const container = scrollContainerRef.current;
-      const elementTop = productElement.offsetTop;
-      const containerTop = container.scrollTop;
-      const containerHeight = container.clientHeight;
-      
-      // Centrar el elemento en el contenedor
-      container.scrollTo({
-        top: elementTop - (containerHeight / 2) + (productElement.clientHeight / 2),
-        behavior: 'smooth'
-      });
-      
-      // Resaltar el producto
-      setHighlightedProductId(productId);
-      
-      // Eliminar el resaltado después de 2 segundos
-      setTimeout(() => {
-        setHighlightedProductId(null);
-      }, 2000);
-    }
-  }, []);
-
   useEffect(() => {
     if (isOpen) {
       loadProducts();
     }
   }, [isOpen, loadProducts]);
 
-  // Escuchar eventos de socket y locales
   useEffect(() => {
     const handleCatalogUpdate = (data) => {
       if (data.type === "create") {
-        // Verificar que el producto no exista antes de añadirlo
         setProducts((prevProducts) => {
-          // El evento puede venir del socket (productStatus) o local (productStatus)
-          // Necesitamos extraer el producto del catálogo
           const newProduct = data.productStatus ? data.productStatus.producto : data.product;
-          
           if (!newProduct) return prevProducts;
-
-          // Si el producto ya existe, no lo añadimos de nuevo
           if (prevProducts.some(p => p._id === newProduct._id)) {
             return prevProducts;
           }
@@ -153,10 +236,7 @@ const CatalogManagement = ({ isOpen, onClose }) => {
         );
       } else if (data.type === "update") {
         setProducts((prevProducts) => {
-          // Verificar que data.product exista
           if (!data.product) return prevProducts;
-
-          // Si el producto no existe en el array, no intentamos actualizarlo
           if (!prevProducts.some(p => p._id === data.product._id)) {
             return prevProducts;
           }
@@ -171,7 +251,6 @@ const CatalogManagement = ({ isOpen, onClose }) => {
       socket.on("catalogUpdate", handleCatalogUpdate);
     }
 
-    // Escuchar eventos locales para modo offline
     const handleLocalCatalogUpdate = (event) => {
       handleCatalogUpdate(event.detail);
     };
@@ -185,193 +264,86 @@ const CatalogManagement = ({ isOpen, onClose }) => {
     };
   }, [socket]);
 
-  // Eliminar producto
-  // Eliminar producto
   const handleDeleteProduct = (productId) => {
-    // 1. Llamar al servicio (sin await para no bloquear)
     OfflineManager.deleteCatalogProduct(productId).catch(err => {
       console.error("Error al eliminar en background:", err);
-      // Opcional: Revertir cambios si falla, pero por simplicidad y petición del usuario, priorizamos la UI inmediata.
-      // Si se quisiera revertir: loadProducts();
     });
 
-    // 2. Actualizar estado local INMEDIATAMENTE
     setProducts(prevProducts => prevProducts.filter(p => p._id !== productId));
-    
-    // Limpiar estados de UI
     setDeleteConfirm(null);
     if (selectedProductId === productId) {
       setSelectedProductId(null);
     }
   };
 
-  // Manejar edición de producto
   const handleEditProduct = (productId) => {
     setSelectedProductId(productId);
     setShowEditModal(true);
   };
 
-  // Manejar producto actualizado
   const handleProductUpdated = async (updatedProduct) => {
-    // Actualizar el producto en el estado local sin recargar toda la lista
+    // Normalizar: si viene envuelto en .producto, usar eso.
+    const productToUse = updatedProduct.producto || updatedProduct;
+
     setProducts(prevProducts => 
-      prevProducts.map(p => p._id === updatedProduct._id ? updatedProduct : p)
+      prevProducts.map(p => p._id === productToUse._id ? productToUse : p)
     );
     
-    // Scroll al producto editado
-    setTimeout(() => {
-      scrollToProduct(updatedProduct._id);
-    }, 300);
-    setSearchTerm(""); // Limpiar el buscador
+    setHighlightedProductId(productToUse._id);
+    setTimeout(() => setHighlightedProductId(null), 2000);
+
+    scrollToProductId(productToUse._id);
+    setSearchTerm("");
   };
 
-  // Manejar producto creado
   const handleProductCreated = (newProduct) => {
-    // Añadir al estado local inmediatamente
+    // Normalizar: si viene envuelto en .producto (respuesta online), usar eso.
+    // Si viene directo (respuesta offline), usar newProduct.
+    const productToUse = newProduct.producto || newProduct;
+
     setProducts(prevProducts => {
-      // Evitar duplicados si ya existe
-      if (prevProducts.some(p => p._id === newProduct._id)) {
+      if (prevProducts.some(p => p._id === productToUse._id)) {
         return prevProducts;
       }
-      return [...prevProducts, newProduct];
+      return [...prevProducts, productToUse];
     });
     
-    // Scroll al nuevo producto
-    setTimeout(() => {
-      scrollToProduct(newProduct._id);
-    }, 100);
-    
-    // Opcional: Limpiar buscador para ver el nuevo producto si estaba filtrado
-    // setSearchTerm(""); 
+    setHighlightedProductId(productToUse._id);
+    setTimeout(() => setHighlightedProductId(null), 2000);
+
+    scrollToProductId(productToUse._id);
+    setSearchTerm(""); 
   };
 
-  // Renderizar producto (memorizado)
-  const ProductItem = memo(({ product }) => {
-    // Verificar que el producto tenga un ID válido
-    if (!product || !product._id) {
-      return null;
-    }
-
-    const isDeleteConfirm = deleteConfirm === product._id;
-    
-    return (
-      <div
-        ref={(el) => (productRefs.current[product._id] = el)}
-        onClick={() => {
-          // Si seleccionamos un producto diferente, cancelar cualquier confirmación previa
-          if (deleteConfirm && deleteConfirm !== product._id) {
-            setDeleteConfirm(null);
-          }
-          
-          if (!isDeleteConfirm) {
-            setSelectedProductId(
-              selectedProductId === product._id ? null : product._id
-            );
-          }
-        }}
-        className={`
-          flex items-center p-3 w-full
-          ${isDeleteConfirm 
-            ? "bg-red-50 justify-center" 
-            : `justify-between ${selectedProductId === product._id ? "bg-gray-100" : "bg-gray-50"}`
-          }
-          ${highlightedProductId === product._id ? "animate-pulse bg-gray-100" : ""}
-          rounded-md transition-all duration-200
-          active:bg-gray-200 select-none
-          min-h-[72px]
-        `}
-      >
-        {isDeleteConfirm ? (
-          // MODO CONFIRMACIÓN: Mútuamente excluyente
-          <div className="w-full flex justify-center items-center gap-3 animate-[fadeIn_0.2s_ease-out]">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDeleteProduct(product._id);
-              }}
-              className="flex-1 max-w-[120px] py-2.5 bg-red-600 text-white text-sm font-medium rounded-md
-                hover:bg-red-700 active:bg-red-800 transition-colors shadow-sm
-                flex items-center justify-center"
-            >
-              Confirmar
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setDeleteConfirm(null);
-              }}
-              className="flex-1 max-w-[120px] py-2.5 bg-white text-gray-700 text-sm font-medium rounded-md border border-gray-300
-                hover:bg-gray-50 active:bg-gray-100 transition-colors shadow-sm
-                flex items-center justify-center"
-            >
-              Cancelar
-            </button>
-          </div>
-        ) : (
-          // MODO NORMAL
-          <>
-            {/* Información del producto */}
-            <div className="flex items-center gap-3 flex-1 min-w-0 pr-2 select-none">
-              <div className={`p-2 rounded-full flex-shrink-0 ${TYPE_STYLES[product.tipo]?.bg || "bg-gray-100"}`}>
-                <Tag
-                  className={`w-5 h-5 ${
-                    TYPE_STYLES[product.tipo]?.color || "text-gray-400"
-                  }`}
-                />
-              </div>
-              <span className="text-gray-900 font-medium truncate select-none text-base">
-                {product.nombre}
-              </span>
-            </div>
-
-            {/* Botones de acción */}
-            <div className="flex items-center gap-1 flex-shrink-0">
-              {selectedProductId === product._id ? (
-                <>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEditProduct(product._id);
-                    }}
-                    className="p-2.5 text-[#1d5030] hover:bg-[#1d5030]/10 active:bg-[#1d5030]/20 transition-colors
-                    rounded-lg select-none"
-                    aria-label="Editar producto"
-                  >
-                    <Edit className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDeleteConfirm(product._id);
-                    }}
-                    className="p-2.5 text-red-500 hover:bg-red-50 active:bg-red-100 transition-colors
-                    rounded-lg select-none"
-                    aria-label="Eliminar producto"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
-                </>
-              ) : (
-                // Espacio reservado o indicador de "más acciones" si se desea, 
-                // pero por ahora mantenemos limpio si no está seleccionado
-                 <div className="w-[88px]"></div> 
-              )}
-            </div>
-          </>
-        )}
-      </div>
-    );
-  });
-  
-  // Prevenir re-renderizados innecesarios
-  ProductItem.displayName = 'ProductItem';
-
   const handleClose = () => {
-    // Limpiar selecciones al cerrar el modal
     setSelectedProductId(null);
     setDeleteConfirm(null);
-    setSearchTerm(""); // Limpiar el buscador
+    setSearchTerm("");
     onClose();
+  };
+
+  const handleSelect = useCallback((productId) => {
+    if (deleteConfirm && deleteConfirm !== productId) {
+      setDeleteConfirm(null);
+    }
+    
+    // Si no estamos en modo confirmación de borrado para este producto
+    if (deleteConfirm !== productId) {
+      setSelectedProductId(prev => prev === productId ? null : productId);
+    }
+  }, [deleteConfirm]);
+
+  const handleDeleteRequest = useCallback((productId) => {
+    setDeleteConfirm(productId);
+  }, []);
+
+  const handleDeleteCancel = useCallback(() => {
+    setDeleteConfirm(null);
+  }, []);
+
+  const handleBackgroundClick = () => {
+    setSelectedProductId(null);
+    setDeleteConfirm(null);
   };
 
   if (!isOpen) return null;
@@ -392,6 +364,7 @@ const CatalogManagement = ({ isOpen, onClose }) => {
           className="relative w-full max-w-2xl bg-white rounded-lg shadow-xl z-10
           animate-[slideIn_0.3s_ease-out] select-none"
           data-modal-content
+          onClick={handleBackgroundClick}
         >
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200 select-none">
@@ -465,7 +438,7 @@ const CatalogManagement = ({ isOpen, onClose }) => {
               <button
                 onClick={() => {
                   setShowCreateModal(true);
-                  setSearchTerm(""); // Limpiar el buscador al pulsar "Añadir Producto"
+                  setSearchTerm(""); 
                 }}
                 className="flex items-center justify-center gap-2 px-4 h-12 bg-[#1d5030] text-white rounded-md
                   hover:bg-[#1d5030]/90 transition-colors font-medium select-none w-full sm:w-auto"
@@ -478,7 +451,6 @@ const CatalogManagement = ({ isOpen, onClose }) => {
             {/* Lista de productos */}
             <div 
               className="min-h-[300px] max-h-[60vh] overflow-y-auto select-none"
-              ref={scrollContainerRef}
             >
               {loading ? (
                 <div className="flex justify-center py-8 select-none">
@@ -514,9 +486,22 @@ const CatalogManagement = ({ isOpen, onClose }) => {
                           No hay productos permanentes
                         </p>
                       ) : (
-                        groupedProducts.permanentes.map((product) => (
-                          <ProductItem key={product._id} product={product} />
-                        ))
+                        <div className="space-y-1.5 px-4">
+                          {groupedProducts.permanentes.map((product) => (
+                            <ProductItem 
+                              key={product._id} 
+                              product={product}
+                              selectedProductId={selectedProductId}
+                              deleteConfirm={deleteConfirm}
+                              highlightedProductId={highlightedProductId}
+                              onSelect={handleSelect}
+                              onEdit={handleEditProduct}
+                              onDeleteRequest={handleDeleteRequest}
+                              onDeleteConfirm={handleDeleteProduct}
+                              onDeleteCancel={handleDeleteCancel}
+                            />
+                          ))}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -532,9 +517,22 @@ const CatalogManagement = ({ isOpen, onClose }) => {
                           No hay productos promocionales
                         </p>
                       ) : (
-                        groupedProducts.promocionales.map((product) => (
-                          <ProductItem key={product._id} product={product} />
-                        ))
+                        <div className="space-y-1.5 px-4">
+                          {groupedProducts.promocionales.map((product) => (
+                            <ProductItem 
+                              key={product._id} 
+                              product={product}
+                              selectedProductId={selectedProductId}
+                              deleteConfirm={deleteConfirm}
+                              highlightedProductId={highlightedProductId}
+                              onSelect={handleSelect}
+                              onEdit={handleEditProduct}
+                              onDeleteRequest={handleDeleteRequest}
+                              onDeleteConfirm={handleDeleteProduct}
+                              onDeleteCancel={handleDeleteCancel}
+                            />
+                          ))}
+                        </div>
                       )}
                     </div>
                   </div>
