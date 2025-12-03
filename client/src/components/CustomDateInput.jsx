@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
+import { createPortal } from "react-dom";
 import PropTypes from "prop-types";
 import { X, Calendar, AlertCircle } from "lucide-react";
 import usePreventScroll from "../hooks/usePreventScroll";
@@ -8,17 +9,16 @@ const KeypadButton = memo(({ value, label, onClick, variant = "primary", disable
     onClick={(e) => onClick(e, value)}
     disabled={disabled}
     className={`
-      min-h-[56px] flex items-center justify-center
+      h-12 sm:h-14 flex items-center justify-center
       ${
         variant === "secondary"
-          ? "text-gray-600 bg-gray-100 active:bg-gray-300"
-          : "text-gray-700 bg-gray-50 active:bg-gray-200"
+          ? "bg-white text-gray-400 hover:text-gray-600 active:bg-gray-50"
+          : "bg-white text-gray-800 hover:bg-gray-50 active:bg-gray-100"
       }
-      ${typeof value === "number" ? "text-2xl" : "text-lg"}
-      font-medium rounded-lg
-      border border-gray-100
-      transition-colors duration-75
-      active:scale-[0.98]
+      ${typeof value === "number" ? "text-xl font-normal" : "text-lg font-medium"}
+      rounded-md shadow-sm border border-gray-100
+      transition-all duration-150
+      active:scale-[0.98] active:shadow-inner
       focus:outline-none
       disabled:opacity-50 disabled:cursor-not-allowed
       select-none touch-manipulation
@@ -47,6 +47,7 @@ const CustomDateInput = ({
   const [isOpen, setIsOpen] = useState(false);
   const [error, setError] = useState("");
   const modalRef = useRef(null);
+  const triggerRef = useRef(null);
 
   // Default ranges if not provided
   const effectiveMinDate = useMemo(() => {
@@ -99,6 +100,16 @@ const CustomDateInput = ({
     }
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen, value, onCancel]);
+
+  // Scroll trigger into view on open (Mobile UX)
+  useEffect(() => {
+    if (isOpen && triggerRef.current) {
+      // Pequeño delay para asegurar que el teclado virtual o la UI se haya asentado
+      setTimeout(() => {
+        triggerRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 300);
+    }
+  }, [isOpen]);
 
   // Validar fecha y rango
   const isValidDate = useCallback((day, month, year) => {
@@ -264,6 +275,7 @@ const CustomDateInput = ({
     <div>
       <div className="flex items-center gap-2">
         <button
+          ref={triggerRef}
           type="button"
           onClick={() => !disabled && setIsOpen(true)}
           data-date-input={dataDateInput}
@@ -295,11 +307,11 @@ const CustomDateInput = ({
         )}
       </div>
 
-      {isOpen && !disabled && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+      {isOpen && !disabled && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-end justify-center sm:items-center p-0 sm:p-4 animate-fade-in">
           <div
             data-modal-backdrop
-            className="fixed inset-0 bg-black/50"
+            className="absolute inset-0 bg-black/50 transition-opacity"
             onClick={() => {
               setIsOpen(false);
               if (!value && onCancel) onCancel();
@@ -308,63 +320,64 @@ const CustomDateInput = ({
           <div
             ref={modalRef}
             data-modal-content
-            className="relative bg-white rounded-lg shadow-xl max-w-sm w-full mx-auto z-10 animate-slide-down overflow-hidden"
+            className="relative z-10 bg-white w-full rounded-t-2xl rounded-b-none sm:rounded-2xl shadow-2xl sm:max-w-xs mx-auto animate-slideUp sm:animate-slide-down overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-[#2d3748]">Seleccionar {label}</h3>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsOpen(false);
-                  if (!value && onCancel) onCancel();
-                }}
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="max-h-[calc(100vh-8rem)] overflow-y-auto">
-              <div className="px-4">
-                <div className="flex flex-col items-center space-y-3 py-4">
-                  <input
-                    type="text"
-                    value={inputValue}
-                    onChange={handleInputChange}
-                    placeholder="DD/MM/YYYY"
-                    autoComplete="off"
-                    inputMode="none"
-                    readOnly
-                    className="w-full text-2xl text-center py-4 text-gray-800 rounded-md shadow-sm px-3 border border-gray-300 focus:border-[#1d5030] focus:ring-[#1d5030] transition-colors duration-200 outline-none select-none pointer-events-none"
-                  />
-                  {error && (
-                    <div className="w-full bg-red-50 rounded-md px-3 py-2 flex items-center justify-center gap-2 animate-[slideDown_0.2s_ease-out]">
-                      <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
-                      <p className="text-base text-red-600">{error}</p>
-                    </div>
-                  )}
-                </div>
+            {/* Header / Display Section (White) */}
+            <div className="bg-white px-5 pt-5 pb-3">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                  Seleccionar {label}
+                </h3>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsOpen(false);
+                    if (!value && onCancel) onCancel();
+                  }}
+                  className="text-gray-300 hover:text-gray-500 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
 
-              <div className="border-t border-gray-200 my-2" />
+              <div className="flex flex-col items-center space-y-1">
+                <input
+                  type="text"
+                  value={inputValue}
+                  onChange={handleInputChange}
+                  placeholder="DD/MM/YYYY"
+                  autoComplete="off"
+                  inputMode="none"
+                  readOnly
+                  className="w-full text-3xl font-bold text-center py-1 text-[#004D40] bg-transparent border-none focus:ring-0 placeholder-gray-200 outline-none select-none pointer-events-none tracking-tight"
+                />
+                {error && (
+                  <div className="flex items-center gap-1.5 text-red-500 animate-[slideDown_0.2s_ease-out]">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    <span className="text-xs font-medium">{error}</span>
+                  </div>
+                )}
+              </div>
+            </div>
 
-              <div className="p-4">
-                <div className="grid grid-cols-3 gap-3">
-                  {keypadButtons.map((button) => (
-                    <KeypadButton
-                      key={button.value}
-                      value={button.value}
-                      label={button.label}
-                      onClick={button.action}
-                      variant={button.variant}
-                    />
-                  ))}
-                </div>
+            {/* Keypad Section (Light Gray) */}
+            <div className="bg-gray-50 px-5 py-5 border-t border-gray-100">
+              <div className="grid grid-cols-3 gap-2.5">
+                {keypadButtons.map((button) => (
+                  <KeypadButton
+                    key={button.value}
+                    value={button.value}
+                    label={button.label}
+                    onClick={button.action}
+                    variant={button.variant}
+                  />
+                ))}
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
