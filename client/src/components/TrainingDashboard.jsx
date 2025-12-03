@@ -1,36 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import PropTypes from 'prop-types';
-import { Users, Plus, GraduationCap } from 'lucide-react';
+import React, { useEffect, useState, useContext } from 'react';
+import { Users, Plus } from 'lucide-react';
+import { useOutletContext } from 'react-router-dom';
 import useEmployees from '../hooks/useEmployees';
 import EmployeeCard from './EmployeeCard';
 import CreateEmployeeModal from './CreateEmployeeModal';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
 import OfflineState from './ui/OfflineState';
-import { useOutletContext } from 'react-router-dom';
-
-const TrainingDashboard = () => {
-  // We can access context from MainLayout if needed, but we also have our own hooks
-  // const { user } = useOutletContext(); // If we passed user via context
-  // But AuthContext is global, so we can just use that if we needed user.
-  // However, the component was receiving currentUser as prop.
-  // Since it's now a route component, it won't receive props from App.jsx directly.
-  // We need to get the user from AuthContext.
-  
-  // Let's import AuthContext
-  // import { useContext } from 'react';
-  // import AuthContext from '../contexts/AuthContext';
-  // But wait, I can't add imports easily with write_to_file unless I rewrite the whole file.
-  // I am rewriting the whole file.
-  
-  return <TrainingDashboardContent />;
-};
-
-// Inner component to use hooks
-import { useContext } from 'react';
 import AuthContext from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 
-const TrainingDashboardContent = () => {
+const TrainingDashboard = () => {
   const { user: currentUser } = useContext(AuthContext);
   const { addToast } = useToast();
   const { isCreateEmployeeModalOpen, setIsCreateEmployeeModalOpen } = useOutletContext();
@@ -92,18 +71,6 @@ const TrainingDashboardContent = () => {
   };
 
   const canManage = currentUser?.role === 'admin' || currentUser?.role === 'supervisor';
-
-  // Early return for Offline State - CRITICAL: Prevents rendering of "Add Employee" button
-  // Early return for Offline State - CRITICAL: Prevents rendering of "Add Employee" button
-  // if (isOffline) {
-  //   return (
-  //     <div className="min-h-screen">
-  //       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-  //          <OfflineState />
-  //       </div>
-  //     </div>
-  //   );
-  // }
 
   return (
     <div className="min-h-screen" onClick={() => setSelectedEmployeeId(null)}>

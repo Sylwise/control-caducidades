@@ -41,7 +41,7 @@ const MainLayout = () => {
   const { products, loadAllProducts } = useProductManagement((message, type) =>
     addToast(message, type)
   );
-
+  
   const { calculateExpiringProducts, getGroupedExpiringProducts } =
     useExpiringProducts(products);
 

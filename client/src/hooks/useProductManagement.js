@@ -125,9 +125,22 @@ export const useProductManagement = (addToast) => {
 
     socket.on("productStatusUpdate", handleStatusUpdate);
 
+    // Listen for local updates (for offline sync between components)
+    const handleLocalUpdate = (event) => {
+      const data = event.detail;
+      if (data.type === "catalogUpdate") {
+        handleCatalogUpdate(data);
+      } else {
+        handleStatusUpdate(data);
+      }
+    };
+
+    window.addEventListener('local-product-update', handleLocalUpdate);
+
     return () => {
       socket.off("catalogUpdate", handleCatalogUpdate);
       socket.off("productStatusUpdate", handleStatusUpdate);
+      window.removeEventListener('local-product-update', handleLocalUpdate);
     };
   }, [socket]);
 
@@ -278,12 +291,33 @@ export const useProductManagement = (addToast) => {
 
       if (!productToUpdate) throw new Error("Producto no encontrado");
 
-      const updatedProduct = await updateProductStatus(productId, updateData);
-      updateProductInState(updatedProduct);
-      
-      // Si actualizamos, quitamos de la lista negra (por si acaso estaba ahí)
+      // 1. Optimistic Update (Actualización Optimista)
+      const optimisticProduct = {
+        ...productToUpdate,
+        ...updateData,
+        estado: updateData.estado || productToUpdate.estado,
+        producto: productToUpdate.producto,
+        updatedAt: new Date().toISOString()
+      };
+
+      // CRÍTICO: Quitamos de la lista negra ANTES de actualizar el estado
+      // Esto evita que useExpiringProducts filtre el producto cuando se renderice
       removeFromOfflineBlacklist(productId);
 
+      // Actualizamos el estado visualmente YA
+      updateProductInState(optimisticProduct);
+
+      // Broadcast local event for other components (like MainLayout)
+      window.dispatchEvent(new CustomEvent('local-product-update', {
+        detail: { type: 'update', productStatus: optimisticProduct }
+      }));
+
+      // 2. Llamada real al servidor / OfflineManager
+      const updatedProduct = await updateProductStatus(productId, updateData);
+      
+      // 3. Confirmamos con la respuesta real
+      updateProductInState(updatedProduct);
+      
       addToast(
         `${productToUpdate.producto.nombre} actualizado correctamente.`,
         "success"
@@ -341,6 +375,15 @@ export const useProductManagement = (addToast) => {
       };
       addProductToState(unclassifiedProduct);
 
+      // Broadcast local event
+      window.dispatchEvent(new CustomEvent('local-product-update', {
+        detail: { 
+            type: 'delete', 
+            productId, 
+            product: productToDelete.producto 
+        }
+      }));
+
       addToast(
         `${productToDelete.producto.nombre} desclasificado correctamente.`,
         "success",
@@ -372,15 +415,21 @@ export const useProductManagement = (addToast) => {
         estado: productToRestore.estado,
       };
 
+      // CRÍTICO: Quitamos de la lista negra ANTES de cualquier actualización de estado
+      removeFromOfflineBlacklist(productId);
+
       const restoredProduct = await updateProductStatus(productId, updateData);
       updateProductInState(restoredProduct);
+      
+      // Broadcast local event
+      window.dispatchEvent(new CustomEvent('local-product-update', {
+        detail: { type: 'update', productStatus: restoredProduct }
+      }));
+
       // await loadAllProducts();
 
       // Limpiar del historial una vez restaurado
       removeFromHistory(productId);
-      
-      // QUITAR DE LISTA NEGRA LOCAL
-      removeFromOfflineBlacklist(productId);
 
       addToast(`${productToRestore.producto.nombre} restaurado correctamente.`, "success");
       return true;
