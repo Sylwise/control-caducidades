@@ -13,67 +13,6 @@ export const useProductManagement = (addToast) => {
   const { socket } = useSocket();
   const [products, setProducts] = useState(INITIAL_PRODUCTS_STATE);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [lastUpdatedProductId, setLastUpdatedProductId] = useState(null);
-  
-  // Usamos el contexto en lugar de window
-  const { addToHistory, getFromHistory, removeFromHistory } = useDeletedProducts();
-
-  const loadAllProducts = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const [statusData, catalogData] = await Promise.all([
-        getAllProductStatus(),
-        getAllCatalogProducts(),
-      ]);
-
-      const classifiedProductIds = new Set(
-        statusData.map((product) => product.producto._id)
-      );
-
-      const unclassifiedProducts = catalogData
-        .filter((product) => !classifiedProductIds.has(product._id))
-        .map((product) => ({
-          producto: product,
-          estado: "sin-clasificar",
-        }));
-
-      const combinedUnclassifiedProducts = [
-        ...unclassifiedProducts,
-        ...statusData.filter(
-          (product) => product.estado === "sin-clasificar"
-        )
-      ].sort((a, b) => a.producto.nombre.localeCompare(b.producto.nombre));
-
-      const organizedProducts = {
-        "sin-clasificar": combinedUnclassifiedProducts,
-        "frente-cambia": statusData.filter(
-          (product) => product.estado === "frente-cambia"
-        ),
-        "frente-agota": statusData.filter(
-          (product) => product.estado === "frente-agota"
-        ),
-        "abierto-cambia": statusData.filter(
-          (product) => product.estado === "abierto-cambia"
-        ),
-        "abierto-agota": statusData.filter(
-          (product) => product.estado === "abierto-agota"
-        ),
-      };
-
-      setProducts(organizedProducts);
-    } catch (err) {
-      setError(err.message || "Error al cargar los productos");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Escuchar eventos del catálogo en tiempo real
-  useEffect(() => {
-    if (!socket) return;
 
     const handleCatalogUpdate = (data) => {
       if (data.type === "delete") {

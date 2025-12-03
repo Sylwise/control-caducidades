@@ -6,7 +6,29 @@ const socketService = require("../services/socketService");
 exports.getAllStatus = async (req, res) => {
   try {
     const statuses = await ProductStatus.find({ restaurante: req.user.restaurante }).populate("producto", "nombre");
-    res.json(statuses);
+    
+    // Filtrar estados huérfanos (donde el producto referenciado ya no existe)
+    const validStatuses = [];
+    const orphanIds = [];
+
+    statuses.forEach(status => {
+      if (status.producto) {
+        validStatuses.push(status);
+      } else {
+        orphanIds.push(status._id);
+      }
+    });
+
+    // Limpiar huérfanos automáticamente
+    if (orphanIds.length > 0) {
+      logger.warn(`Detectados ${orphanIds.length} estados huérfanos en getAllStatus. Eliminando...`, { orphanIds });
+      // No esperamos a que termine la eliminación para responder, pero manejamos errores en background
+      ProductStatus.deleteMany({ _id: { $in: orphanIds } })
+        .then(() => logger.info("Limpieza de estados huérfanos completada"))
+        .catch(err => logger.error({ err }, "Error al limpiar estados huérfanos"));
+    }
+
+    res.json(validStatuses);
   } catch (error) {
     logger.error({ error }, "Error al obtener todos los estados");
     res
@@ -22,7 +44,27 @@ exports.getByStatus = async (req, res) => {
       "producto",
       "nombre"
     );
-    res.json(statuses);
+
+    // Filtrar y limpiar huérfanos
+    const validStatuses = [];
+    const orphanIds = [];
+
+    statuses.forEach(status => {
+      if (status.producto) {
+        validStatuses.push(status);
+      } else {
+        orphanIds.push(status._id);
+      }
+    });
+
+    if (orphanIds.length > 0) {
+      logger.warn(`Detectados ${orphanIds.length} estados huérfanos en getByStatus. Eliminando...`, { orphanIds });
+      ProductStatus.deleteMany({ _id: { $in: orphanIds } }).catch(err => 
+        logger.error({ err }, "Error al limpiar estados huérfanos en getByStatus")
+      );
+    }
+
+    res.json(validStatuses);
   } catch (error) {
     logger.error({ error, params: req.params }, "Error al obtener por estado");
     res
