@@ -68,9 +68,7 @@ const MainLayout = () => {
 
   const navigateToProduct = (product) => {
     setIsExpiringModalOpen(false);
-    navigate("/inventory");
-    // We might need a way to tell ProductList to select this product
-    // For now, we just navigate to inventory
+    navigate("/inventory", { state: { productId: product.producto._id } });
   };
 
   const groupedProducts = getGroupedExpiringProducts();

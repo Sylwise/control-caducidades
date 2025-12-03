@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useOutletContext, useLocation } from "react-router-dom";
 import { CheckCircle, ClipboardList } from "lucide-react";
 import SearchBar from "./SearchBar";
 import UpdateModal from "./UpdateModal";
@@ -21,6 +21,7 @@ import ToastContainer from "./ToastContainer";
 const ProductList = () => {
   const { socket } = useSocket();
   const { addToast, toasts, removeToast } = useToasts();
+  const location = useLocation();
   
   // Estados locales
   const [searchTerm, setSearchTerm] = useState("");
@@ -114,6 +115,42 @@ const ProductList = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [selectedProduct]);
+
+  // Efecto para manejar navegación desde el modal de caducidades
+  useEffect(() => {
+    if (location.state?.productId && !loading && products) {
+      const productId = location.state.productId;
+      
+      // Buscar el producto en todas las categorías
+      let foundProduct = null;
+      let foundCategory = null;
+
+      for (const category in products) {
+        const product = products[category].find(p => p.producto._id === productId);
+        if (product) {
+          foundProduct = product;
+          foundCategory = category;
+          break;
+        }
+      }
+
+      if (foundProduct) {
+        // Si es un producto sin clasificar, usamos el buscador para que aparezca en la lista
+        if (foundCategory === "sin-clasificar") {
+          setSearchTerm(foundProduct.producto.nombre);
+        } else {
+          // Si es clasificado, limpiamos el buscador para asegurar que no esté filtrado
+          setSearchTerm("");
+        }
+
+        setSelectedProduct(foundProduct);
+        scrollToProductId(productId);
+        
+        // Limpiar el state para evitar re-selección al recargar o navegar
+        window.history.replaceState({}, document.title);
+      }
+    }
+  }, [location.state, loading, products, scrollToProductId]);
 
   // Handlers para eventos
   const handleCatalogUpdate = useCallback((data) => {

@@ -103,9 +103,9 @@ const ProductItem = memo(({
                 }`}
               />
             </div>
-            <span className="text-gray-900 font-medium truncate select-none text-base">
+            <div className="text-gray-900 font-medium truncate select-none text-base flex-1 min-w-0">
               {product.nombre}
-            </span>
+            </div>
           </div>
 
           <div className="flex items-center gap-1 flex-shrink-0">
@@ -134,9 +134,7 @@ const ProductItem = memo(({
                   <Trash2 className="w-5 h-5" />
                 </button>
               </>
-            ) : (
-               <div className="w-[80px]"></div> 
-            )}
+            ) : null}
           </div>
         </div>
       )}
