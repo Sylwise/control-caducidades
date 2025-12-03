@@ -76,7 +76,12 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-[#f8f8f8] p-4">
       <div className="w-full max-w-md">
         {/* Header */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 flex flex-col items-center">
+          <img 
+            src="/logo.svg" 
+            alt="Logo" 
+            className="w-48 h-48 mb-4 md:w-64 md:h-64" 
+          />
           <h1 className="text-2xl font-bold text-[#1d5030] font-['Noto Sans'] mb-2 select-none">
             Gestión Operativa
           </h1>
