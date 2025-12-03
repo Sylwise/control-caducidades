@@ -109,6 +109,13 @@ class IndexedDBService {
   }
 
   async saveProductStatus(product) {
+    // Validar keyPath antes de intentar guardar
+    if (!product?.producto?._id) {
+      const error = new Error("Invalid product structure: Missing producto._id (KeyPath)");
+      OfflineDebugger.error("SAVE_PRODUCT_ERROR", error, { product });
+      throw error;
+    }
+
     const store = await this.getStore(STORES.PRODUCTS, "readwrite");
     product.updatedAt = new Date().toISOString();
 

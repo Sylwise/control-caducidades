@@ -178,9 +178,13 @@ class StatusService {
 
     // Luego guardar los nuevos estados
     for (const product of products) {
-      if (!product._id) {
-        OfflineDebugger.error("SAVE_TO_LOCAL_ERROR", "Product without ID", {
+      // Validar estructura requerida por IndexedDB (keyPath: producto._id)
+      if (!product._id || !product.producto || !product.producto._id) {
+        OfflineDebugger.error("SAVE_TO_LOCAL_ERROR", "Invalid product structure", {
           product,
+          reason: !product._id 
+            ? "Missing ID" 
+            : (!product.producto ? "Missing producto" : "Missing producto._id")
         });
         continue;
       }
