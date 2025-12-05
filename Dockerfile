@@ -7,16 +7,29 @@ COPY package*.json ./
 COPY client/package*.json ./client/
 COPY server/package*.json ./server/
 
-# Install dependencies
+# Install root dependencies
 RUN npm install
-RUN cd client && npm install
-RUN cd server && npm install
+
+# Install client dependencies
+WORKDIR /app/client
+RUN npm install
+
+# Install server dependencies
+WORKDIR /app/server
+RUN npm install
+
+# Return to root
+WORKDIR /app
 
 # Copy source code
 COPY . .
 
 # Build client
-RUN cd client && npm run build
+WORKDIR /app/client
+RUN npm run build
+
+# Return to root
+WORKDIR /app
 
 # Expose port
 EXPOSE 3000

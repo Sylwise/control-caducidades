@@ -111,3 +111,5 @@ La aplicación estará disponible en `http://localhost:5173`.
 
 ---
 *Desarrollado con un enfoque en escalabilidad, experiencia de usuario y robustez operativa.*
+
+Perfecto. Queria pedir tu opinion. Para gente supervisora conviene recopilar historial, información de algun tipo ? La intencion es hacer que la app sea meas inteligente. Ahora nos avisa de proximas caducidades. Tambien nos avisa que si durante 4 dias no tocan un producto, la tarjeta se vuelve de otro color. No se si hay algo mas que podriamos hacer. Tampoco se que cosas le interesan a los supervisores para ver que representa esta app, como se usa, que insights puede dar.
