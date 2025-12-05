@@ -38,3 +38,20 @@ export const isExpiringSoon = (date) => {
   const productDate = new Date(date);
   return productDate <= twoWeeksFromNow;
 };
+
+export const isExpired = (date) => {
+  if (!date) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  // Create a date for tomorrow
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  
+  const productDate = new Date(date);
+  // Ensure we compare apples to apples (start of day)
+  productDate.setHours(0, 0, 0, 0);
+  
+  // Returns true if date is today, tomorrow, or in the past
+  return productDate <= tomorrow;
+};

@@ -1,6 +1,7 @@
 import { memo, useMemo } from "react";
 import { Box, Clock, Edit3, Trash2, Package, History } from "lucide-react";
 import PropTypes from "prop-types";
+import { isExpired } from "../utils/dateUtils";
 
 const formatDate = (dateString) => {
   try {
@@ -36,6 +37,12 @@ const ProductCard = memo(({
     return daysDiff > 4;
   }, [product.updatedAt]);
 
+  const getStatusColor = () => {
+    if (isExpired(product.fechaFrente)) return 'bg-red-500 animate-pulse';
+    if (isExpiringSoon(product.fechaFrente)) return 'bg-[#ffb81c] animate-pulse';
+    return 'bg-gray-300';
+  };
+
   return (
     <div
       data-product-id={product.producto?._id}
@@ -70,7 +77,7 @@ const ProductCard = memo(({
             {/* Indicador de estado (punto) */}
             <div className={`
               w-2.5 h-2.5 rounded-full flex-shrink-0
-              ${isExpiringSoon(product.fechaFrente) ? 'bg-[#ffb81c] animate-pulse' : 'bg-gray-300'}
+              ${getStatusColor()}
             `} />
 
             {isStale && (
@@ -163,18 +170,12 @@ const ProductCard = memo(({
                 <History size={16} className="text-amber-500/80" />
               </div>
             )}
-            {isExpiringSoon(product.fechaFrente) && (
-              <div
-                className="
-                w-2 h-2 
-                rounded-full 
-                bg-[#ffb81c]
-                shadow-[0_0_6px_rgba(255,184,28,0.5)]
-                animate-pulse
-                transition-opacity duration-300
-              "
-              />
-            )}
+            
+            {/* Indicador de estado (punto) - Siempre visible ahora */}
+            <div className={`
+              w-2.5 h-2.5 rounded-full flex-shrink-0
+              ${getStatusColor()}
+            `} />
           </div>
 
           {/* Contenido expandible - para todos los productos cuando están seleccionados */}
