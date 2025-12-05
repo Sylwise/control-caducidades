@@ -1,9 +1,4 @@
-[build]
-builder = "nixpacks"
-buildCommand = "cd client && npm install && npm run build && cd ../server && npm install"
-
 [deploy]
-startCommand = "cd server && node scripts/create_indexes.js && node scripts/create_admin.js && NODE_ENV=production npm start"
 healthcheckPath = "/api/auth/health"
 healthcheckTimeout = 100
 restartPolicyType = "on_failure" 

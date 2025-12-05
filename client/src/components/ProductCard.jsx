@@ -40,7 +40,7 @@ const ProductCard = memo(({
   const getStatusColor = () => {
     if (isExpired(product.fechaFrente)) return 'bg-red-500 animate-pulse';
     if (isExpiringSoon(product.fechaFrente)) return 'bg-[#ffb81c] animate-pulse';
-    return 'bg-gray-300';
+    return null;
   };
 
   return (
@@ -75,10 +75,12 @@ const ProductCard = memo(({
           {/* FILA SUPERIOR (Móvil) / IZQUIERDA (Desktop): Indicador y Nombre */}
           <div className="flex items-center gap-3 w-full sm:flex-1 min-w-0">
             {/* Indicador de estado (punto) */}
-            <div className={`
-              w-2.5 h-2.5 rounded-full flex-shrink-0
-              ${getStatusColor()}
-            `} />
+            {getStatusColor() && (
+              <div className={`
+                w-2.5 h-2.5 rounded-full flex-shrink-0
+                ${getStatusColor()}
+              `} />
+            )}
 
             {isStale && (
               <div 
@@ -172,10 +174,12 @@ const ProductCard = memo(({
             )}
             
             {/* Indicador de estado (punto) - Siempre visible ahora */}
-            <div className={`
-              w-2.5 h-2.5 rounded-full flex-shrink-0
-              ${getStatusColor()}
-            `} />
+            {getStatusColor() && (
+              <div className={`
+                w-2.5 h-2.5 rounded-full flex-shrink-0
+                ${getStatusColor()}
+              `} />
+            )}
           </div>
 
           {/* Contenido expandible - para todos los productos cuando están seleccionados */}
