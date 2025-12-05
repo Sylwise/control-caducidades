@@ -28,11 +28,11 @@ COPY . .
 WORKDIR /app/client
 RUN npm run build
 
-# Return to root
-WORKDIR /app
+# Return to server to run the app
+WORKDIR /app/server
 
 # Expose port
 EXPOSE 3000
 
 # Start command
-CMD ["sh", "-c", "cd server && node scripts/create_indexes.js && node scripts/create_admin.js && NODE_ENV=production npm start"]
+CMD ["npm", "run", "start:prod"]

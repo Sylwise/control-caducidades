@@ -8,6 +8,7 @@
   },
   "scripts": {
     "start": "node index.js",
+    "start:prod": "node scripts/create_indexes.js && node scripts/create_admin.js && NODE_ENV=production node index.js",
     "dev": "nodemon index.js | pino-pretty"
   },
   "dependencies": {
