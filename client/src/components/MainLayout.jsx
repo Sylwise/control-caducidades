@@ -72,7 +72,7 @@ const MainLayout = () => {
   };
 
   const groupedProducts = getGroupedExpiringProducts();
-  const hasExpiredProducts = groupedProducts.expired.products.length > 0;
+  const hasExpiredProducts = groupedProducts.expired.products.length > 0 || groupedProducts.critical.products.length > 0;
 
   return (
     <div className="min-h-screen bg-[#f8f8f8]">

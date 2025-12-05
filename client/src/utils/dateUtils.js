@@ -55,3 +55,14 @@ export const isExpired = (date) => {
   // Returns true if date is today, tomorrow, or in the past
   return productDate <= tomorrow;
 };
+
+export const isStrictlyExpired = (date) => {
+  if (!date) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const productDate = new Date(date);
+  productDate.setHours(0, 0, 0, 0);
+  
+  return productDate < today;
+};

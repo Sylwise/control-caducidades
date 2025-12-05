@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { getDaysUntilExpiry, isExpiringSoon } from "../utils/dateUtils";
+import { getDaysUntilExpiry, isExpiringSoon, isExpired, isStrictlyExpired } from "../utils/dateUtils";
 
 export const useExpiringProducts = (products) => {
   const calculateExpiringProducts = useCallback(() => {
@@ -62,13 +62,20 @@ export const useExpiringProducts = (products) => {
       expired: {
         title: "Productos Caducados",
         color: "#991b1b",
-        products: products.filter((p) => p.daysUntilExpiry <= 0),
+        products: products.filter((p) => isStrictlyExpired(p.fechaFrente)),
       },
-      urgent: {
-        title: "Caduca en menos de 7 días",
+      critical: {
+        title: "Caduca Hoy / Mañana",
         color: "#dc2626",
         products: products.filter(
-          (p) => p.daysUntilExpiry > 0 && p.daysUntilExpiry < 7
+          (p) => isExpired(p.fechaFrente) && !isStrictlyExpired(p.fechaFrente)
+        ),
+      },
+      urgent: {
+        title: "Caduca en 2-7 días",
+        color: "#ea580c",
+        products: products.filter(
+          (p) => !isExpired(p.fechaFrente) && p.daysUntilExpiry < 7
         ),
       },
       warning: {
