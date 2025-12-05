@@ -123,58 +123,64 @@ const ProductCard = memo(({
           </div>
 
           {/* FILA INFERIOR (Móvil) / DERECHA (Desktop): Fechas y Acciones */}
-          <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-2 sm:gap-6 pl-5 sm:pl-0">
-            {/* Fechas Compactas */}
-            <div className="flex flex-wrap items-center gap-2 text-xs flex-1 min-w-0">
+          <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-2 sm:gap-4 pl-0 sm:pl-0 mt-1 sm:mt-0">
+            {/* Fechas Compactas - GRID LAYOUT */}
+            <div className="grid grid-cols-2 gap-2 text-xs flex-1 sm:flex-none sm:w-[280px] min-w-0">
               {isSameDate ? (
                 <>
-                  <div className="flex items-center gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100">
-                    <span className="text-[#1d5030] font-semibold">F/A:</span>
-                    <span className="font-medium text-gray-600">{formatDate(product.fechaFrente)}</span>
+                  <div className="flex items-center gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100 w-full overflow-hidden">
+                    <span className="text-[#1d5030] font-semibold flex-shrink-0">F/A:</span>
+                    <span className="font-medium text-gray-600 truncate">{formatDate(product.fechaFrente)}</span>
                     {product.cajasAlmacen > 1 && (
-                      <span className="ml-1 px-1.5 py-0.5 bg-[#1d5030]/10 text-[#1d5030] rounded-full text-[10px] font-bold">
+                      <span className="ml-auto px-1.5 py-0.5 bg-[#1d5030]/10 text-[#1d5030] rounded-full text-[10px] font-bold flex-shrink-0">
                         {product.cajasAlmacen}
                       </span>
                     )}
                   </div>
                   
-                  {nextDate && (
-                     <div className="flex items-center gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100">
-                        <span className="text-[#1d5030] font-semibold">A:</span>
-                        <span className="font-medium text-gray-600">{formatDate(nextDate.date)}</span>
+                  {nextDate ? (
+                     <div className="flex items-center gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100 w-full overflow-hidden">
+                        <span className="text-[#1d5030] font-semibold flex-shrink-0">A:</span>
+                        <span className="font-medium text-gray-600 truncate">{formatDate(nextDate.date)}</span>
                         {nextDate.boxes > 0 && (
-                          <span className="ml-1 px-1.5 py-0.5 bg-[#1d5030]/10 text-[#1d5030] rounded-full text-[10px] font-bold">
+                          <span className="ml-auto px-1.5 py-0.5 bg-[#1d5030]/10 text-[#1d5030] rounded-full text-[10px] font-bold flex-shrink-0">
                             {nextDate.boxes}
                           </span>
                         )}
                      </div>
+                  ) : (
+                    <div></div> // Spacer for grid
                   )}
                 </>
               ) : (
                 <>
-                  {product.fechaFrente && (
-                    <div className="flex items-center gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100">
-                      <span className="text-[#1d5030] font-semibold">F:</span>
-                      <span className="font-medium text-gray-600">{formatDate(product.fechaFrente)}</span>
+                  {product.fechaFrente ? (
+                    <div className="flex items-center gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100 w-full overflow-hidden">
+                      <span className="text-[#1d5030] font-semibold flex-shrink-0">F:</span>
+                      <span className="font-medium text-gray-600 truncate">{formatDate(product.fechaFrente)}</span>
                     </div>
+                  ) : (
+                     <div></div>
                   )}
-                  {product.fechaAlmacen && (
-                    <div className="flex items-center gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100">
-                      <span className="text-[#1d5030] font-semibold">A:</span>
-                      <span className="font-medium text-gray-600">{formatDate(product.fechaAlmacen)}</span>
+                  {product.fechaAlmacen ? (
+                    <div className="flex items-center gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100 w-full overflow-hidden">
+                      <span className="text-[#1d5030] font-semibold flex-shrink-0">A:</span>
+                      <span className="font-medium text-gray-600 truncate">{formatDate(product.fechaAlmacen)}</span>
                       {product.cajasAlmacen > 0 && (
-                        <span className="ml-1 px-1.5 py-0.5 bg-[#1d5030]/10 text-[#1d5030] rounded-full text-[10px] font-bold">
+                        <span className="ml-auto px-1.5 py-0.5 bg-[#1d5030]/10 text-[#1d5030] rounded-full text-[10px] font-bold flex-shrink-0">
                           {product.cajasAlmacen}
                         </span>
                       )}
                     </div>
+                  ) : (
+                    <div></div>
                   )}
                 </>
               )}
             </div>
 
             {/* Acciones Rápidas - Touch Friendly */}
-            <div className="flex items-center gap-4 sm:gap-1 flex-shrink-0 ml-2">
+            <div className="flex items-center gap-2 sm:gap-1 flex-shrink-0 ml-1">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -320,7 +326,7 @@ const ProductCard = memo(({
                             Sin stock
                           </span>
                         ) : (
-                          <div className="text-lg font-bold text-gray-900 leading-tight select-none">
+                          <div className="text-lg font-bold text-gray-700 leading-tight select-none">
                             {formatDate(date)}
                           </div>
                         )}
