@@ -11,7 +11,7 @@ const formatDate = (dateString) => {
     return date.getFullYear() !== new Date().getFullYear()
       ? `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
           .toString()
-          .padStart(2, "0")}/${date.getFullYear()}`
+          .padStart(2, "0")}/${date.getFullYear().toString().slice(-2)}`
       : `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
           .toString()
           .padStart(2, "0")}`;
@@ -42,6 +42,31 @@ const ProductCard = memo(({
     if (isExpiringSoon(product.fechaFrente)) return 'bg-[#ffb81c] animate-pulse';
     return null;
   };
+
+  const nextDate = useMemo(() => {
+    if (!product.fechasAlmacen || product.fechasAlmacen.length === 0 || !product.fechaFrente) return null;
+    
+    const frontTime = new Date(product.fechaFrente).getTime();
+    if (isNaN(frontTime)) return null;
+
+    const sortedDates = [...product.fechasAlmacen]
+      .map(d => {
+        // Handle both object structure {date, boxes} and simple date string
+        const dateValue = d.date || d;
+        const boxes = d.boxes !== undefined ? d.boxes : 1;
+        return { date: dateValue, time: new Date(dateValue).getTime(), boxes };
+      })
+      .filter(d => !isNaN(d.time))
+      .sort((a, b) => a.time - b.time);
+
+    const next = sortedDates.find(d => d.time > frontTime);
+    return next || null;
+  }, [product.fechasAlmacen, product.fechaFrente]);
+
+  const isSameDate = useMemo(() => {
+     if (!product.fechaFrente || !product.fechaAlmacen) return false;
+     return formatDate(product.fechaFrente) === formatDate(product.fechaAlmacen);
+  }, [product.fechaFrente, product.fechaAlmacen]);
 
   return (
     <div
@@ -101,22 +126,50 @@ const ProductCard = memo(({
           <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-2 sm:gap-6 pl-5 sm:pl-0">
             {/* Fechas Compactas */}
             <div className="flex flex-wrap items-center gap-2 text-xs flex-1 min-w-0">
-              {product.fechaFrente && (
-                <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded border border-gray-100">
-                  <span className="text-[#1d5030] font-semibold">F:</span>
-                  <span className="font-medium text-gray-600">{formatDate(product.fechaFrente)}</span>
-                </div>
-              )}
-              {product.fechaAlmacen && (
-                <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded border border-gray-100">
-                  <span className="text-[#1d5030] font-semibold">A:</span>
-                  <span className="font-medium text-gray-600">{formatDate(product.fechaAlmacen)}</span>
-                  {product.cajasAlmacen > 0 && (
-                    <span className="ml-1 px-1.5 py-0.5 bg-[#1d5030]/10 text-[#1d5030] rounded-full text-[10px] font-bold">
-                      {product.cajasAlmacen}
-                    </span>
+              {isSameDate ? (
+                <>
+                  <div className="flex items-center gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100">
+                    <span className="text-[#1d5030] font-semibold">F/A:</span>
+                    <span className="font-medium text-gray-600">{formatDate(product.fechaFrente)}</span>
+                    {product.cajasAlmacen > 1 && (
+                      <span className="ml-1 px-1.5 py-0.5 bg-[#1d5030]/10 text-[#1d5030] rounded-full text-[10px] font-bold">
+                        {product.cajasAlmacen}
+                      </span>
+                    )}
+                  </div>
+                  
+                  {nextDate && (
+                     <div className="flex items-center gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100">
+                        <span className="text-[#1d5030] font-semibold">A:</span>
+                        <span className="font-medium text-gray-600">{formatDate(nextDate.date)}</span>
+                        {nextDate.boxes > 0 && (
+                          <span className="ml-1 px-1.5 py-0.5 bg-[#1d5030]/10 text-[#1d5030] rounded-full text-[10px] font-bold">
+                            {nextDate.boxes}
+                          </span>
+                        )}
+                     </div>
                   )}
-                </div>
+                </>
+              ) : (
+                <>
+                  {product.fechaFrente && (
+                    <div className="flex items-center gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100">
+                      <span className="text-[#1d5030] font-semibold">F:</span>
+                      <span className="font-medium text-gray-600">{formatDate(product.fechaFrente)}</span>
+                    </div>
+                  )}
+                  {product.fechaAlmacen && (
+                    <div className="flex items-center gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100">
+                      <span className="text-[#1d5030] font-semibold">A:</span>
+                      <span className="font-medium text-gray-600">{formatDate(product.fechaAlmacen)}</span>
+                      {product.cajasAlmacen > 0 && (
+                        <span className="ml-1 px-1.5 py-0.5 bg-[#1d5030]/10 text-[#1d5030] rounded-full text-[10px] font-bold">
+                          {product.cajasAlmacen}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
@@ -305,6 +358,15 @@ ProductCard.propTypes = {
     estado: PropTypes.string,
     fechaFrente: PropTypes.string,
     fechaAlmacen: PropTypes.string,
+    fechasAlmacen: PropTypes.arrayOf(
+      PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.shape({
+          date: PropTypes.string,
+          boxes: PropTypes.number
+        })
+      ])
+    ),
     cajasAlmacen: PropTypes.number,
     cajaUnica: PropTypes.bool,
     hayOtrasFechas: PropTypes.bool,
