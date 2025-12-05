@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react";
-import { Box, Clock, Edit3, Trash2, Package, History } from "lucide-react";
+import { Box, Clock, Edit3, Trash2, Package, History, PackageOpen } from "lucide-react";
 import PropTypes from "prop-types";
 import { isExpired } from "../utils/dateUtils";
 
@@ -211,7 +211,7 @@ const ProductCard = memo(({
           </div>
         </div>
       ) : (
-        // VISTA TARJETA (Original)
+        // VISTA TARJETA (Unified 2-Column Grid)
         <>
           <div className="flex items-center gap-2">
             <span className="font-['Noto Sans'] font-semibold text-gray-700 text-base flex-1 select-none">
@@ -226,7 +226,7 @@ const ProductCard = memo(({
               </div>
             )}
             
-            {/* Indicador de estado (punto) - Siempre visible ahora */}
+            {/* Indicador de estado (punto) */}
             {getStatusColor() && (
               <div className={`
                 w-2.5 h-2.5 rounded-full flex-shrink-0
@@ -235,7 +235,7 @@ const ProductCard = memo(({
             )}
           </div>
 
-          {/* Contenido expandible - para todos los productos cuando están seleccionados */}
+          {/* Contenido expandible */}
           <div
             className={`
             transform transition-all duration-300
@@ -244,66 +244,100 @@ const ProductCard = memo(({
           `}
           >
             <div className="space-y-4">
-              {/* Mostrar fechas si existen, independientemente del estado */}
-              {(product.fechaFrente || product.fechaAlmacen) && (
-                <div className="grid grid-cols-2 gap-4">
-                  {product.fechaFrente && (
-                    <div className="w-full bg-white border border-gray-200 rounded-md overflow-hidden border-l-4 border-l-[#1d5030]">
-                      <div className="bg-slate-100 w-full h-9 flex justify-between items-center px-2">
-                        <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">
-                          FRENTE
-                        </span>
+              <div className="grid grid-cols-2 gap-4">
+                {(() => {
+                  // Lógica de Renderizado por Estados
+                  const state = product.estado;
+                  
+                  // Default/Fallbacks
+                  let leftDate = product.fechaFrente;
+                  let rightDate = product.fechaAlmacen;
+                  let leftBadge = null;
+                  let rightBadge = null;
+                  let rightDisabled = false;
+                  
+                  // Estilo unificado para badges
+                  const badgeStyle = "bg-white px-2 py-0.5 rounded shadow-sm flex items-center gap-1 text-xs font-bold text-[#1d5030] border border-gray-100";
+
+                  if (state === 'frente-agota') {
+                    // Caso 1: Frente y Agota (Stock solo en frente)
+                    rightDate = null;
+                    rightDisabled = true;
+                  } else if (state === 'abierto-cambia') {
+                    // Caso 3: Abierto y Cambia (Hay una caja abierta en almacén entre medias)
+                    leftBadge = (
+                      <div className={badgeStyle}>
+                        <Box size={12} />
+                        <span>+1</span>
                       </div>
-                      <div className="p-2 text-center">
-                        <div className="text-lg font-bold text-gray-900 leading-tight select-none">
-                          {formatDate(product.fechaFrente)}
-                        </div>
+                    );
+                    rightDate = nextDate ? nextDate.date : null; 
+                    if (!rightDate) rightDisabled = true; 
+                    
+                    if (nextDate && nextDate.boxes > 0) {
+                        rightBadge = (
+                            <div className={badgeStyle}>
+                                <Package size={12} />
+                                <span>{nextDate.boxes}</span>
+                            </div>
+                        );
+                    }
+
+                  } else if (state === 'abierto-agota') {
+                    // Caso 4: Abierto y Agota (Frente coincide con última caja en almacén)
+                    rightBadge = (
+                      <div className={badgeStyle}>
+                        <PackageOpen size={14} />
                       </div>
-                    </div>
-                  )}
-                  {product.fechaAlmacen && (
-                    <div className="w-full bg-white border border-gray-200 rounded-md overflow-hidden border-l-4 border-l-[#1d5030]">
-                      <div className="bg-slate-100 w-full h-9 flex justify-between items-center px-2">
+                    );
+                  } else {
+                    // Default / frente-cambia
+                    // Mostrar badge de stock en almacén si existe
+                    if (product.cajasAlmacen > 0) {
+                        rightBadge = (
+                            <div className={badgeStyle}>
+                                <Package size={12} />
+                                <span>{product.cajasAlmacen}</span>
+                            </div>
+                        );
+                    }
+                  }
+
+                  // Función helper de renderizado
+                  const renderColumn = (title, date, badge, isDisabled) => (
+                    <div className={`w-full bg-white border border-gray-200 rounded-md overflow-hidden border-l-4 flex flex-col h-full ${
+                      isDisabled ? 'border-l-gray-300' : 'border-l-[#1d5030]'
+                    }`}>
+                      <div className="bg-slate-100 w-full h-9 flex justify-between items-center px-2 flex-shrink-0">
                         <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">
-                          ALMACÉN
+                          {title}
                         </span>
-                        {product.cajasAlmacen > 0 && (
-                          <div className="bg-white px-2 py-0.5 rounded shadow-sm flex items-center gap-1 text-xs font-bold text-[#1d5030] border border-gray-100">
-                            <Package size={12} />
-                            <span>{product.cajasAlmacen}</span>
+                        {badge && badge}
+                      </div>
+                      <div className={`p-2 text-center flex-1 flex items-center justify-center min-h-[44px] ${isDisabled ? 'bg-gray-50' : ''}`}>
+                        {isDisabled || !date ? (
+                          <span className="text-sm font-medium text-gray-400 select-none">
+                            Sin stock
+                          </span>
+                        ) : (
+                          <div className="text-lg font-bold text-gray-900 leading-tight select-none">
+                            {formatDate(date)}
                           </div>
                         )}
                       </div>
-                      <div className="p-2 text-center">
-                        <div className="text-lg font-bold text-[#1a1a1a] leading-tight select-none">
-                          {formatDate(product.fechaAlmacen)}
-                        </div>
-                      </div>
                     </div>
-                  )}
-                </div>
-              )}
+                  );
 
-              {/* Mostrar etiqueta de caja única si aplica */}
-              {product.hayOtrasFechas && (
-                <div className="flex items-center gap-2 mt-2">
-                  <Clock className="w-4 h-4 text-gray-600" />
-                  <span className="text-sm text-gray-600 select-none">
-                    Hay más fechas disponibles
-                  </span>
-                  {product.cajaUnica && (
-                    <div
-                      className="inline-flex items-center px-2.5 py-1 rounded-md
-                      bg-[#ffb81c]/5 text-[#1d5030] text-sm select-none"
-                    >
-                      <Box className="w-3.5 h-3.5 mr-1" />
-                      Última caja
-                    </div>
-                  )}
-                </div>
-              )}
+                  return (
+                    <>
+                      {renderColumn("FRENTE", leftDate, leftBadge, false)}
+                      {renderColumn("ALMACÉN", rightDate, rightBadge, rightDisabled)}
+                    </>
+                  );
+                })()}
+              </div>
               
-              {/* Botones - siempre mostrar el botón de actualizar, y el de eliminar solo si aplica */}
+              {/* Botones */}
               <div className="flex items-center justify-between pt-2">
                 <button
                   onClick={(e) => {
