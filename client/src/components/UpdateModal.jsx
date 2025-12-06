@@ -338,6 +338,12 @@ const UpdateModal = ({
         updateForm.fechaAlmacen2 &&
         !updateForm.showThirdDate));
 
+  // Validación: Almacén debe ser posterior a frente
+  const isStorageDateInvalid = updateForm.fechaFrente && 
+                               updateForm.fechaAlmacen && 
+                               !updateForm.noHayEnAlmacen &&
+                               new Date(updateForm.fechaAlmacen) < new Date(updateForm.fechaFrente);
+
   const handleNoHayEnAlmacenChange = (checked) => {
     if (checked && (updateForm.fechaAlmacen2 || updateForm.fechaAlmacen3)) {
       setShowConfirmDialog(true);
@@ -470,6 +476,14 @@ const UpdateModal = ({
                           </>
                         )}
                       </div>
+                      {isStorageDateInvalid && (
+                        <div className="flex items-center gap-1.5 mt-1 animate-slide-down">
+                           <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                           <p className="text-xs text-red-600 font-medium">
+                             La fecha debe ser posterior a la del frente
+                           </p>
+                        </div>
+                      )}
 
                       {updateForm.showSecondDate && (
                         <div className="flex items-center gap-2">
@@ -623,7 +637,8 @@ const UpdateModal = ({
               onClick={onSubmit}
               disabled={
                 isUpdating ||
-                Object.values(dateErrors).some((error) => error !== "")
+                Object.values(dateErrors).some((error) => error !== "") ||
+                isStorageDateInvalid
               }
               className="min-h-[48px] px-5 text-sm font-medium text-white
                 bg-[#1d5030] hover:bg-[#1d5030]/90
@@ -631,6 +646,7 @@ const UpdateModal = ({
                 disabled:opacity-50 disabled:cursor-not-allowed
                 flex items-center gap-2
                 shadow-sm"
+              title={isStorageDateInvalid ? "La fecha de almacén debe ser posterior a la de frente" : ""}
             >
               {isUpdating ? (
                 <>

@@ -185,19 +185,82 @@ const CustomDateInput = ({
     [formatInput, validateAndUpdate]
   );
 
+  // Estado para la animación de error
+  const [isShaking, setIsShaking] = useState(false);
+
+  // Validación parcial "en vivo"
+  const isValidPartial = (rawNumbers) => {
+      const len = rawNumbers.length;
+      if (len === 0) return true;
+
+      const d1 = parseInt(rawNumbers[0]);
+      
+      // Dígito 1: Máximo 3 (0-3)
+      if (len >= 1) {
+          if (isNaN(d1) || d1 > 3) return false;
+      }
+
+      // Dígito 2: Si D1 es 3, D2 máx 1.
+      if (len >= 2) {
+          const d2 = parseInt(rawNumbers[1]);
+          if (d1 === 3 && d2 > 1) return false;
+          // Validación básica de 00 (no existe día 0) - Opcional, pero bueno tener
+          if (d1 === 0 && d2 === 0) return false;
+      }
+
+      // Dígito 3: Mes decena (0-1)
+      if (len >= 3) {
+          const m1 = parseInt(rawNumbers[2]);
+          if (m1 > 1) return false;
+      }
+
+      // Dígito 4: Mes unidad. Si M1 es 1, M2 máx 2.
+      if (len >= 4) {
+          const m1 = parseInt(rawNumbers[2]);
+          const m2 = parseInt(rawNumbers[3]);
+          if (m1 === 1 && m2 > 2) return false;
+          if (m1 === 0 && m2 === 0) return false;
+      }
+
+      return true;
+  };
+
+  const triggerErrorFeedback = () => {
+      // Vibración fuerte
+      if (navigator.vibrate) navigator.vibrate(200);
+      // Animación visual
+      setIsShaking(true);
+      setTimeout(() => setIsShaking(false), 200);
+  };
+
   // Manejar clic en número del teclado (OPTIMIZADO: Sin debounce, lógica directa)
   const handleKeypadClick = useCallback((e, num) => {
     e.stopPropagation();
     
     setInputValue(prev => {
-      // Si ya está lleno, reiniciar con el nuevo número
+      // Si ya está lleno, reiniciar con el nuevo número (si es válido)
       if (prev.length === 10) {
+        // Validar el primer dígito si reiniciamos
+        if (num > 3) {
+            triggerErrorFeedback();
+            return prev; // Mantenemos valor anterior
+        }
+        if (navigator.vibrate) navigator.vibrate(10);
         setError("");
         return num.toString();
       }
 
-      // Añadir número
+      // Intentar añadir número
       let rawNumbers = prev.replace(/\D/g, "") + num;
+
+      // VALIDACIÓN "EN VIVO"
+      if (!isValidPartial(rawNumbers)) {
+          triggerErrorFeedback();
+          return prev; // Rechazamos el input
+      }
+
+      // Feedback de éxito (suave)
+      if (navigator.vibrate) navigator.vibrate(10);
 
       // DETECCIÓN DE SHORTHAND (6 dígitos)
       // Si llegamos a 6 números, asumimos formato DDMMYY y expandimos a DDMM20YY
@@ -350,7 +413,7 @@ const CustomDateInput = ({
                   autoComplete="off"
                   inputMode="none"
                   readOnly
-                  className="w-full text-3xl font-bold text-center py-1 text-[#004D40] bg-transparent border-none focus:ring-0 placeholder-gray-200 outline-none select-none pointer-events-none tracking-tight"
+                  className={`w-full text-3xl font-bold text-center py-1 text-[#004D40] bg-transparent border-none focus:ring-0 placeholder-gray-200 outline-none select-none pointer-events-none tracking-tight ${isShaking ? 'animate-shake text-red-600' : ''}`}
                 />
                 {error && (
                   <div className="flex items-center gap-1.5 text-red-500 animate-[slideDown_0.2s_ease-out]">
