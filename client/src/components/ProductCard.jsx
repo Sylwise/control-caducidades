@@ -95,10 +95,11 @@ const ProductCard = memo(({
       `}
     >
       {viewMode === 'compact' ? (
-        // VISTA COMPACTA
-        <div className="flex flex-col sm:flex-row sm:items-center w-full gap-2 sm:gap-4">
-          {/* FILA SUPERIOR (Móvil) / IZQUIERDA (Desktop): Indicador y Nombre */}
-          <div className="flex items-center gap-3 w-full sm:flex-1 min-w-0">
+        // VISTA COMPACTA - Layout Aplanado (Flattened)
+        <div className="flex flex-wrap md:flex-nowrap items-center w-full gap-y-1 md:gap-4 p-0">
+          
+          {/* 1. SECCIÓN NOMBRE (Arriba Izquierda en Móvil / Izquierda en Desktop) */}
+          <div className="order-1 flex items-center gap-3 flex-1 min-w-0">
             {/* Indicador de estado (punto) */}
             {getStatusColor() && (
               <div className={`
@@ -116,21 +117,56 @@ const ProductCard = memo(({
               </div>
             )}
 
-            {/* Nombre del producto */}
-            <span className="font-['Noto Sans'] font-medium text-gray-700 text-sm sm:text-sm truncate block w-full">
+            {/* Nombre del producto - Mínimo ancho para no desaparecer */}
+            <span className="font-['Noto Sans'] font-medium text-gray-700 text-sm md:text-sm truncate block">
               {product.producto?.nombre}
             </span>
           </div>
 
-          {/* FILA INFERIOR (Móvil) / DERECHA (Desktop): Fechas y Acciones */}
-          <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-2 sm:gap-4 pl-0 sm:pl-0 mt-1 sm:mt-0">
-            {/* Fechas Compactas - GRID LAYOUT */}
-            <div className="grid grid-cols-2 gap-2 text-xs flex-1 sm:flex-none sm:w-[280px] min-w-0">
+          {/* 2. SECCIÓN BOTONES (Arriba Derecha en Móvil / Derecha en Desktop) */}
+          <div className="order-2 md:order-3 flex items-center gap-2 md:gap-1 flex-shrink-0 ml-2 md:ml-0">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onUpdateClick(product, e);
+              }}
+              className="
+                flex items-center justify-center
+                min-w-[36px] min-h-[36px] md:min-w-[32px] md:min-h-[32px]
+                text-gray-400 hover:text-[#1d5030] hover:bg-[#1d5030]/10 
+                rounded-full sm:rounded transition-colors
+              "
+              title="Editar"
+            >
+              <Edit3 className="w-5 h-5 md:w-4 md:h-4" />
+            </button>
+            {(product.estado !== "sin-clasificar" || product.fechaFrente || product.fechaAlmacen) && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteClick(product, e);
+                }}
+                className="
+                  flex items-center justify-center
+                  min-w-[36px] min-h-[36px] md:min-w-[32px] md:min-h-[32px]
+                  text-gray-400 hover:text-red-500 hover:bg-red-50 
+                  rounded-full sm:rounded transition-colors
+                "
+                title="Eliminar"
+              >
+                <Trash2 className="w-5 h-5 md:w-4 md:h-4" />
+              </button>
+            )}
+          </div>
+
+          {/* 3. SECCIÓN FECHAS (Fila 2 en Móvil / Centro en Desktop) */}
+          <div className="order-3 md:order-2 w-full md:w-[280px]">
+            <div className="grid grid-cols-2 gap-2 text-xs">
               {isSameDate ? (
                 <>
                   <div className="flex items-center gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100 w-full overflow-hidden">
                     <span className="text-[#1d5030] font-semibold flex-shrink-0">F/A:</span>
-                    <span className="font-medium text-gray-600 truncate">{formatDate(product.fechaFrente)}</span>
+                    <span className="font-medium text-gray-700 truncate">{formatDate(product.fechaFrente)}</span>
                     {product.cajasAlmacen > 1 && (
                       <span className="ml-auto px-1.5 py-0.5 bg-[#1d5030]/10 text-[#1d5030] rounded-full text-[10px] font-bold flex-shrink-0">
                         {product.cajasAlmacen}
@@ -141,7 +177,7 @@ const ProductCard = memo(({
                   {nextDate ? (
                      <div className="flex items-center gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100 w-full overflow-hidden">
                         <span className="text-[#1d5030] font-semibold flex-shrink-0">A:</span>
-                        <span className="font-medium text-gray-600 truncate">{formatDate(nextDate.date)}</span>
+                        <span className="font-medium text-gray-700 truncate">{formatDate(nextDate.date)}</span>
                         {nextDate.boxes > 0 && (
                           <span className="ml-auto px-1.5 py-0.5 bg-[#1d5030]/10 text-[#1d5030] rounded-full text-[10px] font-bold flex-shrink-0">
                             {nextDate.boxes}
@@ -157,7 +193,7 @@ const ProductCard = memo(({
                   {product.fechaFrente ? (
                     <div className="flex items-center gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100 w-full overflow-hidden">
                       <span className="text-[#1d5030] font-semibold flex-shrink-0">F:</span>
-                      <span className="font-medium text-gray-600 truncate">{formatDate(product.fechaFrente)}</span>
+                      <span className="font-medium text-gray-700 truncate">{formatDate(product.fechaFrente)}</span>
                     </div>
                   ) : (
                      <div></div>
@@ -165,7 +201,7 @@ const ProductCard = memo(({
                   {product.fechaAlmacen ? (
                     <div className="flex items-center gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100 w-full overflow-hidden">
                       <span className="text-[#1d5030] font-semibold flex-shrink-0">A:</span>
-                      <span className="font-medium text-gray-600 truncate">{formatDate(product.fechaAlmacen)}</span>
+                      <span className="font-medium text-gray-700 truncate">{formatDate(product.fechaAlmacen)}</span>
                       {product.cajasAlmacen > 0 && (
                         <span className="ml-auto px-1.5 py-0.5 bg-[#1d5030]/10 text-[#1d5030] rounded-full text-[10px] font-bold flex-shrink-0">
                           {product.cajasAlmacen}
@@ -178,43 +214,8 @@ const ProductCard = memo(({
                 </>
               )}
             </div>
-
-            {/* Acciones Rápidas - Touch Friendly */}
-            <div className="flex items-center gap-2 sm:gap-1 flex-shrink-0 ml-1">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onUpdateClick(product, e);
-                }}
-                className="
-                  flex items-center justify-center
-                  min-w-[36px] min-h-[36px] sm:min-w-[32px] sm:min-h-[32px]
-                  text-gray-400 hover:text-[#1d5030] hover:bg-[#1d5030]/10 
-                  rounded-full sm:rounded transition-colors
-                "
-                title="Editar"
-              >
-                <Edit3 className="w-5 h-5 sm:w-4 sm:h-4" />
-              </button>
-              {(product.estado !== "sin-clasificar" || product.fechaFrente || product.fechaAlmacen) && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDeleteClick(product, e);
-                  }}
-                  className="
-                    flex items-center justify-center
-                    min-w-[36px] min-h-[36px] sm:min-w-[32px] sm:min-h-[32px]
-                    text-gray-400 hover:text-red-500 hover:bg-red-50 
-                    rounded-full sm:rounded transition-colors
-                  "
-                  title="Eliminar"
-                >
-                  <Trash2 className="w-5 h-5 sm:w-4 sm:h-4" />
-                </button>
-              )}
-            </div>
           </div>
+
         </div>
       ) : (
         // VISTA TARJETA (Unified 2-Column Grid)
