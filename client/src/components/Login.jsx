@@ -2,6 +2,7 @@ import { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import AuthContext from "../contexts/AuthContext";
+import { useToast } from "../contexts/ToastContext";
 import config from "../config";
 
 const Login = () => {
@@ -15,10 +16,18 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { setIsAuthenticated, setUser } = useContext(AuthContext);
+  const { addToast } = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    // Validación manual
+    if (!credentials.username || !credentials.password) {
+      addToast("Por favor, introduce tu usuario y contraseña", "error");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -94,6 +103,7 @@ const Login = () => {
         <form
           onSubmit={handleSubmit}
           className="bg-white rounded-lg shadow-sm p-6 space-y-4"
+          noValidate
         >
           {error && (
             <div className="bg-red-50 text-red-600 px-4 py-3 rounded-md text-sm select-none">
@@ -117,7 +127,7 @@ const Login = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-md
                 focus:outline-none focus:ring-2 focus:ring-[#1d5030]/50 focus:border-transparent
                 text-gray-900"
-              required
+              required // Keep for semantics, but noValidate disables browser check
             />
           </div>
 
@@ -138,7 +148,7 @@ const Login = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md
                   focus:outline-none focus:ring-2 focus:ring-[#1d5030]/50 focus:border-transparent
                   text-gray-900 pr-10"
-                required
+                required // Keep for semantics
               />
               <button
                 type="button"
