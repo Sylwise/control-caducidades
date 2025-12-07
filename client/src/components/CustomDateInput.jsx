@@ -59,6 +59,7 @@ const CustomDateInput = ({
   const modalRef = useRef(null);
   const triggerRef = useRef(null);
   const recognitionRef = useRef(null);
+  const valueRef = useRef(inputValue); // Ref to track value synchronously
   const { parseVoiceDate } = useVoiceDateParser();
 
   // Default ranges if not provided
@@ -140,7 +141,19 @@ const CustomDateInput = ({
     const max = new Date(effectiveMaxDate);
     max.setHours(23, 59, 59, 999);
     return inputDate >= min && inputDate <= max;
+  const isDateInRange = useCallback((day, month, year) => {
+    const inputDate = new Date(year, month - 1, day);
+    const min = new Date(effectiveMinDate);
+    min.setHours(0, 0, 0, 0);
+    const max = new Date(effectiveMaxDate);
+    max.setHours(23, 59, 59, 999);
+    return inputDate >= min && inputDate <= max;
   }, [effectiveMinDate, effectiveMaxDate]);
+
+  // Keep ref in sync with state for normal interactions
+  useEffect(() => {
+    valueRef.current = inputValue;
+  }, [inputValue]);
 
   // Formatear entrada
   const formatInput = useCallback((input) => {
@@ -342,6 +355,7 @@ const CustomDateInput = ({
         // Walkie-Talkie Mode: Just update UI, don't validate/close yet
         const newFormatted = formatInput(parsedDate);
         setInputValue(newFormatted);
+        valueRef.current = newFormatted; // Sync ref immediately for upcoming release event
       } else {
          // Error feedback if not understood (shaky)
          if (navigator.vibrate) navigator.vibrate(200);
@@ -376,30 +390,28 @@ const CustomDateInput = ({
 
     // Logic "On Release" (TouchEnd/MouseUp)
     // Check if we have a full valid date in the input
-    // Access updated inputValue via state is tricky in callbacks closure? 
-    // We can use the setInputValue callback to access latest state securely or just rely on re-render.
-    // However, handleStopListening is recreated on [inputValue] changes? 
-    // If we add inputValue to deps, it will be fresh.
+    // Use ref to avoid state closure looseness
+    const currentVal = valueRef.current;
     
-    if (inputValue.length === 10) {
-        const [day, month, year] = inputValue.split("/").map(Number);
+    if (currentVal.length === 10) {
+        const [day, month, year] = currentVal.split("/").map(Number);
         if (isValidDate(day, month, year) && isDateInRange(day, month, year)) {
              // SUCCESS: Double Vibrate + Green Feedback + Close
              if (navigator.vibrate) navigator.vibrate([50, 50]);
              setIsSuccess(true);
              setTimeout(() => {
                  setIsSuccess(false);
-                 validateAndUpdate(inputValue);
+                 validateAndUpdate(currentVal);
              }, 500);
         } else {
             // Invalid params but has text? Shake?
              // Maybe explicit error
              // validateAndUpdate handles errors but it closes modal? No, inside it sets error.
-             validateAndUpdate(inputValue); 
+             validateAndUpdate(currentVal); 
         }
     }
     // If empty or partial, do nothing (keep open)
-  }, [inputValue, isValidDate, isDateInRange, validateAndUpdate]);
+  }, [isValidDate, isDateInRange, validateAndUpdate]);
 
   // Configuración de botones memorizada
   const keypadButtons = useMemo(() => [
