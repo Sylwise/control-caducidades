@@ -1,18 +1,25 @@
 import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
 import { createPortal } from "react-dom";
 import PropTypes from "prop-types";
-import { X, Calendar, AlertCircle } from "lucide-react";
+import { X, Calendar, AlertCircle, Mic, Trash2 } from "lucide-react";
 import usePreventScroll from "../hooks/usePreventScroll";
+import useVoiceDateParser from "../hooks/useVoiceDateParser";
 
-const KeypadButton = memo(({ value, label, onClick, variant = "primary", disabled = false }) => (
+const KeypadButton = memo(({ value, label, onClick, onMouseDown, onMouseUp, onTouchStart, onTouchEnd, variant = "primary", disabled = false, isMic = false }) => (
   <button
-    onClick={(e) => onClick(e, value)}
+    onClick={(e) => onClick && onClick(e, value)}
+    onMouseDown={onMouseDown}
+    onMouseUp={onMouseUp}
+    onTouchStart={onTouchStart}
+    onTouchEnd={onTouchEnd}
     disabled={disabled}
     className={`
       h-12 sm:h-14 flex items-center justify-center
       ${
         variant === "secondary"
           ? "bg-white text-gray-400 hover:text-gray-600 active:bg-gray-50"
+          : variant === "danger"
+          ? "bg-red-500 text-white shadow-red-200"
           : "bg-white text-gray-800 hover:bg-gray-50 active:bg-gray-100"
       }
       ${typeof value === "number" ? "text-xl font-normal" : "text-lg font-medium"}
@@ -22,6 +29,7 @@ const KeypadButton = memo(({ value, label, onClick, variant = "primary", disable
       focus:outline-none
       disabled:opacity-50 disabled:cursor-not-allowed
       select-none touch-manipulation
+      ${isMic ? 'active:bg-red-600' : ''}
     `}
   >
     {label}
@@ -46,8 +54,12 @@ const CustomDateInput = ({
   const [inputValue, setInputValue] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [error, setError] = useState("");
+  const [isListening, setIsListening] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const modalRef = useRef(null);
   const triggerRef = useRef(null);
+  const recognitionRef = useRef(null);
+  const { parseVoiceDate } = useVoiceDateParser();
 
   // Default ranges if not provided
   const effectiveMinDate = useMemo(() => {
@@ -298,10 +310,96 @@ const CustomDateInput = ({
   }, []);
 
   const handleClear = useCallback((e) => {
-    e.stopPropagation();
+    e && e.stopPropagation && e.stopPropagation();
     setInputValue("");
     setError("");
   }, []);
+
+  // Voice Interaction Logic
+  const handleStartListening = useCallback((e) => {
+    e.preventDefault(); // Prevent focus loss or other default touch actions
+    e.stopPropagation();
+    
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      alert("Tu navegador no soporta reconocimiento de voz.");
+      return;
+    }
+
+    if (navigator.vibrate) navigator.vibrate(50);
+    setIsListening(true);
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'es-ES';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      const parsedDate = parseVoiceDate(transcript);
+      
+      if (parsedDate) {
+        // Walkie-Talkie Mode: Just update UI, don't validate/close yet
+        const newFormatted = formatInput(parsedDate);
+        setInputValue(newFormatted);
+      } else {
+         // Error feedback if not understood (shaky)
+         if (navigator.vibrate) navigator.vibrate(200);
+         setError("No entendí la fecha");
+      }
+      setIsListening(false);
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Speech recognition error", event.error);
+      setIsListening(false);
+      if (event.error === 'not-allowed') {
+          setError("Permiso de micrófono denegado");
+      }
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
+    recognitionRef.current = recognition;
+  }, [parseVoiceDate, formatInput]);
+
+  const handleStopListening = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (recognitionRef.current) {
+        recognitionRef.current.stop(); 
+    }
+
+    // Logic "On Release" (TouchEnd/MouseUp)
+    // Check if we have a full valid date in the input
+    // Access updated inputValue via state is tricky in callbacks closure? 
+    // We can use the setInputValue callback to access latest state securely or just rely on re-render.
+    // However, handleStopListening is recreated on [inputValue] changes? 
+    // If we add inputValue to deps, it will be fresh.
+    
+    if (inputValue.length === 10) {
+        const [day, month, year] = inputValue.split("/").map(Number);
+        if (isValidDate(day, month, year) && isDateInRange(day, month, year)) {
+             // SUCCESS: Double Vibrate + Green Feedback + Close
+             if (navigator.vibrate) navigator.vibrate([50, 50]);
+             setIsSuccess(true);
+             setTimeout(() => {
+                 setIsSuccess(false);
+                 validateAndUpdate(inputValue);
+             }, 500);
+        } else {
+            // Invalid params but has text? Shake?
+             // Maybe explicit error
+             // validateAndUpdate handles errors but it closes modal? No, inside it sets error.
+             validateAndUpdate(inputValue); 
+        }
+    }
+    // If empty or partial, do nothing (keep open)
+  }, [inputValue, isValidDate, isDateInRange, validateAndUpdate]);
 
   // Configuración de botones memorizada
   const keypadButtons = useMemo(() => [
@@ -310,10 +408,16 @@ const CustomDateInput = ({
       label: (i + 1).toString(),
       action: handleKeypadClick,
     })),
-    { value: "clear", label: "C", action: handleClear, variant: "secondary" },
-    { value: 0, label: "0", action: handleKeypadClick },
     { value: "delete", label: "←", action: handleDelete, variant: "secondary" },
-  ], [handleKeypadClick, handleClear, handleDelete]);
+    { value: 0, label: "0", action: handleKeypadClick },
+    { 
+        value: "mic", 
+        label: <Mic className={`w-6 h-6 ${isListening ? 'animate-pulse text-white' : ''}`} />, 
+        action: () => {}, // Handled by separate events
+        variant: isListening ? "danger" : "secondary", // Custom variant logic could be added
+        isMic: true
+    },
+  ], [handleKeypadClick, handleDelete, isListening]);
 
   // Manejar teclado físico
   useEffect(() => {
@@ -405,16 +509,29 @@ const CustomDateInput = ({
               </div>
 
               <div className="flex flex-col items-center space-y-1">
-                <input
-                  type="text"
-                  value={inputValue}
-                  onChange={handleInputChange}
-                  placeholder="DD/MM/YYYY"
-                  autoComplete="off"
-                  inputMode="none"
-                  readOnly
-                  className={`w-full text-3xl font-bold text-center py-1 text-[#004D40] bg-transparent border-none focus:ring-0 placeholder-gray-200 outline-none select-none pointer-events-none tracking-tight ${isShaking ? 'animate-shake text-red-600' : ''}`}
-                />
+                <div className="relative w-full">
+                  <input
+                    type="text"
+                    value={inputValue}
+                    onChange={handleInputChange}
+                    placeholder="DD/MM/YYYY"
+                    autoComplete="off"
+                    inputMode="none"
+                    readOnly
+                    className={`w-full text-3xl font-bold text-center py-1 bg-transparent border-none focus:ring-0 placeholder-gray-200 outline-none select-none pointer-events-none tracking-tight 
+                        ${isShaking ? 'animate-shake text-red-600' : ''}
+                        ${isSuccess ? 'text-green-600 scale-110 transition-all duration-300' : 'text-[#004D40]'}
+                    `}
+                  />
+                  {inputValue && (
+                     <button 
+                        onClick={handleClear}
+                        className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-300 hover:text-red-400 p-2 transition-colors active:scale-90"
+                     >
+                         <Trash2 className="w-5 h-5 opacity-50" />
+                     </button>
+                  )}
+                </div>
                 {error && (
                   <div className="flex items-center gap-1.5 text-red-500 animate-[slideDown_0.2s_ease-out]">
                     <AlertCircle className="w-3.5 h-3.5" />
@@ -434,6 +551,11 @@ const CustomDateInput = ({
                     label={button.label}
                     onClick={button.action}
                     variant={button.variant}
+                    isMic={button.isMic}
+                    onMouseDown={button.isMic ? handleStartListening : undefined}
+                    onMouseUp={button.isMic ? handleStopListening : undefined}
+                    onTouchStart={button.isMic ? handleStartListening : undefined}
+                    onTouchEnd={button.isMic ? handleStopListening : undefined}
                   />
                 ))}
               </div>
