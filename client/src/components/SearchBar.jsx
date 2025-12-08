@@ -62,7 +62,7 @@ function SearchBar({
       
       </div>
 
-      {/* Acciones: Botón Sin Clasificar + Toggles */}
+      {/* Acciones */}
       <div className="flex w-full md:w-auto gap-3">
         {/* Botón para productos sin clasificar */}
         <button
@@ -83,7 +83,7 @@ function SearchBar({
           </span>
         </button>
 
-        {/* Botón de Micrófono (Mobile FAB) - Renderizado vía Portal para z-index seguro */}
+        {/* Botón de Micrófono (Mobile FAB) */}
         <div className="md:hidden">
             <MicButton onSpeechResult={onSearchChange} variant="fab" />
         </div>

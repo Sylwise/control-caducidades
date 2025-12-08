@@ -301,7 +301,7 @@ export const useProductManagement = (addToast) => {
 
       if (!productToUpdate) throw new Error("Producto no encontrado");
 
-      // 1. Optimistic Update (Actualización Optimista)
+      // 1. Optimistic Update
       const optimisticProduct = {
         ...productToUpdate,
         ...updateData,
@@ -310,28 +310,60 @@ export const useProductManagement = (addToast) => {
         updatedAt: new Date().toISOString()
       };
 
-      // CRÍTICO: Quitamos de la lista negra ANTES de actualizar el estado
-      // Esto evita que useExpiringProducts filtre el producto cuando se renderice
+      // Remove from offline blacklist BEFORE updating state
       removeFromOfflineBlacklist(productId);
 
-      // Actualizamos el estado visualmente YA
+      // Update UI immediately
       updateProductInState(optimisticProduct);
 
-      // Broadcast local event for other components (like MainLayout)
+      // Broadcast local event
       window.dispatchEvent(new CustomEvent('local-product-update', {
         detail: { type: 'update', productStatus: optimisticProduct }
       }));
 
-      // 2. Llamada real al servidor / OfflineManager
+      // 2. Server Call
       const updatedProduct = await updateProductStatus(productId, updateData);
       
-      // 3. Confirmamos con la respuesta real
+      // 3. Confirm with real response
       updateProductInState(updatedProduct);
       
-      addToast(
-        `${productToUpdate.producto.nombre} actualizado correctamente.`,
-        "success"
-      );
+      // --- Lógica de Alerta de Fecha Corta ---
+      let minDays = Infinity;
+      const today = new Date();
+      // Normalizamos 'hoy' a inicio del día para cálculo correcto de días
+      today.setHours(0, 0, 0, 0);
+
+      const checkDate = (dateStr) => {
+        if (!dateStr) return;
+        const d = new Date(dateStr);
+        d.setHours(0, 0, 0, 0);
+        const diffTime = d - today;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays < minDays) minDays = diffDays;
+      };
+
+      // Revisamos todas las fechas enviadas en la actualización
+      checkDate(updateData.fechaFrente);
+      checkDate(updateData.fechaAlmacen);
+      if (updateData.fechasAlmacen && Array.isArray(updateData.fechasAlmacen)) {
+        updateData.fechasAlmacen.forEach(f => checkDate(f.date));
+      }
+
+      // Si no se actualizó ninguna fecha, minDays será Infinity
+      // Si minDays es <= 4, mostramos warning
+      if (minDays !== Infinity && minDays <= 4) {
+          addToast(
+            `¡El producto caduca en ${minDays} días!`,
+            "warning" // Asumiendo que "warning" es un tipo soportado por tu sistema de toats, si no, usará estilo por defecto o error si "warning" no existe, pero típicamente es naranja.
+          );
+          // Vibración doble
+          if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+      } else {
+          addToast(
+            `${productToUpdate.producto.nombre} actualizado correctamente.`,
+            "success"
+          );
+      }
       return true;
     } catch (error) {
       addToast(`Error al actualizar: ${error.message}.`, "error");
@@ -425,7 +457,7 @@ export const useProductManagement = (addToast) => {
         estado: productToRestore.estado,
       };
 
-      // CRÍTICO: Quitamos de la lista negra ANTES de cualquier actualización de estado
+      // Remove from offline blacklist BEFORE state update
       removeFromOfflineBlacklist(productId);
 
       const restoredProduct = await updateProductStatus(productId, updateData);
@@ -491,11 +523,7 @@ export const useProductManagement = (addToast) => {
              filtered = productList;
           }
 
-          // Mantener lógica original: 
-          // Si hay resultados y NO es "sin-clasificar", lo agregamos.
-          // Si es "sin-clasificar", solo si hay resultados explícitos.
-          // Nota: El código original tenía un comportamiento específico para "sin-clasificar" vs las demás.
-          
+          // Keep if results found OR not 'sin-clasificar'
           if (filtered.length > 0 || category !== "sin-clasificar") {
             filteredProducts[category] = filtered;
           }

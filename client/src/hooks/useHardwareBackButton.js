@@ -3,9 +3,8 @@ import { useBackButton } from '../contexts/BackButtonContext';
 
 /**
  * Hook to handle hardware back button press.
- * 
  * @param {boolean} isOpen - Whether the modal/overlay is currently open/active.
- * @param {Function} onBack - Function to call when back button is pressed (usually onClose).
+ * @param {Function} onBack - Function to call when back button is pressed.
  * @param {number} priority - Priority of this handler (higher = handles first). DEFAULT: 10.
  * @param {string} id - Optional unique ID. If not provided, one is generated.
  */

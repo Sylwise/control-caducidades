@@ -17,7 +17,7 @@ const useVoiceInput = () => {
 
   const startListening = useCallback(() => {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      setError('Browser not supported');
+      setError('Navegador no soportado. Por favor usa Chrome o Safari.');
       return;
     }
 
@@ -47,7 +47,17 @@ const useVoiceInput = () => {
     recognition.onerror = (event) => {
       console.error("Speech recognition error", event.error);
       setIsListening(false);
-      setError(event.error);
+      
+      let errorMessage = 'Error al escuchar.';
+      if (event.error === 'not-allowed') {
+        errorMessage = 'Permiso de micrófono denegado.';
+      } else if (event.error === 'no-speech') {
+        errorMessage = 'No se escuchó nada.';
+      } else if (event.error === 'network') {
+        errorMessage = 'Error de red.';
+      }
+      
+      setError(errorMessage);
       // Haptic feedback error
       if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
     };
