@@ -276,10 +276,7 @@ const ProductList = () => {
                   selectedProduct={selectedProduct}
                   isExpiringSoon={isExpiringSoon}
                   lastUpdatedProductId={lastUpdatedProductId}
-                  onProductClick={(p) => {
-                    handleProductClick(p);
-                    prepareFormForUpdate(p);
-                  }}
+                  onProductClick={handleProductClick}
                   onUpdateClick={prepareFormForUpdate}
                   onDeleteClick={handleDeleteClick}
                   viewMode={viewMode}

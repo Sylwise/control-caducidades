@@ -6,6 +6,7 @@ import usePreventScroll from "../hooks/usePreventScroll";
 import ModalContainer from "./ModalContainer";
 import OfflineManager from "../services/offlineManager";
 import { useToast } from "../contexts/ToastContext";
+import useHardwareBackButton from "../hooks/useHardwareBackButton";
 
 const RestaurantManagement = ({
   isOpen = false,
@@ -88,6 +89,19 @@ const RestaurantManagement = ({
       loadRestaurants();
     }
   }, [isOpen, loadRestaurants]);
+
+  // 1. Delete Confirmation (Priority 20 - Highest)
+  useHardwareBackButton(!!deleteConfirm, () => setDeleteConfirm(null), 20, 'restaurant-delete');
+
+  // 2. Edit Modal (Priority 20 - Highest)
+  useHardwareBackButton(!!editingRestaurant, () => setEditingRestaurant(null), 20, 'restaurant-edit');
+
+  // 3. Create Form View (Priority 15 - Middle)
+  // This is an internal view switch, we want to go back to list, not close modal
+  useHardwareBackButton(showCreateForm, () => setShowCreateForm(false), 15, 'restaurant-create-view');
+
+  // 4. Main Modal (Priority 10 - Lowest)
+  useHardwareBackButton(isOpen, onClose, 10, 'restaurant-main');
 
   const handleCreateRestaurant = async (e) => {
     e.preventDefault();

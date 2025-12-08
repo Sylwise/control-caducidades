@@ -7,6 +7,7 @@ import ModalContainer from "./ModalContainer";
 import { useSocket } from "../hooks/useSocket";
 import OfflineManager from "../services/offlineManager";
 import { useToast } from "../contexts/ToastContext";
+import useHardwareBackButton from "../hooks/useHardwareBackButton";
 
 const UserManagement = ({
   isOpen = false,
@@ -461,6 +462,24 @@ const UserManagement = ({
       <span>Gestión de Usuarios</span>
     </div>
   );
+
+  // --- Hardware Back Button Hooks ---
+  // Placed here to ensure all handlers (handleClose, handleCancelEditing) are defined
+
+  // 1. Delete Confirmation (Priority 20 - Highest)
+  useHardwareBackButton(!!deleteConfirm, () => setDeleteConfirm(null), 20, 'user-delete');
+
+  // 2. Edit Modal (Priority 20 - Highest)
+  useHardwareBackButton(!!editingUser, handleCancelEditing, 20, 'user-edit');
+
+  // 3. Create Form View (Priority 15 - Middle)
+  useHardwareBackButton(showCreateForm, () => {
+    setShowCreateForm(false);
+    setSelectedUserId(null);
+  }, 15, 'user-create-view');
+
+  // 4. Main Modal (Priority 10 - Lowest)
+  useHardwareBackButton(isOpen, handleClose, 10, 'user-main');
 
   return (
     <ModalContainer
