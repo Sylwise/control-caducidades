@@ -163,7 +163,7 @@ function MicButton({ onSpeechResult, variant = 'inline', hidden = false }) {
       className={`
         flex items-center justify-center transition-all duration-200
         ${variant === 'fab' 
-           ? 'fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-lg z-[90] active:scale-95 md:hidden' 
+           ? 'fixed bottom-6 right-6 left-auto z-[90] w-14 h-14 rounded-full shadow-lg active:scale-95 md:hidden' 
            : 'flex-none w-12 h-12 rounded-lg border shadow-sm'
         }
         ${isListening 

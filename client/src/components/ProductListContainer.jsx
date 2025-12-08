@@ -56,7 +56,7 @@ const ProductListContainer = memo(({
   }
 
   return (
-    <div className="product-list-container">
+    <div className="product-list-container pb-20 md:pb-0">
       {Object.entries(filteredProducts).map(
         ([category, productList], index) =>
           productList.length > 0 && (

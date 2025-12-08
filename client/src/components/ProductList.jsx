@@ -30,7 +30,8 @@ const ProductList = () => {
     isUserManagementOpen, 
     isRestaurantManagementOpen,
     isCreateEmployeeModalOpen, // Por si acaso también queremos ocultarlo aquí
-    showCatalogManagement // Y aquí
+    showCatalogManagement, // Y aquí
+    isExpiringModalOpen
   } = useOutletContext();
   
   // Estados locales
@@ -262,7 +263,8 @@ const ProductList = () => {
             isUserManagementOpen || 
             isRestaurantManagementOpen ||
             isCreateEmployeeModalOpen ||
-            showCatalogManagement
+            showCatalogManagement ||
+            isExpiringModalOpen
           }
         />
 
