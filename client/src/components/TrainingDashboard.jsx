@@ -30,7 +30,7 @@ const TrainingDashboard = () => {
 
   // 3. Back to Inventory (Priority 10)
   // Only active if we are on the main training dashboard
-  useHardwareBackButton(true, () => navigate('/inventory'), 10, 'training-back-to-home');
+  useHardwareBackButton(true, () => navigate('/inventory', { replace: true }), 10, 'training-back-to-home');
 
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);

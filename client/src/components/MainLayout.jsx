@@ -60,9 +60,9 @@ const MainLayout = () => {
 
   const handleModuleChange = (module) => {
     if (module === "training") {
-      navigate("/training");
+      navigate("/training", { replace: true });
     } else {
-      navigate("/inventory");
+      navigate("/inventory", { replace: true });
     }
   };
 

@@ -27,6 +27,7 @@ import api from '../services/api';
 import competenciesConfig from '../config/competencies.json';
 import AreaCard from './AreaCard';
 import { useSocket } from '../hooks/useSocket';
+import useHardwareBackButton from "../hooks/useHardwareBackButton";
 
 // Icon Mapping
 const ICON_MAP = {
@@ -55,6 +56,10 @@ const EmployeeDetail = () => {
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // --- Hardware Back Button Hook ---
+  // Priority 10: Exit detail view and return to dashboard
+  useHardwareBackButton(true, () => navigate('/training'), 10, 'employee-detail-back');
 
   useEffect(() => {
     fetchEmployee();
