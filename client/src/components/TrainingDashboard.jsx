@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { Users, Plus } from 'lucide-react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useNavigate } from 'react-router-dom';
+import useHardwareBackButton from "../hooks/useHardwareBackButton";
 import useEmployees from '../hooks/useEmployees';
 import EmployeeCard from './EmployeeCard';
 import CreateEmployeeModal from './CreateEmployeeModal';
@@ -17,6 +18,19 @@ const TrainingDashboard = () => {
   const [employeeToDelete, setEmployeeToDelete] = useState(null);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const navigate = useNavigate();
+
+  // --- Hardware Back Button Hooks ---
+  
+  // 1. Delete Confirmation Modal (Priority 30)
+  useHardwareBackButton(!!employeeToDelete, () => setEmployeeToDelete(null), 30, 'training-delete-confirm');
+
+  // 2. Create Employee Modal (Priority 20)
+  useHardwareBackButton(isCreateEmployeeModalOpen, () => setIsCreateEmployeeModalOpen(false), 20, 'training-create-modal');
+
+  // 3. Back to Inventory (Priority 10)
+  // Only active if we are on the main training dashboard
+  useHardwareBackButton(true, () => navigate('/inventory'), 10, 'training-back-to-home');
 
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
