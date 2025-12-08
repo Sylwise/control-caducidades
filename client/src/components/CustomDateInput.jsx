@@ -4,6 +4,7 @@ import PropTypes from "prop-types";
 import { X, Calendar, AlertCircle, Mic, Trash2 } from "lucide-react";
 import usePreventScroll from "../hooks/usePreventScroll";
 import useVoiceDateParser from "../hooks/useVoiceDateParser";
+import useHardwareBackButton from "../hooks/useHardwareBackButton";
 
 const KeypadButton = memo(({ value, label, onClick, onMouseDown, onMouseUp, onTouchStart, onTouchEnd, variant = "primary", disabled = false, isMic = false }) => (
   <button
@@ -61,6 +62,15 @@ const CustomDateInput = ({
   const recognitionRef = useRef(null);
   const valueRef = useRef(inputValue); // Ref to track value synchronously
   const { parseVoiceDate } = useVoiceDateParser();
+
+  // --- Hardware Back Button Hook ---
+  // Priority 40 - Highest (keyboard overlay)
+  useHardwareBackButton(isOpen, () => {
+    setIsOpen(false);
+    if (!value && onCancel) {
+      onCancel();
+    }
+  }, 40, 'date-input-keyboard');
 
   // Default ranges if not provided
   const effectiveMinDate = useMemo(() => {

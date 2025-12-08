@@ -113,6 +113,8 @@ ConfirmDialog.propTypes = {
   message: PropTypes.string.isRequired,
 };
 
+import useHardwareBackButton from "../hooks/useHardwareBackButton";
+
 const UpdateModal = ({
   isOpen,
   isClosing,
@@ -130,6 +132,16 @@ const UpdateModal = ({
   });
   const [showFrontDateDialog, setShowFrontDateDialog] = useState(false);
   const [dateToDelete, setDateToDelete] = useState(null);
+
+  // --- Hardware Back Button Hooks ---
+  
+  // 1. Internal Dialogs (Priority 30 - Higher than modal itself)
+  useHardwareBackButton(showConfirmDialog, () => setShowConfirmDialog(false), 30, 'update-confirm-dialog');
+  useHardwareBackButton(!!dateToDelete, () => setDateToDelete(null), 30, 'update-delete-date-dialog');
+  useHardwareBackButton(showFrontDateDialog, () => setShowFrontDateDialog(false), 30, 'update-front-date-dialog');
+
+  // 2. Main Modal (Priority 20)
+  useHardwareBackButton(isOpen, onClose, 20, 'update-main-modal');
 
   const handleConfirmDeleteDate = () => {
     if (dateToDelete) {

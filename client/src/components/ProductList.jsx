@@ -18,6 +18,8 @@ import useToasts from "../hooks/useToasts";
 
 import ToastContainer from "./ToastContainer";
 
+import useHardwareBackButton from "../hooks/useHardwareBackButton";
+
 const ProductList = () => {
   const { socket } = useSocket();
   const { addToast, toasts, removeToast } = useToasts();
@@ -56,6 +58,14 @@ const ProductList = () => {
     handleCloseUnclassified,
     handleCloseUpdateModal,
   } = useModalManagement();
+
+  // --- Hardware Back Button Hooks ---
+  // 1. Pending Products Modal (Priority 10)
+  useHardwareBackButton(showUnclassified, handleCloseUnclassified, 10, 'pending-products-list');
+
+  // 2. Deselect Product Card (Priority 15)
+  // Ensures card collapses before modal closes
+  useHardwareBackButton(!!selectedProduct, () => setSelectedProduct(null), 15, 'deselect-product');
 
   // Hook de Scroll
   const { scrollToProductId } = useProductScroll(selectedProduct);
