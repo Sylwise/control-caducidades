@@ -1,4 +1,7 @@
-import { Search, X, LayoutGrid, List } from "lucide-react";
+import { Search, X, LayoutGrid, List, Mic } from "lucide-react";
+import { useEffect } from "react";
+import { createPortal } from "react-dom";
+import useVoiceInput from "../hooks/useVoiceInput";
 import PropTypes from "prop-types";
 
 function SearchBar({
@@ -11,8 +14,9 @@ function SearchBar({
 }) {
   return (
     <div className="flex flex-col md:flex-row md:items-center gap-3 mb-6">
-      {/* Buscador */}
-      <div className="relative w-full md:flex-1">
+      {/* Buscador + Micrófono */}
+      <div className="flex w-full md:flex-1 gap-2">
+      <div className="relative flex-1">
         <input
           type="search"
           name="search_query_nocache_123"
@@ -55,6 +59,12 @@ function SearchBar({
           </button>
         )}
       </div>
+      
+      {/* Botón de Micrófono (Desktop Only) */}
+      <div className="hidden md:block">
+         <MicButton onSpeechResult={onSearchChange} variant="inline" />
+      </div>
+      </div>
 
       {/* Acciones: Botón Sin Clasificar + Toggles */}
       <div className="flex w-full md:w-auto gap-3">
@@ -76,6 +86,11 @@ function SearchBar({
             {unclassifiedCount}
           </span>
         </button>
+
+        {/* Botón de Micrófono (Mobile FAB) - Renderizado vía Portal para z-index seguro */}
+        <div className="md:hidden">
+            <MicButton onSpeechResult={onSearchChange} variant="fab" />
+        </div>
 
         {/* Selector de Vista */}
         <div className="flex bg-white rounded-lg shadow-sm border border-gray-300 p-1 h-12">
@@ -119,3 +134,57 @@ SearchBar.propTypes = {
 };
 
 export default SearchBar;
+
+function MicButton({ onSpeechResult, variant = 'inline' }) {
+  const { isListening, transcript, error, startListening, stopListening } = useVoiceInput();
+
+  useEffect(() => {
+    if (transcript) {
+      onSpeechResult(transcript);
+    }
+  }, [transcript, onSpeechResult]);
+
+  const handleStart = (e) => {
+      e.preventDefault();
+      startListening();
+  };
+
+  const handleStop = (e) => {
+      e.preventDefault();
+      stopListening();
+  };
+
+  const buttonContent = (
+    <button
+      type="button"
+      onTouchStart={handleStart}
+      onTouchEnd={handleStop}
+      onMouseDown={handleStart}
+      onMouseUp={handleStop}
+      className={`
+        flex items-center justify-center transition-all duration-200
+        ${variant === 'fab' 
+           ? 'fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-lg z-[90] active:scale-95' 
+           : 'flex-none w-12 h-12 rounded-lg border shadow-sm'
+        }
+        ${isListening 
+          ? 'bg-red-500 border-red-600 text-white animate-pulse shadow-red-500/50' 
+          : variant === 'fab'
+             ? 'bg-[#1d5030] text-white shadow-[#1d5030]/30 hover:bg-[#153e24]'
+             : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+        }
+      `}
+      title="Mantener para hablar"
+    >
+      <Mic className={`${variant === 'fab' ? 'w-6 h-6' : 'w-5 h-5'} ${isListening ? 'animate-bounce' : ''}`} />
+    </button>
+  );
+
+  // Para el FAB usamos Portal para asegurar que flota sobre todo (como modales o listas largas con overflow)
+  if (variant === 'fab') {
+      return createPortal(buttonContent, document.body);
+  }
+
+  return buttonContent;
+}
+

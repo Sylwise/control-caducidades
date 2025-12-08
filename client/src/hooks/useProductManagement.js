@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
+import Fuse from "fuse.js";
 import { useSocket } from "./useSocket";
 import { INITIAL_PRODUCTS_STATE } from "../constants/productConstants";
 import { useDeletedProducts } from "../contexts/DeletedProductsContext";
@@ -448,6 +449,24 @@ export const useProductManagement = (addToast) => {
     }
   };
 
+  // Memoizar instancias de Fuse para evitar re-creación en cada render
+  const fuseInstances = useMemo(() => {
+    const instances = {};
+    const options = {
+      keys: ['producto.nombre', 'producto.tipo'],
+      threshold: 0.35, // Tolerancia a errores (0.0 = exacto, 1.0 = cualquier cosa)
+      ignoreLocation: true, // Buscar en cualquier parte del string
+      minMatchCharLength: 2,
+      shouldSort: true
+    };
+
+    Object.entries(products).forEach(([category, list]) => {
+      instances[category] = new Fuse(list, options);
+    });
+
+    return instances;
+  }, [products]);
+
   const filterProducts = useCallback(
     (searchTerm) => {
       if (!searchTerm) {
@@ -456,13 +475,27 @@ export const useProductManagement = (addToast) => {
         return rest;
       }
 
-      const searchTermLower = searchTerm.toLowerCase().trim();
+      const searchTermTrimmed = searchTerm.trim();
+      
       return Object.entries(products).reduce(
         (filteredProducts, [category, productList]) => {
-          const filtered = productList.filter((product) =>
-            product.producto?.nombre?.toLowerCase().includes(searchTermLower)
-          );
+          let filtered;
 
+          // Usar Fuzzy Search
+          const fuse = fuseInstances[category];
+          if (fuse && searchTermTrimmed.length >= 1) {
+             const results = fuse.search(searchTermTrimmed);
+             filtered = results.map(result => result.item);
+          } else {
+             // Fallback o búsqueda vacía (aunque el if inicial lo atrapa)
+             filtered = productList;
+          }
+
+          // Mantener lógica original: 
+          // Si hay resultados y NO es "sin-clasificar", lo agregamos.
+          // Si es "sin-clasificar", solo si hay resultados explícitos.
+          // Nota: El código original tenía un comportamiento específico para "sin-clasificar" vs las demás.
+          
           if (filtered.length > 0 || category !== "sin-clasificar") {
             filteredProducts[category] = filtered;
           }
@@ -472,7 +505,7 @@ export const useProductManagement = (addToast) => {
         {}
       );
     },
-    [products]
+    [products, fuseInstances]
   );
 
   return {
