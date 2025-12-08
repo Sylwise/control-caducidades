@@ -4,7 +4,7 @@ const useToasts = () => {
   const [toasts, setToasts] = useState([]);
 
   const addToast = useCallback((message, type = "info", data = {}) => {
-    const id = Date.now();
+    const id = Date.now() + Math.random();
     setToasts((currentToasts) => [
       ...currentToasts,
       { id, message, type, ...data },

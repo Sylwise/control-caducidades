@@ -60,10 +60,6 @@ function SearchBar({
         )}
       </div>
       
-      {/* Botón de Micrófono (Desktop Only) */}
-      <div className="hidden md:block">
-         <MicButton onSpeechResult={onSearchChange} variant="inline" />
-      </div>
       </div>
 
       {/* Acciones: Botón Sin Clasificar + Toggles */}
@@ -164,7 +160,7 @@ function MicButton({ onSpeechResult, variant = 'inline' }) {
       className={`
         flex items-center justify-center transition-all duration-200
         ${variant === 'fab' 
-           ? 'fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-lg z-[90] active:scale-95' 
+           ? 'fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-lg z-[90] active:scale-95 md:hidden' 
            : 'flex-none w-12 h-12 rounded-lg border shadow-sm'
         }
         ${isListening 

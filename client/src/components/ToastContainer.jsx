@@ -50,8 +50,8 @@ const Toast = ({ toast, onRemove, onUndo }) => {
       setIsExiting(true);
       setTimeout(() => {
         onRemove(toast.id);
-      }, 150); // Duración de la animación de salida
-    }, 5000); // Duración del toast aumentada a 5 segundos
+      }, 300); // Duración de la animación de salida
+    }, 4000); 
 
     return () => clearTimeout(timer);
   }, [toast.id, onRemove]);
@@ -60,51 +60,30 @@ const Toast = ({ toast, onRemove, onUndo }) => {
     setIsExiting(true);
     setTimeout(() => {
       onRemove(toast.id);
-    }, 150);
+    }, 300);
   };
 
   const showUndo = toast.message.endsWith("desclasificado correctamente.");
 
   const handleUndo = async () => {
-    // Verificar que el ID del producto está disponible
-    if (!toast.productId) {
-      console.error("Error: Toast no contiene ID de producto para deshacer", toast);
-      return;
-    }
-
-    console.log("Intentando deshacer con datos:", {
-      message: toast.message,
-      productId: toast.productId,
-      hasUndoFunction: !!onUndo,
-    });
+    if (!toast.productId) return;
 
     if (onUndo) {
       try {
-        // Desactivar el botón temporalmente para evitar clics múltiples
         const buttonElement = document.querySelector(`button[data-toast-id="${toast.id}"]`);
         if (buttonElement) buttonElement.disabled = true;
         
-        // Realizar la operación de deshacer
         const success = await onUndo(toast.productId);
         
         if (success) {
           handleManualClose();
         } else {
-          // Si falla, permitir intentar de nuevo
           if (buttonElement) buttonElement.disabled = false;
-          console.error("La operación de restauración no tuvo éxito");
         }
       } catch (error) {
-        console.error("Error en handleUndo:", error);
-        // Si hay una excepción, también permitir intentar de nuevo
         const buttonElement = document.querySelector(`button[data-toast-id="${toast.id}"]`);
         if (buttonElement) buttonElement.disabled = false;
       }
-    } else {
-      console.warn("No se puede deshacer: falta función onUndo", {
-        productId: toast.productId,
-        hasUndoFunction: !!onUndo
-      });
     }
   };
 
@@ -112,19 +91,23 @@ const Toast = ({ toast, onRemove, onUndo }) => {
     <div
       className={`
         ${styles.container}
-        px-4 py-3.5 rounded-lg 
-        shadow-[0_4px_12px_${styles.shadowColor}]
+        px-4 py-3 rounded-2xl
+        shadow-2xl
         flex items-center justify-between
-        w-[calc(100vw-32px)] sm:w-auto sm:min-w-[320px] sm:max-w-md
-        ${isExiting ? "animate-slide-out" : "animate-slide-in"}
+        w-[90vw] sm:w-auto sm:min-w-[340px] max-w-sm
+        ${isExiting ? "opacity-0 translate-y-10 scale-95" : "animate-slide-up-scale"}
         font-['Noto Sans'] text-sm
-        transform transition-all duration-200
-        border bg-gray-50/80
+        transform transition-all duration-300 ease-out
+        border pointer-events-auto
+        mb-2 last:mb-0
       `}
+      style={{
+        boxShadow: `0 10px 25px -5px ${styles.shadowColor}, 0 8px 10px -6px ${styles.shadowColor}`
+      }}
     >
       <div className="flex items-center gap-3 flex-1">
         <Icon className={`${styles.icon} w-5 h-5 flex-shrink-0`} />
-        <span className="font-medium text-gray-700 tracking-wide leading-snug">{toast.message}</span>
+        <span className="font-medium text-gray-800 tracking-wide leading-snug">{toast.message}</span>
       </div>
       <div className="flex items-center gap-2 ml-3">
         {showUndo && (
@@ -133,28 +116,27 @@ const Toast = ({ toast, onRemove, onUndo }) => {
             data-toast-id={toast.id}
             className={`
               ${styles.button}
-              px-3 py-1.5 rounded-md
+              px-3 py-1.5 rounded-lg
               transition-colors duration-200
               flex items-center gap-1.5
-              text-sm font-medium tracking-wide
+              text-xs font-bold tracking-wide uppercase
               whitespace-nowrap
             `}
           >
-            <Undo2 className="w-4 h-4" />
+            <Undo2 className="w-3.5 h-3.5" />
             Deshacer
           </button>
         )}
         <button
           onClick={handleManualClose}
           className={`
-            ${styles.icon}
+            text-gray-400 hover:text-gray-600 hover:bg-black/5
             p-1.5 rounded-full
-            hover:bg-gray-100
             transition-colors duration-200
           `}
           aria-label="Cerrar notificación"
         >
-          <X size={16} />
+          <X size={18} />
         </button>
       </div>
     </div>
@@ -174,8 +156,9 @@ Toast.propTypes = {
 
 const ToastContainer = ({ toasts, removeToast, onUndo }) => {
   return (
-    <div className="fixed bottom-4 right-4 z-[60] flex flex-col gap-2 pointer-events-none">
-      <div className="flex flex-col gap-2 items-end pointer-events-auto">
+    <div className="fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 z-[100] flex flex-col items-center pointer-events-none w-full">
+      {/* Container wrapper for stacking */}
+      <div className="flex flex-col items-center w-full">
         {toasts.map((toast) => (
           <Toast
             key={toast.id}
