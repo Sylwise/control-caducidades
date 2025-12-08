@@ -2,12 +2,10 @@ import OfflineDebugger from "../utils/debugger";
 import OfflineManager from "./offlineManager";
 import axios from 'axios';
 
-// API Base URL basada en el entorno
-const API_BASE_URL = import.meta.env.PROD
-  ? `${window.location.origin}/api` // URL de producción
-  : import.meta.env.PROD 
-    ? "/api" 
-    : "http://localhost:5000/api";
+import config from "../config";
+
+// API Base URL basada en la configuración centralizada
+const API_BASE_URL = config.apiUrl;
 
 
 

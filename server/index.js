@@ -65,12 +65,22 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: function (origin, callback) {
-    if (allowedOrigins.includes(origin) || !origin) {
-      callback(null, true);
-    } else {
-      logger.warn(`Origin bloqueado por CORS: ${origin}`);
-      callback(new Error("Not allowed by CORS"));
+    // Permitir solicitudes sin origen (como apps móviles o curl)
+    if (!origin) return callback(null, true);
+
+    // Permitir orígenes en la lista blanca
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+
+    // Permitir acceso desde la red local (ej. 192.168.x.x)
+    // Regex para IPs de red local comunes: 192.168.x.x, 10.x.x.x, 172.16.x.x - 172.31.x.x
+    const localNetworkRegex = /^(http|https):\/\/(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3})(:\d+)?$/;
+    
+    if (localNetworkRegex.test(origin)) {
+      return callback(null, true);
     }
+    
+    logger.warn(`Origin bloqueado por CORS: ${origin}`);
+    callback(new Error("Not allowed by CORS"));
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],

@@ -4,9 +4,9 @@ import PropTypes from "prop-types";
 import SocketContext from "../SocketContext";
 import AuthContext from "../../contexts/AuthContext";
 
-const SOCKET_URL = import.meta.env.PROD
-  ? window.location.origin
-  : "http://localhost:5000";
+import config from "../../config";
+
+const SOCKET_URL = config.SOCKET_URL;
 
 const RECONNECTION_ATTEMPTS = 5;
 const RECONNECTION_DELAY = 1000;

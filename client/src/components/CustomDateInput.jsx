@@ -134,13 +134,7 @@ const CustomDateInput = ({
     );
   }, []);
 
-  const isDateInRange = useCallback((day, month, year) => {
-    const inputDate = new Date(year, month - 1, day);
-    const min = new Date(effectiveMinDate);
-    min.setHours(0, 0, 0, 0);
-    const max = new Date(effectiveMaxDate);
-    max.setHours(23, 59, 59, 999);
-    return inputDate >= min && inputDate <= max;
+
   const isDateInRange = useCallback((day, month, year) => {
     const inputDate = new Date(year, month - 1, day);
     const min = new Date(effectiveMinDate);

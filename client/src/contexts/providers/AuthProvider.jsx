@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import AuthContext from "../AuthContext";
+import config from "../../config";
 
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -14,7 +15,7 @@ export const AuthProvider = ({ children }) => {
 
       if (token) {
         // Obtener información del usuario
-        const apiUrl = import.meta.env.PROD ? "/api/auth/me" : "http://localhost:5000/api/auth/me";
+        const apiUrl = `${config.apiUrl}/auth/me`;
         fetch(apiUrl, {
           headers: {
             Authorization: `Bearer ${token}`,
