@@ -55,13 +55,13 @@ function SearchBar({
             font-['Noto Sans'] text-sm font-medium 
             bg-white shadow-sm [&::-webkit-search-cancel-button]:appearance-none transition-all duration-300
             ${isListening 
-              ? 'border-green-500 ring-2 ring-green-500/50 placeholder:text-green-600' 
+              ? 'border-[#1d5030] ring-2 ring-[#1d5030]/30 placeholder:text-[#1d5030]/70' 
               : 'border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#1d5030]/50 focus:border-transparent placeholder:text-gray-400'
             }
           `}
           maxLength={20}
         />
-        <div className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors duration-300 ${isListening ? 'text-green-600' : 'text-[#1d5030]'}`}>
+        <div className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors duration-300 ${isListening ? 'text-[#1d5030]' : 'text-[#1d5030]'}`}>
             {isListening ? (
                 <AudioLines className="w-5 h-5 animate-pulse" />
             ) : (
@@ -177,12 +177,12 @@ function MicButton({ isListening, startListening, stopListening, variant = 'inli
     <div className={`${variant === 'fab' ? 'fixed bottom-6 right-6 left-auto z-[90] md:hidden flex items-center justify-center' : 'relative inline-block'}`}>
         {/* Sonar Effect Background */}
         {variant === 'fab' && isListening && (
-            <span className="absolute inset-0 rounded-full bg-green-500/30 animate-ping -z-10 w-full h-full scale-150 transform origin-center pointer-events-none"></span>
+            <span className="absolute inset-0 rounded-full bg-[#1d5030]/30 animate-ping -z-10 w-full h-full scale-150 transform origin-center pointer-events-none"></span>
         )}
         
         {/* Secondary continuous ripple for sustained listening visual */}
         {variant === 'fab' && isListening && (
-             <span className="absolute inset-0 rounded-full bg-green-400/20 w-full h-full scale-125 -z-10 animate-pulse pointer-events-none"></span>
+             <span className="absolute inset-0 rounded-full bg-[#1d5030]/10 w-full h-full scale-125 -z-10 animate-pulse pointer-events-none"></span>
         )}
 
         <button

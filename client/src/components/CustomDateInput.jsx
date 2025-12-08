@@ -1,40 +1,49 @@
 import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
 import { createPortal } from "react-dom";
 import PropTypes from "prop-types";
-import { X, Calendar, AlertCircle, Mic, Trash2 } from "lucide-react";
+import { X, Calendar, AlertCircle, Mic, Trash2, AudioLines, Check } from "lucide-react";
 import usePreventScroll from "../hooks/usePreventScroll";
 import useVoiceDateParser from "../hooks/useVoiceDateParser";
 import useHardwareBackButton from "../hooks/useHardwareBackButton";
 
-const KeypadButton = memo(({ value, label, onClick, onMouseDown, onMouseUp, onTouchStart, onTouchEnd, variant = "primary", disabled = false, isMic = false }) => (
-  <button
-    onClick={(e) => onClick && onClick(e, value)}
-    onMouseDown={onMouseDown}
-    onMouseUp={onMouseUp}
-    onTouchStart={onTouchStart}
-    onTouchEnd={onTouchEnd}
-    disabled={disabled}
-    className={`
-      h-12 sm:h-14 flex items-center justify-center
-      ${
-        variant === "secondary"
-          ? "bg-white text-gray-400 hover:text-gray-600 active:bg-gray-50"
-          : variant === "danger"
-          ? "bg-red-500 text-white shadow-red-200"
-          : "bg-white text-gray-800 hover:bg-gray-50 active:bg-gray-100"
-      }
-      ${typeof value === "number" ? "text-xl font-normal" : "text-lg font-medium"}
-      rounded-md shadow-sm border border-gray-100
-      transition-all duration-150
-      active:scale-[0.98] active:shadow-inner
-      focus:outline-none
-      disabled:opacity-50 disabled:cursor-not-allowed
-      select-none touch-manipulation
-      ${isMic ? 'active:bg-red-600' : ''}
-    `}
-  >
-    {label}
-  </button>
+const KeypadButton = memo(({ value, label, onClick, onMouseDown, onMouseUp, onTouchStart, onTouchEnd, variant = "primary", disabled = false, isMic = false, listening = false }) => (
+  <div className="relative">
+    {isMic && listening && (
+      <>
+        <span className="absolute inset-0 rounded-md bg-[#1d5030]/30 animate-ping -z-10 w-full h-full scale-125 pointer-events-none"></span>
+        <span className="absolute inset-0 rounded-md bg-[#1d5030]/10 w-full h-full scale-110 -z-10 animate-pulse pointer-events-none"></span>
+      </>
+    )}
+    <button
+      onClick={(e) => onClick && onClick(e, value)}
+      onMouseDown={onMouseDown}
+      onMouseUp={onMouseUp}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+      disabled={disabled}
+      className={`
+        relative w-full h-12 sm:h-14 flex items-center justify-center
+        ${
+          variant === "secondary"
+            ? "bg-white text-gray-400 hover:text-gray-600 active:bg-gray-50"
+            : variant === "danger"
+            ? "bg-red-500 text-white shadow-red-200"
+            : "bg-white text-gray-800 hover:bg-gray-50 active:bg-gray-100"
+        }
+        ${typeof value === "number" ? "text-xl font-normal" : "text-lg font-medium"}
+        rounded-md shadow-sm border border-gray-100
+        transition-all duration-150
+        active:scale-[0.98] active:shadow-inner
+        focus:outline-none
+        disabled:opacity-50 disabled:cursor-not-allowed
+        select-none touch-manipulation
+        ${isMic ? 'active:bg-red-600' : ''}
+        ${listening ? 'bg-[#1d5030] text-white border-[#1d5030]' : ''}
+      `}
+    >
+      {label}
+    </button>
+  </div>
 ));
 
 KeypadButton.displayName = "KeypadButton";
@@ -428,7 +437,7 @@ const CustomDateInput = ({
     { value: 0, label: "0", action: handleKeypadClick },
     { 
         value: "mic", 
-        label: <Mic className={`w-6 h-6 ${isListening ? 'animate-pulse text-white' : ''}`} />, 
+        label: <Mic className={`w-6 h-6 ${isListening ? 'animate-pulse text-white' : 'text-[#1d5030]'}`} />, 
         action: () => {}, // Handled by separate events
         variant: isListening ? "danger" : "secondary", // Custom variant logic could be added
         isMic: true
@@ -525,26 +534,50 @@ const CustomDateInput = ({
               </div>
 
               <div className="flex flex-col items-center space-y-1">
-                <div className="relative w-full">
+                <div className={`
+                    relative w-full h-12 rounded-lg transition-all duration-300 flex items-center
+                    border
+                    ${isListening 
+                        ? 'border-[#1d5030] ring-2 ring-[#1d5030]/20 bg-white' 
+                        : isSuccess 
+                            ? 'border-[#1d5030] ring-2 ring-[#1d5030]/20 bg-white'
+                            : 'border-gray-300 bg-white shadow-sm hover:border-gray-400'
+                    }
+                `}>
+                  {isListening && (
+                    <div className="absolute left-3 animate-pulse text-[#1d5030]">
+                        <AudioLines className="w-5 h-5" />
+                    </div>
+                  )}
+                  {isSuccess && (
+                    <div className="absolute left-3 animate-scale-in text-[#1d5030]">
+                        <Check className="w-5 h-5" />
+                    </div>
+                  )}
                   <input
                     type="text"
-                    value={inputValue}
+                    value={isListening ? "" : inputValue}
                     onChange={handleInputChange}
-                    placeholder="DD/MM/YYYY"
+                    placeholder={isListening ? "Escuchando fecha..." : "DD/MM/YYYY"}
                     autoComplete="off"
                     inputMode="none"
                     readOnly
-                    className={`w-full text-3xl font-bold text-center py-1 bg-transparent border-none focus:ring-0 placeholder-gray-200 outline-none select-none pointer-events-none tracking-tight 
+                    className={`
+                        w-full h-full text-lg font-medium text-center bg-transparent border-none focus:ring-0 outline-none select-none pointer-events-none 
+                        transition-colors duration-200
                         ${isShaking ? 'animate-shake text-red-600' : ''}
-                        ${isSuccess ? 'text-green-600 scale-110 transition-all duration-300' : 'text-[#004D40]'}
+                        ${isSuccess ? 'text-[#1d5030] bg-[#1d5030]/10 rounded-lg font-bold tracking-wide pl-8' : ''}
+                        ${!isSuccess && !isShaking && !isListening ? 'text-[#1d5030]' : ''}
+                        ${isListening ? 'text-[#1d5030] placeholder-[#1d5030]/60 pl-8' : 'placeholder-gray-400'}
                     `}
                   />
                   {inputValue && (
                      <button 
                         onClick={handleClear}
-                        className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-300 hover:text-red-400 p-2 transition-colors active:scale-90"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 p-1.5 transition-colors active:scale-95 rounded-full hover:bg-gray-100"
+                        title="Borrar fecha"
                      >
-                         <Trash2 className="w-5 h-5 opacity-50" />
+                         <Trash2 className="w-4 h-4" />
                      </button>
                   )}
                 </div>
@@ -568,6 +601,7 @@ const CustomDateInput = ({
                     onClick={button.action}
                     variant={button.variant}
                     isMic={button.isMic}
+                    listening={button.isMic ? isListening : false}
                     onMouseDown={button.isMic ? handleStartListening : undefined}
                     onMouseUp={button.isMic ? handleStopListening : undefined}
                     onTouchStart={button.isMic ? handleStartListening : undefined}
