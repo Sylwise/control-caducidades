@@ -101,10 +101,14 @@ const MainLayout = () => {
 
           <main>
             <Outlet context={{ 
-              products, 
               loadAllProducts,
               isCreateEmployeeModalOpen,
-              setIsCreateEmployeeModalOpen 
+              setIsCreateEmployeeModalOpen,
+              // Estado de modales globales para ocultar FAB
+              isUserManagementOpen,
+              showCatalogManagement,
+              isRestaurantManagementOpen,
+              isExpiringModalOpen
             }} />
           </main>
         </div>

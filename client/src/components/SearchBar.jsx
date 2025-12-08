@@ -11,6 +11,7 @@ function SearchBar({
   onUnclassifiedClick,
   viewMode = 'card',
   onViewModeChange,
+  hideFab = false,
 }) {
   return (
     <div className="flex flex-col md:flex-row md:items-center gap-3 mb-6">
@@ -85,7 +86,7 @@ function SearchBar({
 
         {/* Botón de Micrófono (Mobile FAB) */}
         <div className="md:hidden">
-            <MicButton onSpeechResult={onSearchChange} variant="fab" />
+            <MicButton onSpeechResult={onSearchChange} variant="fab" hidden={hideFab} />
         </div>
 
         {/* Selector de Vista */}
@@ -131,7 +132,7 @@ SearchBar.propTypes = {
 
 export default SearchBar;
 
-function MicButton({ onSpeechResult, variant = 'inline' }) {
+function MicButton({ onSpeechResult, variant = 'inline', hidden = false }) {
   const { isListening, transcript, error, startListening, stopListening } = useVoiceInput();
 
   useEffect(() => {
@@ -149,6 +150,8 @@ function MicButton({ onSpeechResult, variant = 'inline' }) {
       e.preventDefault();
       stopListening();
   };
+
+  if (hidden) return null;
 
   const buttonContent = (
     <button

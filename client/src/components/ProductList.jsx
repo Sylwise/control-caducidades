@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useOutletContext } from "react-router-dom";
 import { CheckCircle, ClipboardList } from "lucide-react";
 import SearchBar from "./SearchBar";
 import UpdateModal from "./UpdateModal";
@@ -24,6 +24,14 @@ const ProductList = () => {
   const { socket } = useSocket();
   const { addToast, toasts, removeToast } = useToasts();
   const location = useLocation();
+  
+  // Contexto de MainLayout (Modales Globales)
+  const { 
+    isUserManagementOpen, 
+    isRestaurantManagementOpen,
+    isCreateEmployeeModalOpen, // Por si acaso también queremos ocultarlo aquí
+    showCatalogManagement // Y aquí
+  } = useOutletContext();
   
   // Estados locales
   const [searchTerm, setSearchTerm] = useState("");
@@ -248,6 +256,14 @@ const ProductList = () => {
           onUnclassifiedClick={() => setShowUnclassified(!showUnclassified)}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
+          hideFab={
+            showUnclassified || 
+            isUpdateModalOpen || 
+            isUserManagementOpen || 
+            isRestaurantManagementOpen ||
+            isCreateEmployeeModalOpen ||
+            showCatalogManagement
+          }
         />
 
         {/* Lista de productos sin clasificar */}
