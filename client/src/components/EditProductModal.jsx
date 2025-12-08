@@ -3,6 +3,7 @@ import { Pencil, X, RefreshCw } from "lucide-react";
 import PropTypes from "prop-types";
 import usePreventScroll from "../hooks/usePreventScroll";
 import OfflineManager from "../services/offlineManager";
+import useHardwareBackButton from "../hooks/useHardwareBackButton";
 
 const EditProductModal = ({ isOpen, onClose, productId, onProductUpdated }) => {
   // Usar el hook para prevenir scroll
@@ -110,6 +111,8 @@ const EditProductModal = ({ isOpen, onClose, productId, onProductUpdated }) => {
     setError(null);
     onClose();
   };
+
+  useHardwareBackButton(isOpen, handleClose, 20, 'edit-product-modal');
 
   if (!isOpen) return null;
 

@@ -17,6 +17,7 @@ import OfflineManager from "../services/offlineManager";
 import usePreventScroll from "../hooks/usePreventScroll";
 import EditProductModal from "./EditProductModal";
 import { useProductScroll } from "../hooks/useProductScroll";
+import useHardwareBackButton from "../hooks/useHardwareBackButton";
 
 const TYPE_STYLES = {
   permanente: {
@@ -159,6 +160,9 @@ ProductItem.propTypes = {
 const CatalogManagement = ({ isOpen, onClose }) => {
   usePreventScroll(isOpen);
 
+  // -------------------------------------------------------------------------
+  // 1. STATE & HOOKS (Must be first)
+  // -------------------------------------------------------------------------
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -171,6 +175,30 @@ const CatalogManagement = ({ isOpen, onClose }) => {
   const { socket } = useSocket();
   
   const { scrollToProductId } = useProductScroll(null, 'data-catalog-product-id');
+
+  // -------------------------------------------------------------------------
+  // 2. HANDLERS (Dependent on State)
+  // -------------------------------------------------------------------------
+  // Manejadores manuales de cierre (limpiando estados)
+  const handleClose = useCallback(() => {
+    setSelectedProductId(null);
+    setDeleteConfirm(null);
+    setSearchTerm("");
+    onClose();
+  }, [onClose]);
+
+  const handleDeleteCancel = useCallback(() => {
+    setDeleteConfirm(null);
+  }, []);
+
+  // -------------------------------------------------------------------------
+  // 3. BACK BUTTON INTEGRATION (Dependent on Handlers & State)
+  // -------------------------------------------------------------------------
+  // Priority 10: Main Modal
+  useHardwareBackButton(isOpen, handleClose, 10, 'catalog-main');
+  
+  // Priority 20: Delete Confirmation Overlay (Higher than Main Modal)
+  useHardwareBackButton(!!deleteConfirm, handleDeleteCancel, 20, 'catalog-delete-confirm');
 
   const groupedProducts = useMemo(() => {
     const uniqueProducts = [];
@@ -313,12 +341,7 @@ const CatalogManagement = ({ isOpen, onClose }) => {
     setSearchTerm(""); 
   };
 
-  const handleClose = () => {
-    setSelectedProductId(null);
-    setDeleteConfirm(null);
-    setSearchTerm("");
-    onClose();
-  };
+  // Handlers moved up for hook usage (handleClose, handleDeleteCancel)
 
   const handleSelect = useCallback((productId) => {
     if (deleteConfirm && deleteConfirm !== productId) {
@@ -333,10 +356,6 @@ const CatalogManagement = ({ isOpen, onClose }) => {
 
   const handleDeleteRequest = useCallback((productId) => {
     setDeleteConfirm(productId);
-  }, []);
-
-  const handleDeleteCancel = useCallback(() => {
-    setDeleteConfirm(null);
   }, []);
 
   const handleBackgroundClick = () => {

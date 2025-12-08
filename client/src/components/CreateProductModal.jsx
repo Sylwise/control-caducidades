@@ -3,8 +3,13 @@ import { PackagePlus, X, RefreshCw } from "lucide-react";
 import PropTypes from "prop-types";
 import usePreventScroll from "../hooks/usePreventScroll";
 import OfflineManager from "../services/offlineManager";
+import useHardwareBackButton from "../hooks/useHardwareBackButton";
 
 const CreateProductModal = ({ isOpen, onClose, onProductCreated }) => {
+  // Integation: Hardware Back Button (Priority 20 - Higher than Catalog)
+  // Need to define handleClose before using it, or use a ref/wrapper.
+  // Ideally, move handleClose definition up.
+  
   // Usar el hook para prevenir scroll
   usePreventScroll(isOpen);
 
@@ -90,6 +95,8 @@ const CreateProductModal = ({ isOpen, onClose, onProductCreated }) => {
     setError(null);
     onClose();
   };
+
+  useHardwareBackButton(isOpen, handleClose, 20, 'create-product-modal');
 
   if (!isOpen) return null;
 

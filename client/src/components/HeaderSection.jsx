@@ -48,8 +48,9 @@ const HeaderSection = ({
               {user?.role === "admin" && (
                 <button
                   onClick={onRestaurantManagementClick}
-                  className="p-2 text-gray-400 hover:text-[#1d5030]
-                    hover:bg-[#1d5030]/10 rounded-md transition-colors"
+                  className="p-2 text-gray-400 hover:text-[#1d5030] hover:bg-[#1d5030]/10 
+                    active:text-[#1d5030] active:bg-[#1d5030]/20
+                    rounded-md transition-colors"
                   title="Gestionar Restaurantes"
                 >
                   <Store className="w-5 h-5" />
@@ -57,16 +58,18 @@ const HeaderSection = ({
               )}
               <button
                 onClick={onCatalogManagementClick}
-                className="p-2 text-gray-400 hover:text-[#1d5030]
-                  hover:bg-[#1d5030]/10 rounded-md transition-colors"
+                className="p-2 text-gray-400 hover:text-[#1d5030] hover:bg-[#1d5030]/10 
+                  active:text-[#1d5030] active:bg-[#1d5030]/20
+                  rounded-md transition-colors"
                 title="Gestionar Catálogo"
               >
                 <Package className="w-5 h-5" />
               </button>
               <button
                 onClick={onUserManagementClick}
-                className="p-2 text-gray-400 hover:text-[#1d5030]
-                  hover:bg-[#1d5030]/10 rounded-md transition-colors"
+                className="p-2 text-gray-400 hover:text-[#1d5030] hover:bg-[#1d5030]/10 
+                  active:text-[#1d5030] active:bg-[#1d5030]/20
+                  rounded-md transition-colors"
                 title="Gestionar Usuarios"
               >
                 <Users className="w-5 h-5" />
