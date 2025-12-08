@@ -67,6 +67,9 @@ const ProductList = () => {
   // Ensures card collapses before modal closes
   useHardwareBackButton(!!selectedProduct, () => setSelectedProduct(null), 15, 'deselect-product');
 
+  // 3. Compact View -> Card View (Priority 12)
+  useHardwareBackButton(viewMode === 'compact', () => setViewMode('card'), 12, 'compact-view-reset');
+
   // Hook de Scroll
   const { scrollToProductId } = useProductScroll(selectedProduct);
 
