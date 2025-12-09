@@ -6,76 +6,7 @@ import ModalContainer from "./ModalContainer";
 import QuantitySelector from "./QuantitySelector";
 
 // Componente de checkbox mejorado con tooltip
-const CustomCheckbox = ({ 
-  id, 
-  label, 
-  checked, 
-  disabled = false, 
-  onChange, 
-  tooltip = null 
-}) => (
-  <label
-    htmlFor={id}
-    className={`
-      flex items-center gap-3
-      w-full py-2.5 px-4 my-1.5 
-      rounded-lg transition-all duration-200
-      font-medium text-sm select-none
-      ${
-        disabled
-          ? "text-gray-400 cursor-not-allowed"
-          : "text-[#2d3748] hover:bg-gray-50 cursor-pointer"
-      }
-    `}
-  >
-    <div className="relative">
-      <input
-        type="checkbox"
-        id={id}
-        checked={checked}
-        disabled={disabled}
-        onChange={(e) => onChange(e.target.checked)}
-        className="sr-only" // Oculto visualmente pero accesible
-      />
-      <div
-        className={`
-          w-5 h-5 rounded-md
-          flex items-center justify-center
-          transition-all duration-200
-          ${
-            disabled
-              ? "bg-gray-100"
-              : checked
-                ? "bg-[#1d5030]"
-                : "bg-white border-2 border-gray-300"
-          }
-        `}
-      >
-        {checked && <Check className="w-3.5 h-3.5 text-white" />}
-      </div>
-    </div>
-    <div className="flex items-center gap-1.5">
-      <span>{label}</span>
-      {tooltip && (
-        <div className="group relative">
-          <HelpCircle className="w-4 h-4 text-gray-400" />
-          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-48 p-2 bg-gray-800 text-white text-xs rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
-            {tooltip}
-          </div>
-        </div>
-      )}
-    </div>
-  </label>
-);
 
-CustomCheckbox.propTypes = {
-  id: PropTypes.string.isRequired,
-  label: PropTypes.string.isRequired,
-  checked: PropTypes.bool.isRequired,
-  disabled: PropTypes.bool,
-  onChange: PropTypes.func.isRequired,
-  tooltip: PropTypes.string,
-};
 
 const ConfirmDialog = ({ onConfirm, onCancel, title, message }) => (
   <div className="fixed inset-0 z-[60] flex items-center justify-center animate-fade-in">
@@ -343,7 +274,6 @@ const UpdateModal = ({
   };
 
   const canAddMoreDates =
-    (editingProduct?.producto?.isDirectConsumption || !updateForm.noHayEnAlmacen) &&
     updateForm.fechaAlmacen &&
     (!updateForm.showSecondDate ||
       (updateForm.showSecondDate &&
@@ -354,46 +284,9 @@ const UpdateModal = ({
   const isStorageDateInvalid = !editingProduct?.producto?.isDirectConsumption && 
                                updateForm.fechaFrente && 
                                updateForm.fechaAlmacen && 
-                               !updateForm.noHayEnAlmacen &&
                                new Date(updateForm.fechaAlmacen) < new Date(updateForm.fechaFrente);
 
-  const handleNoHayEnAlmacenChange = (checked) => {
-    if (checked && (updateForm.fechaAlmacen2 || updateForm.fechaAlmacen3)) {
-      setShowConfirmDialog(true);
-      return;
-    }
 
-    setUpdateForm({
-      ...updateForm,
-      noHayEnAlmacen: checked,
-      fechaAlmacen: checked ? "" : updateForm.fechaAlmacen,
-      fechaAlmacen2: "",
-      fechaAlmacen3: "",
-      showSecondDate: false,
-      showThirdDate: false,
-      cajaUnica: checked ? false : updateForm.cajaUnica,
-      hayUnicaCajaActual: checked ? false : updateForm.hayUnicaCajaActual,
-    });
-  };
-
-  const handleConfirmNoHayEnAlmacen = () => {
-    setUpdateForm({
-      ...updateForm,
-      noHayEnAlmacen: true,
-      fechaAlmacen: "",
-      fechaAlmacen2: "",
-      fechaAlmacen3: "",
-      showSecondDate: false,
-      showThirdDate: false,
-      cajaUnica: false,
-      hayUnicaCajaActual: false,
-    });
-    setShowConfirmDialog(false);
-  };
-
-  const handleCancelNoHayEnAlmacen = () => {
-    setShowConfirmDialog(false);
-  };
 
   return (
     <>
@@ -424,23 +317,11 @@ const UpdateModal = ({
                     />
                   </div>
 
-                  <div className="relative">
-                    <div className="flex items-center justify-between">
-                      <CustomCheckbox
-                        id="noHayEnAlmacen"
-                        label="No hay producto en almacén"
-                        checked={updateForm.noHayEnAlmacen}
-                        disabled={isUpdating}
-                        onChange={handleNoHayEnAlmacenChange}
-                        tooltip="Si se selecciona esta opción, se eliminarán todas las fechas de almacén."
-                      />
-                    </div>
-                  </div>
+
                 </>
               )}
 
-              {(!updateForm.noHayEnAlmacen || editingProduct?.producto?.isDirectConsumption) && (
-                <div className="space-y-5 mt-3">
+              <div className="space-y-5 mt-3">
                   <div className="relative">
                     <h3 className="text-sm font-medium text-gray-500 mb-2">
                       {editingProduct?.producto?.isDirectConsumption ? "Fechas de Caducidad" : "Fechas de caducidad en almacén"}
@@ -635,7 +516,7 @@ const UpdateModal = ({
                     </button>
                   )}
                 </div>
-              )}    {/* Checkbox de caja única eliminado en favor del contador */}
+
             </div>
           </div>
 
@@ -678,14 +559,7 @@ const UpdateModal = ({
         </div>
       </ModalContainer>
 
-      {showConfirmDialog && (
-        <ConfirmDialog
-          title="¿Estás seguro?"
-          message="Se perderán todas las fechas de almacén que hayas añadido."
-          onConfirm={handleConfirmNoHayEnAlmacen}
-          onCancel={handleCancelNoHayEnAlmacen}
-        />
-      )}
+
 
       {dateToDelete && (
         <ConfirmDialog
@@ -760,10 +634,6 @@ UpdateModal.propTypes = {
     fechaAlmacen: PropTypes.string,
     fechaAlmacen2: PropTypes.string,
     fechaAlmacen3: PropTypes.string,
-    noHayEnAlmacen: PropTypes.bool,
-    cajaUnica: PropTypes.bool,
-    showSecondDate: PropTypes.bool,
-    showThirdDate: PropTypes.bool,
     hayUnicaCajaActual: PropTypes.bool,
   }).isRequired,
   setUpdateForm: PropTypes.func.isRequired,

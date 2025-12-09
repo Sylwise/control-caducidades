@@ -21,13 +21,14 @@ export const ToastProvider = ({ children }) => {
       type, 
       ...options 
     };
-    
-    setToasts((currentToasts) => [...currentToasts, newToast]);
 
-    // Auto close is handled by the Toast component itself usually, 
-    // but if we want to enforce it here or if the Toast component relies on onRemove:
-    // The existing Toast component has internal timer logic that calls onRemove.
-    // So we just need to provide the state and the remove function.
+    const MAX_TOASTS = 2;
+    
+    setToasts((currentToasts) => {
+      // Keep only the last (MAX_TOASTS - 1) items to make room for the new one
+      const keptToasts = currentToasts.slice(-(MAX_TOASTS - 1));
+      return [...keptToasts, newToast];
+    });
   }, []);
 
   return (

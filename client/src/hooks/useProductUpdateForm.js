@@ -20,7 +20,6 @@ export const useProductUpdateForm = ({
     hayUnicaCajaActual: false,
     showSecondDate: false,
     showThirdDate: false,
-    noHayEnAlmacen: false,
   });
 
   const prepareFormForUpdate = useCallback((product, e) => {
@@ -59,7 +58,6 @@ export const useProductUpdateForm = ({
       hayUnicaCajaActual: product.hayUnicaCajaActual || false,
       showSecondDate: Boolean(segundaFechaObj),
       showThirdDate: Boolean(terceraFechaObj),
-      noHayEnAlmacen: product.estado === "frente-agota",
     });
 
     setIsUpdateModalOpen(true);
@@ -83,32 +81,30 @@ export const useProductUpdateForm = ({
 
       // Preparar array de fechas de almacén
       const fechasAlmacen = [];
-      if (!updateForm.noHayEnAlmacen) {
-        // La primera fecha va en fechaAlmacen, las siguientes en el array
-        if (updateForm.showSecondDate && updateForm.fechaAlmacen2) {
-          fechasAlmacen.push({
-            date: updateForm.fechaAlmacen2,
-            boxes: updateForm.cajasAlmacen2 || 1
-          });
-        }
-        if (updateForm.showThirdDate && updateForm.fechaAlmacen3) {
-          fechasAlmacen.push({
-            date: updateForm.fechaAlmacen3,
-            boxes: updateForm.cajasAlmacen3 || 1
-          });
-        }
+      // La primera fecha va en fechaAlmacen, las siguientes en el array
+      if (updateForm.showSecondDate && updateForm.fechaAlmacen2) {
+        fechasAlmacen.push({
+          date: updateForm.fechaAlmacen2,
+          boxes: updateForm.cajasAlmacen2 || 1
+        });
       }
+      if (updateForm.showThirdDate && updateForm.fechaAlmacen3) {
+        fechasAlmacen.push({
+          date: updateForm.fechaAlmacen3,
+          boxes: updateForm.cajasAlmacen3 || 1
+        });
+      }
+
+      const hasStorage = !!updateForm.fechaAlmacen;
 
       const updateData = {
         fechaFrente: updateForm.fechaFrente,
-        fechaAlmacen: updateForm.noHayEnAlmacen
-          ? null
-          : updateForm.fechaAlmacen || null,
-        cajasAlmacen: updateForm.noHayEnAlmacen ? 0 : (updateForm.cajasAlmacen || 1),
-        fechasAlmacen: updateForm.noHayEnAlmacen ? [] : fechasAlmacen,
+        fechaAlmacen: updateForm.fechaAlmacen || null,
+        cajasAlmacen: hasStorage ? (updateForm.cajasAlmacen || 1) : 0,
+        fechasAlmacen: fechasAlmacen,
         cajaUnica: Boolean(updateForm.cajaUnica),
         hayUnicaCajaActual: Boolean(updateForm.hayUnicaCajaActual),
-        estado: updateForm.noHayEnAlmacen ? "frente-agota" : "frente-cambia",
+        estado: hasStorage ? "frente-cambia" : "frente-agota",
         isDirectConsumption: isDirectConsumption, // Pass flag to service for validation bypass
       };
 
