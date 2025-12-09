@@ -1,8 +1,10 @@
 import { ChevronRight, Calendar } from "lucide-react";
 import PropTypes from "prop-types";
 import ModalContainer from "./ModalContainer";
+import useHardwareBackButton from "../hooks/useHardwareBackButton";
 
 const formatDate = (dateString) => {
+// ... existing formatDate code
   try {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return "Fecha inválida";
@@ -26,6 +28,10 @@ const ExpiringModal = ({
   onClose,
   onProductClick,
 }) => {
+  // --- Hardware Back Button Hook ---
+  // Priority 20: Main Overlay Modal
+  useHardwareBackButton(isOpen, onClose, 20, 'expiring-products-modal');
+
   return (
     <ModalContainer
       isOpen={isOpen}

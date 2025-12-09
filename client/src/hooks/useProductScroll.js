@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback } from 'react';
 
 /**
  * Hook para manejar el scroll hacia productos
@@ -39,35 +39,13 @@ export const useProductScroll = (selectedProduct, attributeName = 'data-product-
     tryScroll();
   }, []);
 
-  // Track previous product to scroll back when closing
-  const prevSelectedProductIdRef = useRef(null);
-
   // Efecto para hacer scroll cuando cambia el producto seleccionado
   useEffect(() => {
     if (selectedProduct?.producto?._id) {
-      // Si hay producto seleccionado, guardamos su ID y hacemos scroll
-      prevSelectedProductIdRef.current = selectedProduct.producto._id;
+      // SOLO hacer scroll si hay un producto seleccionado (ABRIR)
       scrollToProductId(selectedProduct.producto._id);
-    } else if (prevSelectedProductIdRef.current) {
-       // Si se deselecciona (selectedProduct es null) pero había uno antes,
-       // hacemos scroll suave hacia él para evitar saltos bruscos
-       // Usamos una pequeña pausa para esperar a que la tarjeta colapse
-       const lastId = prevSelectedProductIdRef.current;
-       setTimeout(() => {
-         const element = document.querySelector(`[${attributeName}="${lastId}"]`);
-         if (element) {
-           element.scrollIntoView({
-             behavior: "smooth",
-             block: "center", // Mantenerlo centrado
-             inline: "nearest",
-           });
-         }
-       }, 450); // Esperar un poco más que la animación (300ms) para suavizar
-       
-       // Limpiamos la referencia
-       prevSelectedProductIdRef.current = null;
     }
-  }, [selectedProduct, scrollToProductId, attributeName]);
+  }, [selectedProduct, scrollToProductId]);
 
   return { scrollToProductId };
 };

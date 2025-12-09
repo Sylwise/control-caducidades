@@ -278,12 +278,12 @@ const ProductCard = memo(({
           {/* Contenido expandible */}
           <div
             className={`
-            transform transition-all duration-300
-            ${isSelected ? "max-h-[500px] opacity-100 mt-4" : "max-h-0 opacity-0"}
-            overflow-hidden
-          `}
+              grid transition-[grid-template-rows] duration-300 ease-out
+              ${isSelected ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}
+            `}
           >
-            <div className="space-y-4">
+            <div className="overflow-hidden min-h-0">
+              <div className="pt-4 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 {(() => {
                   // Lógica de Renderizado por Estados
@@ -472,6 +472,7 @@ const ProductCard = memo(({
                   </button>
                 )}
               </div>
+            </div>
             </div>
           </div>
         </>
