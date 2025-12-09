@@ -6,7 +6,7 @@ const { verifyToken, isSupervisor } = require("../middleware/auth");
 
 // Middleware de logging para depuración (Solo en desarrollo)
 if (process.env.NODE_ENV !== 'production') {
-  router.use((req, res, next) => {
+  router.use((req, next) => {
     console.log("\n=== Petición a Catalog Router ===");
     console.log("Método:", req.method);
     console.log("URL:", req.originalUrl);

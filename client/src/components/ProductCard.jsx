@@ -31,10 +31,14 @@ const ProductCard = memo(({
   viewMode = 'card',
 }) => {
 
-  const isStale = useMemo(() => {
-    if (!product.updatedAt) return false;
+  const freshnessLevel = useMemo(() => {
+    if (!product.updatedAt) return 0;
     const daysDiff = (new Date() - new Date(product.updatedAt)) / (1000 * 60 * 60 * 24);
-    return daysDiff > 4;
+    
+    if (daysDiff > 7) return 3; // ABANDONED: > 7 days
+    if (daysDiff > 4) return 2; // OLD: > 4 days
+    if (daysDiff > 2) return 1; // STALE: > 2 days
+    return 0; // FRESH
   }, [product.updatedAt]);
 
   const getStatusColor = () => {
@@ -75,14 +79,17 @@ const ProductCard = memo(({
       className={`
         w-full text-left 
         rounded-lg
-        ${isStale 
-          ? "bg-white hover:bg-gray-50 border border-amber-200/60 shadow-sm" 
-          : "bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300"
-        }
+        transition-all duration-300
         ${viewMode === 'compact' 
-          ? 'p-3 sm:p-2 border-b border-gray-100' 
-          : 'p-3 md:p-4 shadow hover:shadow-md'}
-        transition-shadow duration-300
+          ? 'p-3 sm:p-2 border-b' 
+          : 'p-3 md:p-4 shadow hover:shadow-md border'}
+        
+        ${/* STYLES BASED ON FRESHNESS LEVEL */ ''}
+        ${freshnessLevel === 0 ? "bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50" : ""}
+        ${freshnessLevel === 1 ? "bg-[#fafafa] border-gray-300 hover:bg-gray-100" : ""}
+        ${freshnessLevel === 2 ? "bg-white border-amber-200/60 shadow-sm hover:bg-amber-50/10" : ""}
+        ${freshnessLevel === 3 ? "bg-gray-50 border-red-300/50 opacity-75 grayscale-[0.3] hover:opacity-100 hover:grayscale-0" : ""}
+
         ${isSelected ? "ring-1 ring-[#1d5030]/30 bg-[#1d5030]/5" : ""}
         ${
           lastUpdatedProductId === product.producto?._id
@@ -101,19 +108,30 @@ const ProductCard = memo(({
           {/* 1. SECCIÓN NOMBRE (Arriba Izquierda en Móvil / Izquierda en Desktop) */}
           <div className="order-1 flex items-center gap-3 flex-1 min-w-0">
             {/* Indicador de estado (punto) */}
-            {getStatusColor() && (
-              <div className={`
+            {/* Indicador de estado (punto) - Siempre renderizado para mantener alineación */}
+            <div className={`
                 w-2.5 h-2.5 rounded-full flex-shrink-0
-                ${getStatusColor()}
-              `} />
-            )}
+                ${getStatusColor() || 'invisible'}
+            `} />
 
-            {isStale && (
+            {/* Indicador de "Frescura" (Reloj/History) */}
+            {freshnessLevel > 0 && (
               <div 
-                className="flex items-center justify-center p-1.5 bg-amber-50 rounded-full flex-shrink-0 ring-1 ring-amber-100/50"
-                title="Pendiente de revisar"
+                className={`
+                  flex items-center justify-center p-1.5 rounded-full flex-shrink-0 ring-1
+                  ${freshnessLevel === 1 ? "bg-gray-100 ring-gray-200 text-gray-400" : ""}
+                  ${freshnessLevel === 2 ? "bg-amber-50 ring-amber-100/50 text-amber-500/80" : ""}
+                  ${freshnessLevel === 3 ? "bg-red-50 ring-red-100/50 text-red-500/70" : ""}
+                `}
+                title={
+                  freshnessLevel === 1 ? "Sin actualizar hace >2 días" :
+                  freshnessLevel === 2 ? "Sin actualizar hace >4 días" :
+                  "Sin revisar hace >1 semana"
+                }
               >
-                <History size={14} className="text-amber-500/80" />
+                {freshnessLevel === 1 && <Clock size={12} />}
+                {freshnessLevel === 2 && <History size={14} />}
+                {freshnessLevel === 3 && <History size={14} />}
               </div>
             )}
 
@@ -257,22 +275,28 @@ const ProductCard = memo(({
             <span className="font-['Noto Sans'] font-semibold text-gray-700 text-base flex-1 select-none">
               {product.producto?.nombre}
             </span>
-            {isStale && (
+            {freshnessLevel > 0 && (
               <div 
-                className="flex items-center justify-center p-1.5 bg-amber-50 rounded-full ml-2 ring-1 ring-amber-100/50"
+                className={`
+                  flex items-center justify-center p-1.5 rounded-full ml-2 ring-1
+                  ${freshnessLevel === 1 ? "bg-gray-100 ring-gray-200 text-gray-400" : ""}
+                  ${freshnessLevel === 2 ? "bg-amber-50 ring-amber-100/50 text-amber-500/80" : ""}
+                  ${freshnessLevel === 3 ? "bg-red-50 ring-red-100/50 text-red-500/70" : ""}
+                `}
                 title="Pendiente de revisar"
               >
-                <History size={16} className="text-amber-500/80" />
+                {freshnessLevel === 1 && <Clock size={14} />}
+                {freshnessLevel === 2 && <History size={16} />}
+                {freshnessLevel === 3 && <History size={16} />}
               </div>
             )}
             
             {/* Indicador de estado (punto) */}
-            {getStatusColor() && (
-              <div className={`
-                w-2.5 h-2.5 rounded-full flex-shrink-0
-                ${getStatusColor()}
-              `} />
-            )}
+            {/* Indicador de estado (punto) - Siempre renderizado para mantener alineación */}
+            <div className={`
+              w-2.5 h-2.5 rounded-full flex-shrink-0
+              ${getStatusColor() || 'invisible'}
+            `} />
           </div>
 
           {/* Contenido expandible */}
