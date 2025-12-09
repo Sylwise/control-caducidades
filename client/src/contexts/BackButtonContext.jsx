@@ -114,7 +114,18 @@ export const BackButtonProvider = ({ children }) => {
     };
 
     window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    
+    // Disable native scroll restoration to prevent conflicts with our manual vibration/scroll logic
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      if ('scrollRestoration' in window.history) {
+        window.history.scrollRestoration = 'auto';
+      }
+    };
   }, []);
 
   return (
