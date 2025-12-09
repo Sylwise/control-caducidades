@@ -28,6 +28,13 @@ exports.getAllStatus = async (req, res) => {
         .catch(err => logger.error({ err }, "Error al limpiar estados huérfanos"));
     }
 
+    // Ordenar alfabéticamente
+    validStatuses.sort((a, b) => {
+      const nameA = a.producto.nombre.toLowerCase();
+      const nameB = b.producto.nombre.toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
+
     res.json(validStatuses);
   } catch (error) {
     logger.error({ error }, "Error al obtener todos los estados");
@@ -63,6 +70,13 @@ exports.getByStatus = async (req, res) => {
         logger.error({ err }, "Error al limpiar estados huérfanos en getByStatus")
       );
     }
+
+    // Ordenar alfabéticamente
+    validStatuses.sort((a, b) => {
+        const nameA = a.producto.nombre.toLowerCase();
+        const nameB = b.producto.nombre.toLowerCase();
+        return nameA.localeCompare(nameB);
+    });
 
     res.json(validStatuses);
   } catch (error) {
@@ -129,12 +143,13 @@ exports.updateStatus = async (req, res) => {
       savedStatus._id
     ).populate("producto", "nombre tipo activo");
 
-    logger.info(`Estado del producto actualizado: ${productoId}`);
+    logger.info(`Estado del producto actualizado: ${productoId} por usuario: ${req.user.username}`);
 
     const io = req.app.get('io');
+
     socketService.notifyStatusUpdate(
       io, 
-      req.user.restaurante, 
+      req.user.restaurante.toString(), 
       isNew ? "create" : "update", 
       populatedStatus
     );
@@ -171,9 +186,10 @@ exports.deleteStatus = async (req, res) => {
     if (deletedStatus) {
       logger.info(`Estado del producto eliminado: ${productoId}`);
       const io = req.app.get('io');
+      
       socketService.notifyStatusDelete(
         io,
-        req.user.restaurante,
+        req.user.restaurante.toString(),
         productoId,
         deletedStatus.producto
       );

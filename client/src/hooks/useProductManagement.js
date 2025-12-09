@@ -59,18 +59,18 @@ export const useProductManagement = (addToast) => {
 
       const organizedProducts = {
         "sin-clasificar": combinedUnclassifiedProducts,
-        "frente-cambia": validStatusData.filter(
-          (product) => product.estado === "frente-cambia"
-        ),
-        "frente-agota": validStatusData.filter(
-          (product) => product.estado === "frente-agota"
-        ),
-        "abierto-cambia": validStatusData.filter(
-          (product) => product.estado === "abierto-cambia"
-        ),
-        "abierto-agota": validStatusData.filter(
-          (product) => product.estado === "abierto-agota"
-        ),
+        "frente-cambia": validStatusData
+          .filter((product) => product.estado === "frente-cambia")
+          .sort((a, b) => a.producto.nombre.localeCompare(b.producto.nombre)),
+        "frente-agota": validStatusData
+          .filter((product) => product.estado === "frente-agota")
+          .sort((a, b) => a.producto.nombre.localeCompare(b.producto.nombre)),
+        "abierto-cambia": validStatusData
+          .filter((product) => product.estado === "abierto-cambia")
+          .sort((a, b) => a.producto.nombre.localeCompare(b.producto.nombre)),
+        "abierto-agota": validStatusData
+          .filter((product) => product.estado === "abierto-agota")
+          .sort((a, b) => a.producto.nombre.localeCompare(b.producto.nombre)),
       };
 
       setProducts(organizedProducts);
@@ -81,78 +81,7 @@ export const useProductManagement = (addToast) => {
     }
   }, []);
 
-  // Escuchar eventos del catálogo en tiempo real
-  useEffect(() => {
-    if (!socket) return;
 
-    const handleCatalogUpdate = (data) => {
-      if (data.type === "delete") {
-        removeProductFromState(data.productId);
-      } else if (data.type === "create" && data.productStatus) {
-        addProductToState(data.productStatus);
-      } else if (data.type === "update" && data.product) {
-        setProducts((prevProducts) => {
-          const newProducts = { ...prevProducts };
-          
-          Object.keys(newProducts).forEach((category) => {
-            newProducts[category] = newProducts[category].map((item) => {
-              if (item.producto._id === data.product._id) {
-                return {
-                  ...item,
-                  producto: data.product
-                };
-              }
-              return item;
-            });
-          });
-          
-          return newProducts;
-        });
-      }
-    };
-
-    socket.on("catalogUpdate", handleCatalogUpdate);
-
-    const handleStatusUpdate = (data) => {
-      if (data.type === "delete") {
-        removeProductFromState(data.productId);
-        if (data.product) {
-             const unclassifiedProduct = {
-                producto: data.product,
-                estado: "sin-clasificar",
-                fechaFrente: null,
-                fechaAlmacen: null,
-                fechasAlmacen: [],
-                cajaUnica: false,
-                hayUnicaCajaActual: false
-              };
-              addProductToState(unclassifiedProduct);
-        }
-      } else if ((data.type === "create" || data.type === "update") && data.productStatus) {
-        updateProductInState(data.productStatus);
-      }
-    };
-
-    socket.on("productStatusUpdate", handleStatusUpdate);
-
-    // Listen for local updates (for offline sync between components)
-    const handleLocalUpdate = (event) => {
-      const data = event.detail;
-      if (data.type === "catalogUpdate") {
-        handleCatalogUpdate(data);
-      } else {
-        handleStatusUpdate(data);
-      }
-    };
-
-    window.addEventListener('local-product-update', handleLocalUpdate);
-
-    return () => {
-      socket.off("catalogUpdate", handleCatalogUpdate);
-      socket.off("productStatusUpdate", handleStatusUpdate);
-      window.removeEventListener('local-product-update', handleLocalUpdate);
-    };
-  }, [socket]);
 
   const updateProductInState = useCallback((productData) => {
     if (!productData) return;
@@ -180,15 +109,11 @@ export const useProductManagement = (addToast) => {
           ...productData
       };
 
-      newProducts[category] = [...newProducts[category], productToSave];
-      
-      if (category === "sin-clasificar") {
-        newProducts[category] = newProducts[category].sort((a, b) => {
-           const nameA = a.producto?.nombre || a.nombre || "";
-           const nameB = b.producto?.nombre || b.nombre || "";
-           return nameA.localeCompare(nameB);
-        });
-      }
+      newProducts[category] = [...newProducts[category], productToSave].sort((a, b) => {
+        const nameA = a.producto?.nombre || a.nombre || "";
+        const nameB = b.producto?.nombre || b.nombre || "";
+        return nameA.localeCompare(nameB);
+      });
 
       return newProducts;
     });
@@ -225,13 +150,13 @@ export const useProductManagement = (addToast) => {
           (p) => p.producto._id === productData.producto._id
         );
         
-        if (exists) return prevProducts;
-
-        const newCategoryList = [...prevProducts[category], productData];
-        
-        if (category === "sin-clasificar") {
-            newCategoryList.sort((a, b) => a.producto.nombre.localeCompare(b.producto.nombre));
+        if (exists) {
+            return prevProducts;
         }
+
+        const newCategoryList = [...prevProducts[category], productData].sort(
+          (a, b) => a.producto.nombre.localeCompare(b.producto.nombre)
+        );
 
         return {
           ...prevProducts,
@@ -270,6 +195,108 @@ export const useProductManagement = (addToast) => {
       };
     });
   }, []);
+
+  // Escuchar eventos del catálogo en tiempo real
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleCatalogUpdate = (data) => {
+      if (data.type === "delete") {
+        removeProductFromState(data.productId);
+      } else if (data.type === "create") {
+         if (data.productStatus) {
+            addProductToState(data.productStatus);
+         } else if (data.product) {
+            // Offline creation emits 'product', implies 'sin-clasificar'
+            const newStatus = {
+                producto: data.product,
+                estado: "sin-clasificar",
+                fechaFrente: null,
+                fechaAlmacen: null,
+                fechasAlmacen: [],
+                cajaUnica: false,
+                hayUnicaCajaActual: false,
+                _id: data.product._id // Use product ID (temp or perm) as status ID for now
+            };
+            addProductToState(newStatus);
+         }
+      } else if (data.type === "update" && data.product) {
+        setProducts((prevProducts) => {
+          const newProducts = { ...prevProducts };
+          
+          Object.keys(newProducts).forEach((category) => {
+            const hasProduct = newProducts[category].some(item => item.producto._id === data.product._id);
+            
+            if (hasProduct) {
+                newProducts[category] = newProducts[category].map((item) => {
+                  if (item.producto._id === data.product._id) {
+                    return {
+                      ...item,
+                      producto: data.product
+                    };
+                  }
+                  return item;
+                }).sort((a, b) => {
+                    const nameA = a.producto?.nombre || a.nombre || "";
+                    const nameB = b.producto?.nombre || b.nombre || "";
+                    return nameA.localeCompare(nameB);
+                });
+            }
+          });
+          
+          return newProducts;
+        });
+      }
+    };
+
+    socket.on("catalogUpdate", handleCatalogUpdate);
+
+    const handleStatusUpdate = (data) => {
+      
+      if (data.type === "delete") {
+        removeProductFromState(data.productId);
+        if (data.product) {
+             const unclassifiedProduct = {
+                producto: data.product,
+                estado: "sin-clasificar",
+                fechaFrente: null,
+                fechaAlmacen: null,
+                fechasAlmacen: [],
+                cajaUnica: false,
+                hayUnicaCajaActual: false
+              };
+              addProductToState(unclassifiedProduct);
+        }
+      } else if ((data.type === "create" || data.type === "update") && data.productStatus) {
+        updateProductInState(data.productStatus);
+      }
+    };
+
+    socket.on("productStatusUpdate", handleStatusUpdate);
+
+    // Listen for local updates (for offline sync between components)
+    const handleLocalUpdate = (event) => {
+      const data = event.detail;
+      if (data.type === "catalogUpdate" || event.type === "localCatalogUpdate") {
+        handleCatalogUpdate(data || event.detail);
+      } else {
+        handleStatusUpdate(data || event.detail);
+      }
+    };
+
+    window.addEventListener('local-product-update', handleLocalUpdate);
+    window.addEventListener('localCatalogUpdate', handleLocalUpdate);
+    window.addEventListener('localProductStatusUpdate', handleLocalUpdate);
+
+    return () => {
+      socket.off("catalogUpdate", handleCatalogUpdate);
+      socket.off("productStatusUpdate", handleStatusUpdate);
+      window.removeEventListener('local-product-update', handleLocalUpdate);
+      window.removeEventListener('localCatalogUpdate', handleLocalUpdate);
+      window.removeEventListener('localProductStatusUpdate', handleLocalUpdate);
+    };
+  }, [socket, updateProductInState, addProductToState, removeProductFromState]);
+
 
   // Helpers para gestión offline
   const addToOfflineBlacklist = (id) => {
@@ -371,6 +398,57 @@ export const useProductManagement = (addToast) => {
     }
   };
 
+  const unclassifyProductInState = useCallback((productId, productData) => {
+    setProducts((prevProducts) => {
+      // 1. Remove from any category
+      const newProducts = Object.entries(prevProducts).reduce(
+        (acc, [category, productList]) => {
+          const filtered = productList.filter((p) => {
+             if (p.producto && p.producto._id) return p.producto._id !== productId;
+             return p._id !== productId;
+          });
+          acc[category] = filtered;
+          return acc;
+        },
+        { ...prevProducts }
+      );
+
+      // 2. Add to 'sin-clasificar'
+      const unclassifiedProduct = {
+        producto: productData,
+        estado: "sin-clasificar",
+        fechaFrente: null,
+        fechaAlmacen: null,
+        fechasAlmacen: [],
+        cajaUnica: false,
+        hayUnicaCajaActual: false,
+        // Preserve temp ID if it exists
+        _id: productData._id || productId 
+      };
+
+      // Check existence to avoid duplicates (safeguard)
+      // Note: Since we removed it from all categories above, it shouldn't be here unless duplicate IDs exist
+      const exists = newProducts["sin-clasificar"]?.some(
+          p => (p.producto._id === unclassifiedProduct.producto._id)
+      );
+
+      if (!exists) {
+          if (!newProducts["sin-clasificar"]) newProducts["sin-clasificar"] = [];
+          
+          newProducts["sin-clasificar"] = [
+            ...newProducts["sin-clasificar"], 
+            unclassifiedProduct
+          ].sort((a, b) => {
+              const nameA = a.producto?.nombre || "";
+              const nameB = b.producto?.nombre || "";
+              return nameA.localeCompare(nameB);
+          });
+      }
+
+      return newProducts;
+    });
+  }, []);
+
   const handleDeleteProduct = async (productId) => {
     try {
       const productToDelete = Object.values(products)
@@ -404,18 +482,9 @@ export const useProductManagement = (addToast) => {
       addToOfflineBlacklist(productId);
 
       await deleteProductStatus(productId);
-      removeProductFromState(productId);
-
-      const unclassifiedProduct = {
-        producto: productToDelete.producto,
-        estado: "sin-clasificar",
-        fechaFrente: null,
-        fechaAlmacen: null,
-        fechasAlmacen: [],
-        cajaUnica: false,
-        hayUnicaCajaActual: false
-      };
-      addProductToState(unclassifiedProduct);
+      
+      // ATOMIC LOCAL UPDATE
+      unclassifyProductInState(productId, productToDelete.producto);
 
       // Broadcast local event
       window.dispatchEvent(new CustomEvent('local-product-update', {

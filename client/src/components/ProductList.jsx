@@ -174,68 +174,7 @@ const ProductList = () => {
     }
   }, [location.state, loading, products, scrollToProductId]);
 
-  // Handlers para eventos
-  const handleCatalogUpdate = useCallback((data) => {
-    if (data.type === "create") {
-      addProductToState(data.productStatus || data.product);
-    } else if (data.type === "update") {
-      updateProductInState(data.productStatus || data.product);
-    } else if (data.type === "delete") {
-      removeProductFromState(data.productId);
-    }
-  }, [addProductToState, updateProductInState, removeProductFromState]);
 
-  const handleProductStatusUpdate = useCallback((data) => {
-    if (data.type === "update" || data.type === "create") {
-      updateProductInState(data.productStatus);
-    } else if (data.type === "delete") {
-      removeProductFromState(data.productId);
-      
-      if (data.product) {
-        addProductToState({
-          producto: data.product,
-          estado: "sin-clasificar",
-          fechaFrente: null,
-          fechaAlmacen: null,
-          fechasAlmacen: [],
-          cajaUnica: false,
-          hayUnicaCajaActual: false
-        });
-      }
-    }
-  }, [updateProductInState, removeProductFromState, addProductToState]);
-
-  // Efecto para eventos locales
-  useEffect(() => {
-    const handleLocalCatalogUpdate = (event) => {
-      handleCatalogUpdate(event.detail);
-    };
-
-    const handleLocalProductStatusUpdate = (event) => {
-      handleProductStatusUpdate(event.detail);
-    };
-
-    window.addEventListener("localCatalogUpdate", handleLocalCatalogUpdate);
-    window.addEventListener("localProductStatusUpdate", handleLocalProductStatusUpdate);
-
-    return () => {
-      window.removeEventListener("localCatalogUpdate", handleLocalCatalogUpdate);
-      window.removeEventListener("localProductStatusUpdate", handleLocalProductStatusUpdate);
-    };
-  }, [handleCatalogUpdate, handleProductStatusUpdate]);
-
-  // Efecto para eventos de socket
-  useEffect(() => {
-    if (!socket) return;
-
-    socket.on("productStatusUpdate", handleProductStatusUpdate);
-    socket.on("catalogUpdate", handleCatalogUpdate);
-
-    return () => {
-      socket.off("productStatusUpdate", handleProductStatusUpdate);
-      socket.off("catalogUpdate", handleCatalogUpdate);
-    };
-  }, [socket, handleProductStatusUpdate, handleCatalogUpdate]);
 
   return (
     <LoadingErrorContainer
