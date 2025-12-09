@@ -5,6 +5,7 @@ import { X, Calendar, AlertCircle, Mic, Trash2, AudioLines, Check } from "lucide
 import usePreventScroll from "../hooks/usePreventScroll";
 import useVoiceDateParser from "../hooks/useVoiceDateParser";
 import useHardwareBackButton from "../hooks/useHardwareBackButton";
+import useOnlineStatus from "../hooks/useOnlineStatus";
 
 const KeypadButton = memo(({ value, label, onClick, onMouseDown, onMouseUp, onTouchStart, onTouchEnd, variant = "primary", disabled = false, isMic = false, listening = false }) => (
   <div className="relative">
@@ -37,8 +38,9 @@ const KeypadButton = memo(({ value, label, onClick, onMouseDown, onMouseUp, onTo
         focus:outline-none
         disabled:opacity-50 disabled:cursor-not-allowed
         select-none touch-manipulation
-        ${isMic ? 'active:bg-red-600' : ''}
-        ${listening ? 'bg-[#1d5030] text-white border-[#1d5030]' : ''}
+        ${disabled ? 'opacity-50 cursor-not-allowed grayscale bg-gray-100 text-gray-400' : ''}
+        ${isMic && !disabled ? 'active:bg-red-600' : ''}
+        ${listening && !disabled ? 'bg-[#1d5030] text-white border-[#1d5030]' : ''}
       `}
     >
       {label}
@@ -71,6 +73,7 @@ const CustomDateInput = ({
   const recognitionRef = useRef(null);
   const valueRef = useRef(inputValue); // Ref to track value synchronously
   const { parseVoiceDate } = useVoiceDateParser();
+  const isOnline = useOnlineStatus();
 
   // --- Hardware Back Button Hook ---
   // Priority 40 - Highest (keyboard overlay)
@@ -437,12 +440,13 @@ const CustomDateInput = ({
     { value: 0, label: "0", action: handleKeypadClick },
     { 
         value: "mic", 
-        label: <Mic className={`w-6 h-6 ${isListening ? 'animate-pulse text-white' : 'text-[#1d5030]'}`} />, 
+        label: <Mic className={`w-6 h-6 ${isListening ? 'animate-pulse text-white' : isOnline ? 'text-[#1d5030]' : 'text-gray-400'}`} />, 
         action: () => {}, // Handled by separate events
         variant: isListening ? "danger" : "secondary", // Custom variant logic could be added
-        isMic: true
+        isMic: true,
+        disabled: !isOnline
     },
-  ], [handleKeypadClick, handleDelete, isListening]);
+  ], [handleKeypadClick, handleDelete, isListening, isOnline]);
 
   // Manejar teclado físico
   useEffect(() => {
@@ -602,10 +606,11 @@ const CustomDateInput = ({
                     variant={button.variant}
                     isMic={button.isMic}
                     listening={button.isMic ? isListening : false}
-                    onMouseDown={button.isMic ? handleStartListening : undefined}
-                    onMouseUp={button.isMic ? handleStopListening : undefined}
-                    onTouchStart={button.isMic ? handleStartListening : undefined}
-                    onTouchEnd={button.isMic ? handleStopListening : undefined}
+                    disabled={button.isMic ? !isOnline : false}
+                    onMouseDown={button.isMic && isOnline ? handleStartListening : undefined}
+                    onMouseUp={button.isMic && isOnline ? handleStopListening : undefined}
+                    onTouchStart={button.isMic && isOnline ? handleStartListening : undefined}
+                    onTouchEnd={button.isMic && isOnline ? handleStopListening : undefined}
                   />
                 ))}
               </div>

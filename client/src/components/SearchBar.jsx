@@ -2,6 +2,7 @@ import { Search, X, LayoutGrid, List, Mic, AudioLines } from "lucide-react";
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import useVoiceInput from "../hooks/useVoiceInput";
+import useOnlineStatus from "../hooks/useOnlineStatus";
 import PropTypes from "prop-types";
 
 function SearchBar({
@@ -14,6 +15,7 @@ function SearchBar({
   hideFab = false,
 }) {
   const { isListening, transcript, startListening, stopListening } = useVoiceInput();
+  const isOnline = useOnlineStatus();
 
   // Handle voice transcript updates
   useEffect(() => {
@@ -81,6 +83,17 @@ function SearchBar({
           </button>
         )}
       </div>
+
+       {/* INLINE MICROPHONE BUTTON (Desktop/Tablet) */}
+       <div className="hidden md:block">
+          <MicButton 
+             isListening={isListening}
+             startListening={startListening}
+             stopListening={stopListening}
+             variant="inline"
+             disabled={!isOnline}
+          />
+       </div>
       
       </div>
 
@@ -112,7 +125,8 @@ function SearchBar({
                 startListening={startListening} 
                 stopListening={stopListening} 
                 variant="fab" 
-                hidden={hideFab} 
+                hidden={hideFab}
+                disabled={!isOnline}
             />
         </div>
 
@@ -160,13 +174,17 @@ SearchBar.propTypes = {
 
 export default SearchBar;
 
-function MicButton({ isListening, startListening, stopListening, variant = 'inline', hidden = false }) {
+
+
+function MicButton({ isListening, startListening, stopListening, variant = 'inline', hidden = false, disabled = false }) {
   const handleStart = (e) => {
+      if (disabled) return;
       e.preventDefault();
       startListening();
   };
 
   const handleStop = (e) => {
+      if (disabled) return;
       e.preventDefault();
       stopListening();
   };
@@ -193,8 +211,9 @@ function MicButton({ isListening, startListening, stopListening, variant = 'inli
             onMouseUp={handleStop}
             className={`
                 flex items-center justify-center transition-all duration-200 select-none
+                ${disabled ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'}
                 ${variant === 'fab' 
-                ? 'w-14 h-14 rounded-full shadow-lg active:scale-95 active:bg-[#143d23]' 
+                ? `w-14 h-14 rounded-full shadow-lg ${!disabled && 'active:scale-95 active:bg-[#143d23]'}` 
                 : 'flex-none w-12 h-12 rounded-lg border shadow-sm'
                 }
                 ${isListening 
@@ -204,7 +223,7 @@ function MicButton({ isListening, startListening, stopListening, variant = 'inli
                     : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50 hover:text-gray-700'
                 }
             `}
-            title="Mantener para hablar"
+            title={disabled ? "Sin conexión" : "Mantener para hablar"}
             style={{ WebkitTapHighlightColor: 'transparent' }}
         >
             <Mic className={`${variant === 'fab' ? 'w-6 h-6' : 'w-5 h-5'} ${isListening ? 'animate-bounce' : ''}`} />
