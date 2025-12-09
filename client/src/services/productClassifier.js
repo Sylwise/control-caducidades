@@ -13,6 +13,10 @@ export const PRODUCT_STATES = {
  * Clasifica un producto basado en sus fechas y estado
  * Esta función replica la lógica exacta del servidor
  */
+/**
+ * Clasifica un producto basado en sus fechas y estado
+ * Esta función replica la lógica exacta del servidor
+ */
 export function classifyProduct({
   fechaFrente,
   fechaAlmacen,
@@ -20,7 +24,13 @@ export function classifyProduct({
   cajasAlmacen,
   cajaUnica = false,
   hayUnicaCajaActual = false,
+  isDirectConsumption = false,
 }) {
+  // Para consumo directo, no clasificamos por estado de stock
+  if (isDirectConsumption) {
+    return PRODUCT_STATES.SIN_CLASIFICAR; // O cualquier estado, ya que se filtra por el flag
+  }
+
   // Validar fechas requeridas
   if (!fechaFrente) {
     throw new Error("La fecha de frente es requerida");
@@ -66,12 +76,15 @@ export function classifyProduct({
  */
 export function validateProductData(data) {
   const errors = [];
-
-  // Validar fecha de frente
-  if (!data.fechaFrente) {
-    errors.push("La fecha de frente es requerida");
-  } else if (isNaN(new Date(data.fechaFrente).getTime())) {
-    errors.push("La fecha de frente no es válida");
+  
+  // Si es consumo directo, saltamos la validación de fecha frente
+  if (!data.isDirectConsumption) {
+      // Validar fecha de frente
+      if (!data.fechaFrente) {
+        errors.push("La fecha de frente es requerida");
+      } else if (isNaN(new Date(data.fechaFrente).getTime())) {
+        errors.push("La fecha de frente no es válida");
+      }
   }
 
   // Validar fecha de almacén si existe

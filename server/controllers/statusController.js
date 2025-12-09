@@ -5,7 +5,7 @@ const socketService = require("../services/socketService");
 
 exports.getAllStatus = async (req, res) => {
   try {
-    const statuses = await ProductStatus.find({ restaurante: req.user.restaurante }).populate("producto", "nombre");
+    const statuses = await ProductStatus.find({ restaurante: req.user.restaurante }).populate("producto", "nombre isDirectConsumption");
     
     // Filtrar estados huérfanos (donde el producto referenciado ya no existe)
     const validStatuses = [];
@@ -49,7 +49,7 @@ exports.getByStatus = async (req, res) => {
     const { estado } = req.params;
     const statuses = await ProductStatus.find({ estado, restaurante: req.user.restaurante }).populate(
       "producto",
-      "nombre"
+      "nombre isDirectConsumption"
     );
 
     // Filtrar y limpiar huérfanos
@@ -141,7 +141,7 @@ exports.updateStatus = async (req, res) => {
     // ... resto del código (populate, socket, response) igual que antes ...
     const populatedStatus = await ProductStatus.findById(
       savedStatus._id
-    ).populate("producto", "nombre tipo activo");
+    ).populate("producto", "nombre tipo activo isDirectConsumption");
 
     logger.info(`Estado del producto actualizado: ${productoId} por usuario: ${req.user.username}`);
 
@@ -181,7 +181,7 @@ exports.deleteStatus = async (req, res) => {
     const deletedStatus = await ProductStatus.findOneAndDelete({
       producto: productoId,
       restaurante: req.user.restaurante,
-    }).populate("producto");
+    }).populate("producto", "nombre isDirectConsumption");
 
     if (deletedStatus) {
       logger.info(`Estado del producto eliminado: ${productoId}`);

@@ -4,6 +4,7 @@ export const CATEGORY_TITLES = {
   "frente-agota": "FRENTE Y AGOTA",
   "abierto-cambia": "ABIERTO Y CAMBIA",
   "abierto-agota": "ABIERTO Y AGOTA",
+  "directos": "USO INTERNO",
 };
 
 export const INITIAL_PRODUCTS_STATE = {
@@ -12,6 +13,7 @@ export const INITIAL_PRODUCTS_STATE = {
   "frente-agota": [],
   "abierto-cambia": [],
   "abierto-agota": [],
+  "directos": [],
 };
 
 export const MODAL_ANIMATION_DURATION = 150; // ms

@@ -343,15 +343,16 @@ const UpdateModal = ({
   };
 
   const canAddMoreDates =
-    !updateForm.noHayEnAlmacen &&
+    (editingProduct?.producto?.isDirectConsumption || !updateForm.noHayEnAlmacen) &&
     updateForm.fechaAlmacen &&
     (!updateForm.showSecondDate ||
       (updateForm.showSecondDate &&
         updateForm.fechaAlmacen2 &&
         !updateForm.showThirdDate));
 
-  // Validación: Almacén debe ser posterior a frente
-  const isStorageDateInvalid = updateForm.fechaFrente && 
+  // Validación: Almacén debe ser posterior a frente (Excluir para consumo directo)
+  const isStorageDateInvalid = !editingProduct?.producto?.isDirectConsumption && 
+                               updateForm.fechaFrente && 
                                updateForm.fechaAlmacen && 
                                !updateForm.noHayEnAlmacen &&
                                new Date(updateForm.fechaAlmacen) < new Date(updateForm.fechaFrente);
@@ -405,40 +406,44 @@ const UpdateModal = ({
         <div className="flex flex-col h-full">
           <div className="flex-1 p-5 space-y-6 min-h-[400px]">
             <div className="space-y-4">
-              <div className="relative">
-                <h3 className="text-sm font-medium text-gray-500 mb-2">
-                  Fecha visible al cliente
-                </h3>
-                <CustomDateInput
-                  label="Fecha Frente"
-                  value={updateForm.fechaFrente}
-                  onChange={(value) =>
-                    setUpdateForm({ ...updateForm, fechaFrente: value })
-                  }
-                  onRemove={handleFrontDateRemoval}
-                  RemoveIcon={Trash}
-                  className="w-full py-2.5 px-4 my-1.5 rounded-lg transition-all duration-200 font-medium text-sm select-none flex items-center justify-between shadow-sm hover:shadow-md"
-                />
-              </div>
+              {!editingProduct?.producto?.isDirectConsumption && (
+                <>
+                  <div className="relative">
+                    <h3 className="text-sm font-medium text-gray-500 mb-2">
+                      Fecha visible al cliente
+                    </h3>
+                    <CustomDateInput
+                      label="Fecha Frente"
+                      value={updateForm.fechaFrente}
+                      onChange={(value) =>
+                        setUpdateForm({ ...updateForm, fechaFrente: value })
+                      }
+                      onRemove={handleFrontDateRemoval}
+                      RemoveIcon={Trash}
+                      className="w-full py-2.5 px-4 my-1.5 rounded-lg transition-all duration-200 font-medium text-sm select-none flex items-center justify-between shadow-sm hover:shadow-md"
+                    />
+                  </div>
 
-              <div className="relative">
-                <div className="flex items-center justify-between">
-                  <CustomCheckbox
-                    id="noHayEnAlmacen"
-                    label="No hay producto en almacén"
-                    checked={updateForm.noHayEnAlmacen}
-                    disabled={isUpdating}
-                    onChange={handleNoHayEnAlmacenChange}
-                    tooltip="Si se selecciona esta opción, se eliminarán todas las fechas de almacén."
-                  />
-                </div>
-              </div>
+                  <div className="relative">
+                    <div className="flex items-center justify-between">
+                      <CustomCheckbox
+                        id="noHayEnAlmacen"
+                        label="No hay producto en almacén"
+                        checked={updateForm.noHayEnAlmacen}
+                        disabled={isUpdating}
+                        onChange={handleNoHayEnAlmacenChange}
+                        tooltip="Si se selecciona esta opción, se eliminarán todas las fechas de almacén."
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
 
-              {!updateForm.noHayEnAlmacen && (
+              {(!updateForm.noHayEnAlmacen || editingProduct?.producto?.isDirectConsumption) && (
                 <div className="space-y-5 mt-3">
                   <div className="relative">
                     <h3 className="text-sm font-medium text-gray-500 mb-2">
-                      Fechas de caducidad en almacén
+                      {editingProduct?.producto?.isDirectConsumption ? "Fechas de Caducidad" : "Fechas de caducidad en almacén"}
                     </h3>
                     <div className="flex flex-col gap-4">
                       {/* Fecha Principal */}

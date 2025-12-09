@@ -74,7 +74,9 @@ export const useProductUpdateForm = ({
         return;
       }
 
-      if (!updateForm.fechaFrente) {
+      const isDirectConsumption = editingProduct.producto?.isDirectConsumption;
+      
+      if (!updateForm.fechaFrente && !isDirectConsumption) {
         addToast("La fecha de frente es obligatoria.", "error");
         return;
       }
@@ -107,6 +109,7 @@ export const useProductUpdateForm = ({
         cajaUnica: Boolean(updateForm.cajaUnica),
         hayUnicaCajaActual: Boolean(updateForm.hayUnicaCajaActual),
         estado: updateForm.noHayEnAlmacen ? "frente-agota" : "frente-cambia",
+        isDirectConsumption: isDirectConsumption, // Pass flag to service for validation bypass
       };
 
       const success = await handleUpdateProduct(

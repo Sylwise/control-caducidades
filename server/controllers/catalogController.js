@@ -147,7 +147,7 @@ exports.updateProduct = async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
     
-    const allowedUpdates = ['nombre', 'tipo', 'activo'];
+    const allowedUpdates = ['nombre', 'tipo', 'activo', 'isDirectConsumption'];
     const updates = {};
     
     for (const key of allowedUpdates) {

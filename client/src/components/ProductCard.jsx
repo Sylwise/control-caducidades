@@ -162,56 +162,89 @@ const ProductCard = memo(({
           {/* 3. SECCIÓN FECHAS (Fila 2 en Móvil / Centro en Desktop) */}
           <div className="order-3 md:order-2 w-full md:w-[280px]">
             <div className="grid grid-cols-2 gap-2 text-xs">
-              {isSameDate ? (
-                <>
-                  <div className="flex items-center gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100 w-full overflow-hidden">
-                    <span className="text-[#1d5030] font-semibold flex-shrink-0">F/A:</span>
-                    <span className="font-medium text-gray-700 truncate">{formatDate(product.fechaFrente)}</span>
-                    {product.cajasAlmacen > 1 && (
-                      <span className="ml-auto px-1.5 py-0.5 bg-[#1d5030]/10 text-[#1d5030] rounded-full text-[10px] font-bold flex-shrink-0">
-                        {product.cajasAlmacen}
-                      </span>
-                    )}
-                  </div>
-                  
-                  {nextDate ? (
-                     <div className="flex items-center gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100 w-full overflow-hidden">
-                        <span className="text-[#1d5030] font-semibold flex-shrink-0">A:</span>
-                        <span className="font-medium text-gray-700 truncate">{formatDate(nextDate.date)}</span>
-                        {nextDate.boxes > 0 && (
+              {product.producto?.isDirectConsumption ? (
+                  // LOGIC FOR DIRECT CONSUMPTION (COMPACT)
+                  (() => {
+                        const allDates = [];
+                        if (product.fechaAlmacen) allDates.push({ date: product.fechaAlmacen, boxes: product.cajasAlmacen || 0 });
+                        if (product.fechasAlmacen && Array.isArray(product.fechasAlmacen)) {
+                            product.fechasAlmacen.forEach(f => {
+                                const d = typeof f === 'object' ? f.date : f;
+                                const b = typeof f === 'object' ? f.boxes : 1;
+                                if (d) allDates.push({ date: d, boxes: b });
+                            });
+                        }
+                        allDates.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                        if (allDates.length === 0) return <div className="col-span-2 text-gray-400 italic">Sin fechas</div>;
+
+                        // Show up to 2 dates, or scroll? Let's show up to 2 rows (4 dates) or just list them.
+                        // Given the grid-cols-2, mapping them directly works well.
+                        return allDates.map((item, idx) => (
+                             <div key={idx} className="flex items-center gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100 w-full overflow-hidden">
+                                <span className="text-[#1d5030] font-semibold flex-shrink-0">Cad:</span>
+                                <span className="font-medium text-gray-700 truncate">{formatDate(item.date)}</span>
+                                {item.boxes > 0 && (
+                                  <span className="ml-auto px-1.5 py-0.5 bg-[#1d5030]/10 text-[#1d5030] rounded-full text-[10px] font-bold flex-shrink-0">
+                                    {item.boxes}
+                                  </span>
+                                )}
+                             </div>
+                        ));
+                  })()
+              ) : (
+                  // NORMAL LOGIC
+                  isSameDate ? (
+                    <>
+                      <div className="flex items-center gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100 w-full overflow-hidden">
+                        <span className="text-[#1d5030] font-semibold flex-shrink-0">F/A:</span>
+                        <span className="font-medium text-gray-700 truncate">{formatDate(product.fechaFrente)}</span>
+                        {product.cajasAlmacen > 1 && (
                           <span className="ml-auto px-1.5 py-0.5 bg-[#1d5030]/10 text-[#1d5030] rounded-full text-[10px] font-bold flex-shrink-0">
-                            {nextDate.boxes}
+                            {product.cajasAlmacen}
                           </span>
                         )}
-                     </div>
-                  ) : (
-                    <div></div> // Spacer for grid
-                  )}
-                </>
-              ) : (
-                <>
-                  {product.fechaFrente ? (
-                    <div className="flex items-center gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100 w-full overflow-hidden">
-                      <span className="text-[#1d5030] font-semibold flex-shrink-0">F:</span>
-                      <span className="font-medium text-gray-700 truncate">{formatDate(product.fechaFrente)}</span>
-                    </div>
-                  ) : (
-                     <div></div>
-                  )}
-                  {product.fechaAlmacen ? (
-                    <div className="flex items-center gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100 w-full overflow-hidden">
-                      <span className="text-[#1d5030] font-semibold flex-shrink-0">A:</span>
-                      <span className="font-medium text-gray-700 truncate">{formatDate(product.fechaAlmacen)}</span>
-                      {product.cajasAlmacen > 0 && (
-                        <span className="ml-auto px-1.5 py-0.5 bg-[#1d5030]/10 text-[#1d5030] rounded-full text-[10px] font-bold flex-shrink-0">
-                          {product.cajasAlmacen}
-                        </span>
+                      </div>
+                      
+                      {nextDate ? (
+                         <div className="flex items-center gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100 w-full overflow-hidden">
+                            <span className="text-[#1d5030] font-semibold flex-shrink-0">A:</span>
+                            <span className="font-medium text-gray-700 truncate">{formatDate(nextDate.date)}</span>
+                            {nextDate.boxes > 0 && (
+                              <span className="ml-auto px-1.5 py-0.5 bg-[#1d5030]/10 text-[#1d5030] rounded-full text-[10px] font-bold flex-shrink-0">
+                                {nextDate.boxes}
+                              </span>
+                            )}
+                         </div>
+                      ) : (
+                        <div></div> // Spacer for grid
                       )}
-                    </div>
+                    </>
                   ) : (
-                    <div></div>
-                  )}
-                </>
+                    <>
+                      {product.fechaFrente ? (
+                        <div className="flex items-center gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100 w-full overflow-hidden">
+                          <span className="text-[#1d5030] font-semibold flex-shrink-0">F:</span>
+                          <span className="font-medium text-gray-700 truncate">{formatDate(product.fechaFrente)}</span>
+                        </div>
+                      ) : (
+                         <div></div>
+                      )}
+                      {product.fechaAlmacen ? (
+                        <div className="flex items-center gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100 w-full overflow-hidden">
+                          <span className="text-[#1d5030] font-semibold flex-shrink-0">A:</span>
+                          <span className="font-medium text-gray-700 truncate">{formatDate(product.fechaAlmacen)}</span>
+                          {product.cajasAlmacen > 0 && (
+                            <span className="ml-auto px-1.5 py-0.5 bg-[#1d5030]/10 text-[#1d5030] rounded-full text-[10px] font-bold flex-shrink-0">
+                              {product.cajasAlmacen}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <div></div>
+                      )}
+                    </>
+                  )
               )}
             </div>
           </div>
@@ -256,6 +289,88 @@ const ProductCard = memo(({
                   // Lógica de Renderizado por Estados
                   const state = product.estado;
                   
+                  // Estilo unificado para badges
+                  const badgeStyle = "bg-white px-2 py-0.5 rounded shadow-sm flex items-center gap-1 text-xs font-bold text-[#1d5030] border border-gray-100";
+
+                   // Función helper de renderizado
+                  const renderColumn = (title, date, badge, isDisabled) => (
+                    <div className={`w-full bg-white border border-gray-200 rounded-md overflow-hidden border-l-4 flex flex-col h-full ${
+                      isDisabled ? 'border-l-gray-300' : 'border-l-[#1d5030]'
+                    }`}>
+                      <div className="bg-slate-100 w-full h-9 flex justify-between items-center px-2 flex-shrink-0">
+                        <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">
+                          {title}
+                        </span>
+                        {badge && badge}
+                      </div>
+                      <div className={`p-2 text-center flex-1 flex items-center justify-center min-h-[44px] ${isDisabled ? 'bg-gray-50' : ''}`}>
+                        {isDisabled || !date ? (
+                          <span className="text-sm font-medium text-gray-400 select-none">
+                            --
+                          </span>
+                        ) : (
+                          <div className="text-lg font-bold text-gray-700 leading-tight select-none">
+                            {formatDate(date)}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+
+                  // CASE: DIRECT CONSUMPTION
+                  if (product.producto?.isDirectConsumption) {
+                       // Helper to extract and sort all dates
+                       const allDates = [];
+                       if (product.fechaAlmacen) {
+                           allDates.push({ 
+                               date: product.fechaAlmacen, 
+                               boxes: product.cajasAlmacen || 0 
+                           });
+                       }
+                       if (product.fechasAlmacen && Array.isArray(product.fechasAlmacen)) {
+                           product.fechasAlmacen.forEach(f => {
+                               const d = typeof f === 'object' ? f.date : f;
+                               const b = typeof f === 'object' ? f.boxes : 1;
+                               if (d) allDates.push({ date: d, boxes: b });
+                           });
+                       }
+                       // Sort by date ascending
+                       allDates.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                       if (allDates.length === 0) {
+                           return (
+                               <div className="col-span-2">
+                                   {renderColumn("FECHA DE CADUCIDAD", null, null, true)}
+                               </div>
+                           );
+                       }
+
+                       return (
+                           <div className="col-span-2 space-y-2">
+                               <div className="bg-slate-100 w-full h-9 flex items-center px-4 rounded-t-md border border-gray-200 border-b-0">
+                                   <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">
+                                     FECHAS DE CADUCIDAD
+                                   </span>
+                               </div>
+                               <div className="bg-white border border-gray-200 rounded-b-md p-2 space-y-2">
+                                   {allDates.map((item, idx) => (
+                                       <div key={idx} className="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-100">
+                                            <span className="text-sm font-bold text-gray-700">
+                                                {formatDate(item.date)}
+                                            </span>
+                                            {item.boxes > 0 && (
+                                                <div className={badgeStyle}>
+                                                    <Package size={12} />
+                                                    <span>{item.boxes}</span>
+                                                </div>
+                                            )}
+                                       </div>
+                                   ))}
+                               </div>
+                           </div>
+                       );
+                  }
+                  
                   // Default/Fallbacks
                   let leftDate = product.fechaFrente;
                   let rightDate = product.fechaAlmacen;
@@ -264,7 +379,7 @@ const ProductCard = memo(({
                   let rightDisabled = false;
                   
                   // Estilo unificado para badges
-                  const badgeStyle = "bg-white px-2 py-0.5 rounded shadow-sm flex items-center gap-1 text-xs font-bold text-[#1d5030] border border-gray-100";
+                  // const badgeStyle = "bg-white px-2 py-0.5 rounded shadow-sm flex items-center gap-1 text-xs font-bold text-[#1d5030] border border-gray-100";
 
                   if (state === 'frente-agota') {
                     // Caso 1: Frente y Agota (Stock solo en frente)
@@ -310,30 +425,7 @@ const ProductCard = memo(({
                     }
                   }
 
-                  // Función helper de renderizado
-                  const renderColumn = (title, date, badge, isDisabled) => (
-                    <div className={`w-full bg-white border border-gray-200 rounded-md overflow-hidden border-l-4 flex flex-col h-full ${
-                      isDisabled ? 'border-l-gray-300' : 'border-l-[#1d5030]'
-                    }`}>
-                      <div className="bg-slate-100 w-full h-9 flex justify-between items-center px-2 flex-shrink-0">
-                        <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">
-                          {title}
-                        </span>
-                        {badge && badge}
-                      </div>
-                      <div className={`p-2 text-center flex-1 flex items-center justify-center min-h-[44px] ${isDisabled ? 'bg-gray-50' : ''}`}>
-                        {isDisabled || !date ? (
-                          <span className="text-sm font-medium text-gray-400 select-none">
-                            Sin stock
-                          </span>
-                        ) : (
-                          <div className="text-lg font-bold text-gray-700 leading-tight select-none">
-                            {formatDate(date)}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
+
 
                   return (
                     <>

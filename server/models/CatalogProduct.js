@@ -20,6 +20,10 @@ const catalogProductSchema = new mongoose.Schema(
       enum: ["permanente", "promocional"],
       default: "permanente",
     },
+    isDirectConsumption: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

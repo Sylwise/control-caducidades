@@ -58,19 +58,25 @@ export const useProductManagement = (addToast) => {
       });
 
       const organizedProducts = {
-        "sin-clasificar": combinedUnclassifiedProducts,
+        "sin-clasificar": combinedUnclassifiedProducts.filter(p => !p.producto?.isDirectConsumption),
+        
         "frente-cambia": validStatusData
-          .filter((product) => product.estado === "frente-cambia")
+          .filter((product) => product.estado === "frente-cambia" && !product.producto?.isDirectConsumption)
           .sort((a, b) => a.producto.nombre.localeCompare(b.producto.nombre)),
         "frente-agota": validStatusData
-          .filter((product) => product.estado === "frente-agota")
+          .filter((product) => product.estado === "frente-agota" && !product.producto?.isDirectConsumption)
           .sort((a, b) => a.producto.nombre.localeCompare(b.producto.nombre)),
         "abierto-cambia": validStatusData
-          .filter((product) => product.estado === "abierto-cambia")
+          .filter((product) => product.estado === "abierto-cambia" && !product.producto?.isDirectConsumption)
           .sort((a, b) => a.producto.nombre.localeCompare(b.producto.nombre)),
         "abierto-agota": validStatusData
-          .filter((product) => product.estado === "abierto-agota")
+          .filter((product) => product.estado === "abierto-agota" && !product.producto?.isDirectConsumption)
           .sort((a, b) => a.producto.nombre.localeCompare(b.producto.nombre)),
+          
+        "directos": [
+            ...combinedUnclassifiedProducts.filter(p => p.producto?.isDirectConsumption),
+            ...validStatusData.filter(p => p.producto?.isDirectConsumption && p.estado !== "sin-clasificar")
+        ].sort((a, b) => a.producto.nombre.localeCompare(b.producto.nombre)),
       };
 
       setProducts(organizedProducts);
@@ -109,6 +115,17 @@ export const useProductManagement = (addToast) => {
           ...productData
       };
 
+      // Si es consumo directo, forzamos la categoría "directos"
+      if (productToSave.producto?.isDirectConsumption) {
+        if (!newProducts["directos"]) newProducts["directos"] = [];
+        newProducts["directos"] = [...newProducts["directos"], productToSave].sort((a, b) => {
+            const nameA = a.producto?.nombre || a.nombre || "";
+            const nameB = b.producto?.nombre || b.nombre || "";
+            return nameA.localeCompare(nameB);
+        });
+        return newProducts; 
+      }
+
       newProducts[category] = [...newProducts[category], productToSave].sort((a, b) => {
         const nameA = a.producto?.nombre || a.nombre || "";
         const nameB = b.producto?.nombre || b.nombre || "";
@@ -146,6 +163,21 @@ export const useProductManagement = (addToast) => {
     setProducts((prevProducts) => {
       if (productData.estado) {
         const category = productData.estado;
+
+        // Si es Directo, va a su categoría especial
+        if (productData.producto?.isDirectConsumption) {
+             const exists = prevProducts["directos"]?.some(
+                (p) => p.producto._id === productData.producto._id
+             );
+             if (exists) return prevProducts;
+             
+             const newDirectList = [...(prevProducts["directos"] || []), productData].sort(
+                (a, b) => a.producto.nombre.localeCompare(b.producto.nombre)
+             );
+             return { ...prevProducts, "directos": newDirectList };
+        }
+
+        // Logic Standard
         const exists = prevProducts[category].some(
           (p) => p.producto._id === productData.producto._id
         );
@@ -186,6 +218,23 @@ export const useProductManagement = (addToast) => {
       
       if (existsById || existsByName) return prevProducts;
 
+      // Si es directo, va a directos
+      if (unclassifiedProduct.producto?.isDirectConsumption) {
+         const exists = prevProducts["directos"]?.some(
+            (p) => p.producto._id === productData._id
+         );
+         if (exists) return prevProducts;
+
+         const newDirectList = [...(prevProducts["directos"] || []), unclassifiedProduct].sort(
+            (a, b) => a.producto.nombre.localeCompare(b.producto.nombre)
+         );
+         return {
+            ...prevProducts,
+            "directos": newDirectList
+         };
+      }
+
+      // Si no, va a sin-clasificar
       const newUnclassifiedProducts = [...prevProducts["sin-clasificar"], unclassifiedProduct]
         .sort((a, b) => a.producto.nombre.localeCompare(b.producto.nombre));
 
@@ -433,16 +482,28 @@ export const useProductManagement = (addToast) => {
       );
 
       if (!exists) {
-          if (!newProducts["sin-clasificar"]) newProducts["sin-clasificar"] = [];
-          
-          newProducts["sin-clasificar"] = [
-            ...newProducts["sin-clasificar"], 
-            unclassifiedProduct
-          ].sort((a, b) => {
-              const nameA = a.producto?.nombre || "";
-              const nameB = b.producto?.nombre || "";
-              return nameA.localeCompare(nameB);
-          });
+          // Check Direct Consumption
+          if (unclassifiedProduct.producto?.isDirectConsumption) {
+              if (!newProducts["directos"]) newProducts["directos"] = [];
+               newProducts["directos"] = [
+                ...newProducts["directos"], 
+                unclassifiedProduct
+              ].sort((a, b) => {
+                  const nameA = a.producto?.nombre || "";
+                  const nameB = b.producto?.nombre || "";
+                  return nameA.localeCompare(nameB);
+              });
+          } else {
+               if (!newProducts["sin-clasificar"]) newProducts["sin-clasificar"] = [];
+               newProducts["sin-clasificar"] = [
+                ...newProducts["sin-clasificar"], 
+                unclassifiedProduct
+              ].sort((a, b) => {
+                  const nameA = a.producto?.nombre || "";
+                  const nameB = b.producto?.nombre || "";
+                  return nameA.localeCompare(nameB);
+              });
+          }
       }
 
       return newProducts;

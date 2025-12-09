@@ -12,6 +12,7 @@ const EditProductModal = ({ isOpen, onClose, productId, onProductUpdated }) => {
   const [formData, setFormData] = useState({
     nombre: "",
     tipo: "permanente",
+    isDirectConsumption: false,
   });
   const [formErrors, setFormErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -29,7 +30,8 @@ const EditProductModal = ({ isOpen, onClose, productId, onProductUpdated }) => {
           if (product) {
             setFormData({
               nombre: product.nombre,
-              tipo: product.tipo
+              tipo: product.tipo,
+              isDirectConsumption: product.isDirectConsumption || false
             });
           } else {
             setError("No se encontró el producto");
@@ -211,6 +213,36 @@ const EditProductModal = ({ isOpen, onClose, productId, onProductUpdated }) => {
                   >
                     Promocional
                   </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  ¿Es ingrediente?
+                </label>
+                <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-md bg-gray-50">
+                  <div 
+                    onClick={() => setFormData(prev => ({ ...prev, isDirectConsumption: !prev.isDirectConsumption }))}
+                    className={`
+                      relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent 
+                      transition-colors duration-200 ease-in-out focus:outline-none 
+                      ${formData.isDirectConsumption ? 'bg-[#1d5030]' : 'bg-gray-200'}
+                    `}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`
+                        pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 
+                        transition duration-200 ease-in-out
+                        ${formData.isDirectConsumption ? 'translate-x-5' : 'translate-x-0'}
+                      `}
+                    />
+                  </div>
+                  <span className="text-sm text-gray-600">
+                    {formData.isDirectConsumption 
+                      ? "Sí, es para elaboración." 
+                      : "No, es producto de venta."}
+                  </span>
                 </div>
               </div>
 
