@@ -15,6 +15,7 @@ export const BackButtonProvider = ({ children }) => {
   const [stack, setStack] = useState([]);
   const isHandlingBackRef = useRef(false);
   const shouldIgnorePopStateRef = useRef(false);
+  const scrollPositionRef = useRef(0);
 
   const removeHandler = useCallback((id) => {
     setStack(prev => prev.filter(item => item.id !== id));
@@ -53,8 +54,30 @@ export const BackButtonProvider = ({ children }) => {
     
     // 2. Check if we need to clean up the browser history
     if (!isHandlingBackRef.current && window.history.state?.modalId === id) {
+      // Capture current scroll position
+      scrollPositionRef.current = window.scrollY;
+
       shouldIgnorePopStateRef.current = true;
       window.history.back();
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          // Calcular el máximo scroll posible AHORA (después del colapso)
+          const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+          
+          // Restaurar a la posición guardada, pero sin exceder el nuevo límite
+          const targetScroll = Math.min(scrollPositionRef.current, maxScroll);
+          
+          window.scrollTo(0, targetScroll);
+          
+          // Fallback para navegadores lentos
+          setTimeout(() => {
+            const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+            const targetScroll = Math.min(scrollPositionRef.current, maxScroll);
+            window.scrollTo(0, targetScroll);
+          }, 50);
+        });
+      });
     }
   }, []);
 
