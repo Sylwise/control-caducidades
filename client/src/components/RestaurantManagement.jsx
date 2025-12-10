@@ -233,7 +233,7 @@ const RestaurantManagement = ({
           </div>
         )}
 
-        {error && (
+        {error && !isOffline && (
           <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-md text-sm animate-[slideDown_0.3s_ease-out]">
             {error}
           </div>

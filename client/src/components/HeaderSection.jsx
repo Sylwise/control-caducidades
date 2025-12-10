@@ -152,9 +152,21 @@ const HeaderSection = ({
         </div>
         {/* Add Employee button moved to TrainingDashboard */}
         {user?.restaurante?.nombre && (
-          <span className="text-sm font-medium text-gray-500 select-none">
-            {user.restaurante.nombre}
-          </span>
+          <div className="flex flex-col items-center">
+            <span className="text-sm font-medium text-gray-500 select-none">
+              {user.restaurante.nombre}
+            </span>
+            {activeModule === 'inventory' && (
+              <span className="text-sm text-gray-600 font-medium select-none mt-0.5">
+                {(() => {
+                  const d = new Date();
+                  const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+                  const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                  return `${days[d.getDay()]}, ${d.getDate()} de ${months[d.getMonth()]} ${d.getFullYear()}`;
+                })()}
+              </span>
+            )}
+          </div>
         )}
       </div>
     </div>

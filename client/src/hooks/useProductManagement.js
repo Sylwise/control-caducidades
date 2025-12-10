@@ -164,7 +164,6 @@ export const useProductManagement = (addToast) => {
       if (productData.estado) {
         const category = productData.estado;
 
-        // Si es Directo, va a su categoría especial
         if (productData.producto?.isDirectConsumption) {
              const exists = prevProducts["directos"]?.some(
                 (p) => p.producto._id === productData.producto._id
@@ -271,29 +270,46 @@ export const useProductManagement = (addToast) => {
          }
       } else if (data.type === "update" && data.product) {
         setProducts((prevProducts) => {
-          const newProducts = { ...prevProducts };
+          // 1. Find the existing item wrapper (ProductStatus) anywhere
+          let existingItem = null;
+          for (const list of Object.values(prevProducts)) {
+             existingItem = list.find(p => p.producto._id === data.product._id);
+             if (existingItem) break;
+          }
+
+          if (!existingItem) return prevProducts;
+
+          // 2. Remove from all categories (to handle moves)
+          const cleanedProducts = Object.entries(prevProducts).reduce((acc, [category, productList]) => {
+            acc[category] = productList.filter(
+              (p) => p.producto._id !== data.product._id
+            );
+            return acc;
+          }, { ...prevProducts });
+
+          // 3. Create updated item with new catalog data
+          const newItem = { 
+            ...existingItem, 
+            producto: data.product 
+          };
+
+          // 4. Place in correct category
+          const sortFn = (a, b) => {
+            const nameA = a.producto?.nombre || a.nombre || "";
+            const nameB = b.producto?.nombre || b.nombre || "";
+            return nameA.localeCompare(nameB);
+          };
+
+          if (newItem.producto.isDirectConsumption) {
+            if (!cleanedProducts["directos"]) cleanedProducts["directos"] = [];
+            cleanedProducts["directos"] = [...cleanedProducts["directos"], newItem].sort(sortFn);
+          } else {
+            const category = newItem.estado || "sin-clasificar";
+             if (!cleanedProducts[category]) cleanedProducts[category] = [];
+            cleanedProducts[category] = [...cleanedProducts[category], newItem].sort(sortFn);
+          }
           
-          Object.keys(newProducts).forEach((category) => {
-            const hasProduct = newProducts[category].some(item => item.producto._id === data.product._id);
-            
-            if (hasProduct) {
-                newProducts[category] = newProducts[category].map((item) => {
-                  if (item.producto._id === data.product._id) {
-                    return {
-                      ...item,
-                      producto: data.product
-                    };
-                  }
-                  return item;
-                }).sort((a, b) => {
-                    const nameA = a.producto?.nombre || a.nombre || "";
-                    const nameB = b.producto?.nombre || b.nombre || "";
-                    return nameA.localeCompare(nameB);
-                });
-            }
-          });
-          
-          return newProducts;
+          return cleanedProducts;
         });
       }
     };
