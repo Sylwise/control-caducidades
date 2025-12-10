@@ -82,7 +82,7 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center bg-[#f8f8f8] p-4 pt-32">
+    <div className="min-h-screen flex flex-col items-center bg-[#f8f8f8] p-4 pt-12 md:pt-32">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8 flex flex-col items-center">

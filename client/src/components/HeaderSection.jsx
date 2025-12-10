@@ -156,7 +156,7 @@ const HeaderSection = ({
             <span className="text-sm font-medium text-gray-500 select-none">
               {user.restaurante.nombre}
             </span>
-            {activeModule === 'inventory' && (
+            {(activeModule === 'inventory' || activeModule === 'training') && (
               <span className="text-sm text-gray-600 font-medium select-none mt-0.5">
                 {(() => {
                   const d = new Date();
