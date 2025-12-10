@@ -81,7 +81,7 @@ const ProductCard = memo(({
         rounded-lg
         transition-all duration-300
         ${viewMode === 'compact' 
-          ? 'p-3 sm:p-2 border-b' 
+          ? 'p-3 sm:p-2 border border-gray-200 shadow-sm mb-2 hover:shadow-md bg-white' 
           : 'p-3 md:p-4 shadow hover:shadow-md border'}
         
         ${/* STYLES BASED ON FRESHNESS LEVEL */ ''}
