@@ -42,6 +42,33 @@ const ProductCard = memo(({
   }, [product.updatedAt]);
 
   const getStatusColor = () => {
+    if (product.producto?.isDirectConsumption) {
+       let hasExpired = false;
+       let hasExpiringSoon = false;
+
+       // Helper to check a single date
+       const checkDate = (d) => {
+         if (!d) return;
+         if (isExpired(d)) hasExpired = true;
+         else if (isExpiringSoon(d)) hasExpiringSoon = true;
+       };
+
+       // Check standard fields if they exist (though mostly only fechasAlmacen used)
+       checkDate(product.fechaAlmacen);
+       
+       // Check array
+       if (product.fechasAlmacen && Array.isArray(product.fechasAlmacen)) {
+         product.fechasAlmacen.forEach(f => {
+            const dateVal = typeof f === 'object' ? f.date : f;
+            checkDate(dateVal);
+         });
+       }
+
+       if (hasExpired) return 'bg-red-500 animate-pulse';
+       if (hasExpiringSoon) return 'bg-[#ffb81c] animate-pulse';
+       return null;
+    }
+
     if (isExpired(product.fechaFrente)) return 'bg-red-500 animate-pulse';
     if (isExpiringSoon(product.fechaFrente)) return 'bg-[#ffb81c] animate-pulse';
     return null;
@@ -81,7 +108,7 @@ const ProductCard = memo(({
         rounded-lg
         transition-all duration-300
         ${viewMode === 'compact' 
-          ? 'p-3 sm:p-2 border border-gray-200 shadow-sm mb-2 hover:shadow-md bg-white' 
+          ? 'py-2 px-3 sm:px-2 border border-gray-200 shadow-sm mb-2 hover:shadow-md bg-white' 
           : 'p-3 md:p-4 shadow hover:shadow-md border'}
         
         ${/* STYLES BASED ON FRESHNESS LEVEL */ ''}
@@ -107,34 +134,6 @@ const ProductCard = memo(({
           
           {/* 1. SECCIÓN NOMBRE (Arriba Izquierda en Móvil / Izquierda en Desktop) */}
           <div className="order-1 flex items-center gap-3 flex-1 min-w-0">
-            {/* Indicador de estado (punto) */}
-            {/* Indicador de estado (punto) - Siempre renderizado para mantener alineación */}
-            <div className={`
-                w-2.5 h-2.5 rounded-full flex-shrink-0
-                ${getStatusColor() || 'invisible'}
-            `} />
-
-            {/* Indicador de "Frescura" (Reloj/History) */}
-            {freshnessLevel > 0 && (
-              <div 
-                className={`
-                  flex items-center justify-center p-1.5 rounded-full flex-shrink-0 ring-1
-                  ${freshnessLevel === 1 ? "bg-gray-100 ring-gray-200 text-gray-400" : ""}
-                  ${freshnessLevel === 2 ? "bg-amber-50 ring-amber-100/50 text-amber-500/80" : ""}
-                  ${freshnessLevel === 3 ? "bg-red-50 ring-red-100/50 text-red-500/70" : ""}
-                `}
-                title={
-                  freshnessLevel === 1 ? "Sin actualizar hace >2 días" :
-                  freshnessLevel === 2 ? "Sin actualizar hace >4 días" :
-                  "Sin revisar hace >1 semana"
-                }
-              >
-                {freshnessLevel === 1 && <Clock size={12} />}
-                {freshnessLevel === 2 && <History size={14} />}
-                {freshnessLevel === 3 && <History size={14} />}
-              </div>
-            )}
-
             {/* Nombre del producto - Mínimo ancho para no desaparecer */}
             <span className="font-['Noto Sans'] font-medium text-gray-700 text-sm md:text-sm truncate block">
               {product.producto?.nombre}
@@ -142,44 +141,73 @@ const ProductCard = memo(({
           </div>
 
           {/* 2. SECCIÓN BOTONES (Arriba Derecha en Móvil / Derecha en Desktop) */}
-          <div className="order-2 md:order-3 flex items-center gap-2 md:gap-1 flex-shrink-0 ml-2 md:ml-0">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onUpdateClick(product, e);
-              }}
-              className="
-                flex items-center justify-center
-                min-w-[36px] min-h-[36px] md:min-w-[32px] md:min-h-[32px]
-                text-gray-400 hover:text-[#1d5030] hover:bg-[#1d5030]/10 
-                rounded-full sm:rounded transition-colors
-              "
-              title="Editar"
-            >
-              <Edit3 className="w-5 h-5 md:w-4 md:h-4" />
-            </button>
-            {(product.estado !== "sin-clasificar" || product.fechaFrente || product.fechaAlmacen) && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDeleteClick(product, e);
-                }}
-                className="
-                  flex items-center justify-center
-                  min-w-[36px] min-h-[36px] md:min-w-[32px] md:min-h-[32px]
-                  text-gray-400 hover:text-red-500 hover:bg-red-50 
-                  rounded-full sm:rounded transition-colors
-                "
-                title="Eliminar"
-              >
-                <Trash2 className="w-5 h-5 md:w-4 md:h-4" />
-              </button>
-            )}
+          <div className="order-2 md:order-3 flex items-center justify-end gap-2 md:gap-1 flex-shrink-0 ml-2 md:ml-0 min-h-[32px] w-[72px]">
+             {/* TOGGLE: Iconos vs Botones */}
+             {!isSelected ? (
+                /* ESTADO NORMAL: Iconos de estado y frescura */
+                <>
+                  <div className={`
+                      w-2.5 h-2.5 rounded-full flex-shrink-0
+                      ${getStatusColor() || 'hidden'}
+                  `} />
+
+                  {freshnessLevel > 0 && (
+                    <div 
+                      className={`
+                        flex items-center justify-center p-1.5 rounded-full flex-shrink-0 ring-1
+                        ${freshnessLevel === 1 ? "bg-gray-100 ring-gray-200 text-gray-400" : ""}
+                        ${freshnessLevel === 2 ? "bg-amber-50 ring-amber-100/50 text-amber-500/80" : ""}
+                        ${freshnessLevel === 3 ? "bg-red-50 ring-red-100/50 text-red-500/70" : ""}
+                      `}
+                    >
+                      {freshnessLevel === 1 && <Clock size={12} />}
+                      {freshnessLevel === 2 && <History size={14} />}
+                      {freshnessLevel === 3 && <History size={14} />}
+                    </div>
+                  )}
+                </>
+             ) : (
+                /* ESTADO SELECCIONADO: Botones de acción */
+                <>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onUpdateClick(product, e);
+                    }}
+                    className="
+                      flex items-center justify-center
+                      h-8 w-8
+                      text-gray-400 hover:text-[#1d5030] hover:bg-[#1d5030]/10 
+                      rounded-full sm:rounded transition-colors
+                    "
+                    title="Editar"
+                  >
+                    <Edit3 className="w-5 h-5 md:w-4 md:h-4" />
+                  </button>
+                  {(product.estado !== "sin-clasificar" || product.fechaFrente || product.fechaAlmacen) && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteClick(product, e);
+                      }}
+                      className="
+                        flex items-center justify-center
+                        h-8 w-8
+                        text-gray-400 hover:text-red-500 hover:bg-red-50 
+                        rounded-full sm:rounded transition-colors
+                      "
+                      title="Eliminar"
+                    >
+                      <Trash2 className="w-5 h-5 md:w-4 md:h-4" />
+                    </button>
+                  )}
+                </>
+             )}
           </div>
 
           {/* 3. SECCIÓN FECHAS (Fila 2 en Móvil / Centro en Desktop) */}
           <div className="order-3 md:order-2 w-full md:w-[280px]">
-            <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="flex flex-wrap gap-2 text-xs">
               {product.producto?.isDirectConsumption ? (
                   // LOGIC FOR DIRECT CONSUMPTION (COMPACT)
                   (() => {
@@ -199,12 +227,11 @@ const ProductCard = memo(({
                         // Show up to 2 dates, or scroll? Let's show up to 2 rows (4 dates) or just list them.
                         // Given the grid-cols-2, mapping them directly works well.
                         return allDates.map((item, idx) => (
-                             <div key={idx} className="flex items-center gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100 w-full overflow-hidden">
-                                <span className="text-[#1d5030] font-semibold flex-shrink-0">Cad:</span>
+                             <div key={idx} className="flex items-center justify-start gap-1 bg-gray-50 px-2 h-7 rounded border border-gray-100 w-auto overflow-hidden">
                                 <span className="font-medium text-gray-700 truncate">{formatDate(item.date)}</span>
                                 {item.boxes > 0 && (
-                                  <span className="ml-auto px-1.5 py-0.5 bg-[#1d5030]/10 text-[#1d5030] rounded-full text-[10px] font-bold flex-shrink-0">
-                                    {item.boxes}
+                                  <span className="text-[#1d5030] text-xs font-bold flex-shrink-0">
+                                    x{item.boxes}
                                   </span>
                                 )}
                              </div>
@@ -214,47 +241,47 @@ const ProductCard = memo(({
                   // NORMAL LOGIC
                   isSameDate ? (
                     <>
-                      <div className="flex items-center gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100 w-full overflow-hidden">
-                        <span className="text-[#1d5030] font-semibold flex-shrink-0">F/A:</span>
+                      <div className="flex items-center justify-between gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100 w-auto overflow-hidden">
+                        <span className="text-[#1d5030] text-xs font-bold flex-shrink-0">F/A:</span>
                         <span className="font-medium text-gray-700 truncate">{formatDate(product.fechaFrente)}</span>
                         {product.cajasAlmacen > 1 && (
-                          <span className="ml-auto px-1.5 py-0.5 bg-[#1d5030]/10 text-[#1d5030] rounded-full text-[10px] font-bold flex-shrink-0">
-                            {product.cajasAlmacen}
+                          <span className="text-[#1d5030] text-xs font-bold flex-shrink-0">
+                            x{product.cajasAlmacen}
                           </span>
                         )}
                       </div>
                       
                       {nextDate ? (
-                         <div className="flex items-center gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100 w-full overflow-hidden">
-                            <span className="text-[#1d5030] font-semibold flex-shrink-0">A:</span>
+                         <div className="flex items-center justify-between gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100 w-auto overflow-hidden">
+                            <span className="text-[#1d5030] text-xs font-bold flex-shrink-0">A:</span>
                             <span className="font-medium text-gray-700 truncate">{formatDate(nextDate.date)}</span>
                             {nextDate.boxes > 0 && (
-                              <span className="ml-auto px-1.5 py-0.5 bg-[#1d5030]/10 text-[#1d5030] rounded-full text-[10px] font-bold flex-shrink-0">
-                                {nextDate.boxes}
+                              <span className="text-[#1d5030] text-xs font-bold flex-shrink-0">
+                                x{nextDate.boxes}
                               </span>
                             )}
                          </div>
                       ) : (
-                        <div></div> // Spacer for grid
+                        <div></div>
                       )}
                     </>
                   ) : (
                     <>
                       {product.fechaFrente ? (
-                        <div className="flex items-center gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100 w-full overflow-hidden">
-                          <span className="text-[#1d5030] font-semibold flex-shrink-0">F:</span>
+                        <div className="flex items-center justify-between gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100 w-auto overflow-hidden">
+                          <span className="text-[#1d5030] text-xs font-bold flex-shrink-0">F:</span>
                           <span className="font-medium text-gray-700 truncate">{formatDate(product.fechaFrente)}</span>
                         </div>
                       ) : (
                          <div></div>
                       )}
                       {product.fechaAlmacen ? (
-                        <div className="flex items-center gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100 w-full overflow-hidden">
-                          <span className="text-[#1d5030] font-semibold flex-shrink-0">A:</span>
+                        <div className="flex items-center justify-between gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100 w-auto overflow-hidden">
+                          <span className="text-[#1d5030] text-xs font-bold flex-shrink-0">A:</span>
                           <span className="font-medium text-gray-700 truncate">{formatDate(product.fechaAlmacen)}</span>
                           {product.cajasAlmacen > 0 && (
-                            <span className="ml-auto px-1.5 py-0.5 bg-[#1d5030]/10 text-[#1d5030] rounded-full text-[10px] font-bold flex-shrink-0">
-                              {product.cajasAlmacen}
+                            <span className="text-[#1d5030] text-xs font-bold flex-shrink-0">
+                              x{product.cajasAlmacen}
                             </span>
                           )}
                         </div>
@@ -403,7 +430,7 @@ const ProductCard = memo(({
                   let rightDisabled = false;
                   
                   // Estilo unificado para badges
-                  // const badgeStyle = "bg-white px-2 py-0.5 rounded shadow-sm flex items-center gap-1 text-xs font-bold text-[#1d5030] border border-gray-100";
+
 
                   if (state === 'frente-agota') {
                     // Caso 1: Frente y Agota (Stock solo en frente)
