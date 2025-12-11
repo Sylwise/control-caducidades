@@ -11,44 +11,7 @@
   <title>Gestión Operativa</title>
 </head>
 
-<style>
-  /* Critical CSS for instant rendering */
-  html,
-  body {
-    margin: 0;
-    padding: 0;
-  }
 
-  #initial-loader {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background-color: #f8f8f8;
-    z-index: 9999;
-    transition: opacity 1.5s ease-out;
-    /* Match pt-12 (12 * 0.25rem = 3rem). 
-       Tailwind pt-12 overrides p-4 for the top side. */
-    padding-top: 3rem;
-  }
-
-  /* Match md:pt-32 */
-  @media (min-width: 768px) {
-    #initial-loader {
-      padding-top: 8rem;
-    }
-  }
-
-  .loader-logo {
-    width: 250px;
-    height: 250px;
-    margin-bottom: 1rem;
-  }
-</style>
-<div id="initial-loader">
-  <img src="/logo.svg" alt="Loading..." class="loader-logo" />
-</div>
 <div id="root"></div>
 <script type="module" src="/src/main.jsx"></script>
 </body>

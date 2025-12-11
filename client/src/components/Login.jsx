@@ -82,15 +82,14 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center bg-[#f8f8f8] p-4 pt-12 md:pt-32">
+    <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-[#f8f8f8] p-4">
       <div className="w-full max-w-md">
         {/* Header */}
-        <div className="text-center mb-8 flex flex-col items-center">
+        <div className="text-center mb-6 md:mb-8 flex flex-col items-center">
           <img 
             src="/logo.svg" 
             alt="Logo" 
-            className="mb-4"
-            style={{ width: '250px', height: '250px' }}
+            className="w-40 h-40 md:w-64 md:h-64 transition-all duration-300"
           />
           <div className="animate-enter delay-200">
             <h1 className="text-2xl font-bold text-[#1d5030] font-['Noto Sans'] mb-2 select-none">
@@ -105,7 +104,7 @@ const Login = () => {
         {/* Formulario */}
         <form
           onSubmit={handleSubmit}
-          className="bg-white rounded-lg shadow-sm p-6 space-y-4 animate-enter delay-300"
+          className="bg-white rounded-lg shadow-sm p-4 md:p-6 space-y-4 animate-enter delay-300"
           noValidate
         >
           {error && (
@@ -127,7 +126,7 @@ const Login = () => {
               name="username"
               value={credentials.username}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md
+              className="w-full px-3 py-2 border border-gray-400 rounded-lg
                 focus:outline-none focus:ring-2 focus:ring-[#1d5030]/50 focus:border-transparent
                 text-gray-900"
               required // Keep for semantics, but noValidate disables browser check
@@ -148,7 +147,7 @@ const Login = () => {
                 name="password"
                 value={credentials.password}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md
+                className="w-full px-3 py-2 border border-gray-400 rounded-lg
                   focus:outline-none focus:ring-2 focus:ring-[#1d5030]/50 focus:border-transparent
                   text-gray-900 pr-10"
                 required // Keep for semantics
@@ -187,7 +186,7 @@ const Login = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-[#1d5030] text-white py-2 px-4 rounded-md
+            className="w-full bg-[#1d5030] text-white py-2 px-4 rounded-lg
               hover:bg-[#1d5030]/90 transition-colors duration-200
               disabled:opacity-50 disabled:cursor-not-allowed
               font-medium select-none"
