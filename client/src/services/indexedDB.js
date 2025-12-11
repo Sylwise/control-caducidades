@@ -117,7 +117,6 @@ class IndexedDBService {
     }
 
     const store = await this.getStore(STORES.PRODUCTS, "readwrite");
-    product.updatedAt = new Date().toISOString();
 
     return new Promise((resolve, reject) => {
       const request = store.put(product);
@@ -188,7 +187,6 @@ class IndexedDBService {
 
   async saveCatalogProduct(product) {
     const store = await this.getStore(STORES.CATALOG, "readwrite");
-    product.updatedAt = new Date().toISOString();
 
     return new Promise((resolve, reject) => {
       const request = store.put(product);
