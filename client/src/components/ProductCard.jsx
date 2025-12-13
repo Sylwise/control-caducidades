@@ -1,7 +1,7 @@
 import { memo, useMemo } from "react";
 import { Box, Clock, Edit3, Trash2, Package, History, PackageOpen } from "lucide-react";
 import PropTypes from "prop-types";
-import { isExpired } from "../utils/dateUtils";
+import { isExpired, isExpiredIncludingToday } from "../utils/dateUtils";
 
 const formatDate = (dateString) => {
   try {
@@ -74,6 +74,22 @@ const ProductCard = memo(({
     return null;
   };
 
+  const isProductExpired = useMemo(() => {
+    // Check Internal/Direct Consumption
+    if (product.producto?.isDirectConsumption) {
+       // Check standard field
+       if (isExpiredIncludingToday(product.fechaAlmacen)) return true;
+       // Check array
+       if (product.fechasAlmacen && Array.isArray(product.fechasAlmacen)) {
+         return product.fechasAlmacen.some(f => isExpiredIncludingToday(typeof f === 'object' ? f.date : f));
+       }
+       return false;
+    }
+    // Check Normal
+    if (isExpiredIncludingToday(product.fechaFrente)) return true;
+    return false;
+  }, [product]);
+
   const nextDate = useMemo(() => {
     if (!product.fechasAlmacen || product.fechasAlmacen.length === 0 || !product.fechaFrente) return null;
     
@@ -108,14 +124,25 @@ const ProductCard = memo(({
         rounded-lg
         transition-all duration-300
         ${viewMode === 'compact' 
-          ? 'py-2 px-3 sm:px-2 border border-gray-200 shadow-sm mb-2 hover:shadow-md bg-white select-none' 
-          : 'p-3 md:p-4 shadow hover:shadow-md border'}
+          ? `py-2 px-3 sm:px-2 border shadow-sm mb-2 hover:shadow-md select-none ${
+              isProductExpired 
+                ? 'bg-red-50/80 border-red-200' 
+                : 'bg-white border-gray-200'
+            }` 
+          : `p-3 md:p-4 shadow hover:shadow-md border ${
+               isProductExpired 
+                 ? 'bg-red-50/30 border-red-200' 
+                 : 'bg-white border-gray-200'
+            }`
+        }
         
         ${/* STYLES BASED ON FRESHNESS LEVEL */ ''}
-        ${freshnessLevel === 0 ? "bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50" : ""}
-        ${freshnessLevel === 1 ? "bg-[#fafafa] border-gray-300 hover:bg-gray-100" : ""}
-        ${freshnessLevel === 2 ? "bg-white border-amber-200/60 shadow-sm hover:bg-amber-50/10" : ""}
-        ${freshnessLevel === 3 ? "bg-gray-50 border-red-300/50 opacity-75 grayscale-[0.3] hover:opacity-100 hover:grayscale-0" : ""}
+        ${!isProductExpired ? (
+          freshnessLevel === 0 ? "bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50" :
+          freshnessLevel === 1 ? "bg-[#fafafa] border-gray-300 hover:bg-gray-100" :
+          freshnessLevel === 2 ? "bg-white border-amber-200/60 shadow-sm hover:bg-amber-50/10" :
+          freshnessLevel === 3 ? "bg-gray-50 border-red-300/50 opacity-75 grayscale-[0.3] hover:opacity-100 hover:grayscale-0" : ""
+        ) : ""}
 
         ${isSelected ? "ring-1 ring-[#1d5030]/30 bg-[#1d5030]/5" : ""}
         ${
@@ -226,37 +253,50 @@ const ProductCard = memo(({
 
                         // Show up to 2 dates, or scroll? Let's show up to 2 rows (4 dates) or just list them.
                         // Given the grid-cols-2, mapping them directly works well.
-                        return allDates.map((item, idx) => (
-                             <div key={idx} className="flex items-center justify-start gap-1 bg-gray-50 px-2 h-7 rounded border border-gray-100 w-auto overflow-hidden">
-                                <span className="font-medium text-gray-700 truncate">{formatDate(item.date)}</span>
-                                {item.boxes > 0 && (
-                                  <span className="text-[#1d5030] text-xs font-bold flex-shrink-0">
-                                    x{item.boxes}
+                        return allDates.map((item, idx) => {
+                             const itemExpired = isExpiredIncludingToday(item.date);
+                             return (
+                               <div key={idx} className={`flex items-center justify-start gap-1 px-2 h-7 rounded border w-auto overflow-hidden ${
+                                  itemExpired 
+                                    ? 'bg-red-50 border-red-200' 
+                                    : 'bg-gray-50 border-gray-100'
+                               }`}>
+                                  <span className={`font-medium truncate ${itemExpired ? 'text-red-700' : 'text-gray-700'}`}>
+                                    {formatDate(item.date)}
                                   </span>
-                                )}
-                             </div>
-                        ));
+                                  {item.boxes > 0 && (
+                                    <span className={`text-xs font-bold flex-shrink-0 ${itemExpired ? 'text-red-600' : 'text-[#1d5030]'}`}>
+                                      x{item.boxes}
+                                    </span>
+                                  )}
+                               </div>
+                             );
+                        });
                   })()
               ) : (
                   // NORMAL LOGIC
                   isSameDate ? (
                     <>
-                      <div className="flex items-center justify-between gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100 w-auto overflow-hidden">
-                        <span className="text-[#1d5030] text-xs font-bold flex-shrink-0">F/A:</span>
-                        <span className="font-medium text-gray-700 truncate">{formatDate(product.fechaFrente)}</span>
+                      <div className={`flex items-center justify-between gap-1.5 px-2 h-7 rounded border w-auto overflow-hidden ${
+                          isExpiredIncludingToday(product.fechaFrente) ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-100'
+                      }`}>
+                        <span className={`text-xs font-bold flex-shrink-0 ${isExpiredIncludingToday(product.fechaFrente) ? 'text-red-700' : 'text-[#1d5030]'}`}>F/A:</span>
+                        <span className={`font-medium truncate ${isExpiredIncludingToday(product.fechaFrente) ? 'text-red-700' : 'text-gray-700'}`}>{formatDate(product.fechaFrente)}</span>
                         {product.cajasAlmacen > 1 && (
-                          <span className="text-[#1d5030] text-xs font-bold flex-shrink-0">
+                          <span className={`text-xs font-bold flex-shrink-0 ${isExpiredIncludingToday(product.fechaFrente) ? 'text-red-600' : 'text-[#1d5030]'}`}>
                             x{product.cajasAlmacen}
                           </span>
                         )}
                       </div>
                       
                       {nextDate ? (
-                         <div className="flex items-center justify-between gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100 w-auto overflow-hidden">
-                            <span className="text-[#1d5030] text-xs font-bold flex-shrink-0">A:</span>
-                            <span className="font-medium text-gray-700 truncate">{formatDate(nextDate.date)}</span>
+                         <div className={`flex items-center justify-between gap-1.5 px-2 h-7 rounded border w-auto overflow-hidden ${
+                              isExpiredIncludingToday(nextDate.date) ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-100'
+                         }`}>
+                            <span className={`text-xs font-bold flex-shrink-0 ${isExpiredIncludingToday(nextDate.date) ? 'text-red-700' : 'text-[#1d5030]'}`}>A:</span>
+                            <span className={`font-medium truncate ${isExpiredIncludingToday(nextDate.date) ? 'text-red-700' : 'text-gray-700'}`}>{formatDate(nextDate.date)}</span>
                             {nextDate.boxes > 0 && (
-                              <span className="text-[#1d5030] text-xs font-bold flex-shrink-0">
+                              <span className={`text-xs font-bold flex-shrink-0 ${isExpiredIncludingToday(nextDate.date) ? 'text-red-600' : 'text-[#1d5030]'}`}>
                                 x{nextDate.boxes}
                               </span>
                             )}
@@ -268,19 +308,23 @@ const ProductCard = memo(({
                   ) : (
                     <>
                       {product.fechaFrente ? (
-                        <div className="flex items-center justify-between gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100 w-auto overflow-hidden">
-                          <span className="text-[#1d5030] text-xs font-bold flex-shrink-0">F:</span>
-                          <span className="font-medium text-gray-700 truncate">{formatDate(product.fechaFrente)}</span>
+                        <div className={`flex items-center justify-between gap-1.5 px-2 h-7 rounded border w-auto overflow-hidden ${
+                              isExpiredIncludingToday(product.fechaFrente) ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-100'
+                        }`}>
+                          <span className={`text-xs font-bold flex-shrink-0 ${isExpiredIncludingToday(product.fechaFrente) ? 'text-red-700' : 'text-[#1d5030]'}`}>F:</span>
+                          <span className={`font-medium truncate ${isExpiredIncludingToday(product.fechaFrente) ? 'text-red-700' : 'text-gray-700'}`}>{formatDate(product.fechaFrente)}</span>
                         </div>
                       ) : (
                          <div></div>
                       )}
                       {product.fechaAlmacen ? (
-                        <div className="flex items-center justify-between gap-1.5 bg-gray-50 px-2 h-7 rounded border border-gray-100 w-auto overflow-hidden">
-                          <span className="text-[#1d5030] text-xs font-bold flex-shrink-0">A:</span>
-                          <span className="font-medium text-gray-700 truncate">{formatDate(product.fechaAlmacen)}</span>
+                        <div className={`flex items-center justify-between gap-1.5 px-2 h-7 rounded border w-auto overflow-hidden ${
+                              isExpiredIncludingToday(product.fechaAlmacen) ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-100'
+                        }`}>
+                          <span className={`text-xs font-bold flex-shrink-0 ${isExpiredIncludingToday(product.fechaAlmacen) ? 'text-red-700' : 'text-[#1d5030]'}`}>A:</span>
+                          <span className={`font-medium truncate ${isExpiredIncludingToday(product.fechaAlmacen) ? 'text-red-700' : 'text-gray-700'}`}>{formatDate(product.fechaAlmacen)}</span>
                           {product.cajasAlmacen > 0 && (
-                            <span className="text-[#1d5030] text-xs font-bold flex-shrink-0">
+                            <span className={`text-xs font-bold flex-shrink-0 ${isExpiredIncludingToday(product.fechaAlmacen) ? 'text-red-600' : 'text-[#1d5030]'}`}>
                               x{product.cajasAlmacen}
                             </span>
                           )}
@@ -344,29 +388,46 @@ const ProductCard = memo(({
                   const badgeStyle = "bg-white px-2 py-0.5 rounded shadow-sm flex items-center gap-1 text-xs font-bold text-[#1d5030] border border-gray-100";
 
                    // Función helper de renderizado
-                  const renderColumn = (title, date, badge, isDisabled) => (
-                    <div className={`w-full bg-white border border-gray-200 rounded-md overflow-hidden border-l-4 flex flex-col h-full ${
-                      isDisabled ? 'border-l-gray-300' : 'border-l-[#1d5030]'
-                    }`}>
-                      <div className="bg-slate-100 w-full h-9 flex justify-between items-center px-2 flex-shrink-0">
-                        <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">
-                          {title}
-                        </span>
-                        {badge && badge}
-                      </div>
-                      <div className={`p-2 text-center flex-1 flex items-center justify-center min-h-[44px] ${isDisabled ? 'bg-gray-50' : ''}`}>
-                        {isDisabled || !date ? (
-                          <span className="text-sm font-medium text-gray-400 select-none">
-                            --
+                  const renderColumn = (title, date, badge, isDisabled) => {
+                     const isColExpired = date && isExpiredIncludingToday(date);
+                     return (
+                      <div className={`w-full bg-white border rounded-md overflow-hidden border-l-4 flex flex-col h-full ${
+                        isDisabled 
+                          ? 'border-gray-200 border-l-gray-300' 
+                          : isColExpired
+                             ? 'border-red-200 border-l-red-500' // Red for Expired
+                             : 'border-gray-200 border-l-[#1d5030]' // Standard Green
+                      }`}>
+                        <div className={`w-full h-9 flex justify-between items-center px-2 flex-shrink-0 ${
+                            isColExpired ? 'bg-red-50' : 'bg-slate-100'
+                        }`}>
+                          <span className={`text-xs font-bold uppercase tracking-wider ${
+                              isColExpired ? 'text-red-700' : 'text-gray-600'
+                          }`}>
+                            {title}
                           </span>
-                        ) : (
-                          <div className="text-lg font-bold text-gray-700 leading-tight select-none">
-                            {formatDate(date)}
-                          </div>
-                        )}
+                          {badge && badge}
+                        </div>
+                        <div className={`p-2 text-center flex-1 flex items-center justify-center min-h-[44px] ${
+                            isDisabled ? 'bg-gray-50' 
+                            : isColExpired ? 'bg-red-50/10' 
+                            : ''
+                        }`}>
+                          {isDisabled || !date ? (
+                            <span className="text-sm font-medium text-gray-400 select-none">
+                              --
+                            </span>
+                          ) : (
+                            <div className={`text-lg font-bold leading-tight select-none ${
+                                isColExpired ? 'text-red-600' : 'text-gray-700'
+                            }`}>
+                              {formatDate(date)}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  );
+                    );
+                  };
 
                   // CASE: DIRECT CONSUMPTION
                   if (product.producto?.isDirectConsumption) {
@@ -404,19 +465,26 @@ const ProductCard = memo(({
                                    </span>
                                </div>
                                <div className="bg-white border border-gray-200 rounded-b-md p-2 space-y-2">
-                                   {allDates.map((item, idx) => (
-                                       <div key={idx} className="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-100">
-                                            <span className="text-sm font-bold text-gray-700">
-                                                {formatDate(item.date)}
-                                            </span>
-                                            {item.boxes > 0 && (
-                                                <div className={badgeStyle}>
-                                                    <Package size={12} />
-                                                    <span>{item.boxes}</span>
-                                                </div>
-                                            )}
-                                       </div>
-                                   ))}
+                                   {allDates.map((item, idx) => {
+                                        const itemExpired = isExpiredIncludingToday(item.date);
+                                        return (
+                                           <div key={idx} className={`flex items-center justify-between p-2 rounded border ${
+                                               itemExpired ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-100'
+                                           }`}>
+                                                <span className={`text-sm font-bold ${
+                                                    itemExpired ? 'text-red-700' : 'text-gray-700'
+                                                }`}>
+                                                    {formatDate(item.date)}
+                                                </span>
+                                                {item.boxes > 0 && (
+                                                    <div className={badgeStyle}>
+                                                        <Package size={12} />
+                                                        <span>{item.boxes}</span>
+                                                    </div>
+                                                )}
+                                           </div>
+                                        );
+                                   })}
                                </div>
                            </div>
                        );

@@ -113,7 +113,9 @@ const ExpiringModal = ({
                                       ? "día"
                                       : "días"
                                   }`
-                                : `${product.daysUntilExpiry} ${
+                                : product.daysUntilExpiry === 0 
+                                  ? "¡Caduca hoy!"
+                                  : `${product.daysUntilExpiry} ${
                                     product.daysUntilExpiry === 1
                                       ? "día"
                                       : "días"
@@ -132,7 +134,7 @@ const ExpiringModal = ({
                             }
                           `}
                           >
-                            {formatDate(product.fechaFrente)}
+                            {formatDate(product.relevantDate || product.fechaFrente)}
                           </p>
                         </div>
 
@@ -170,6 +172,7 @@ ExpiringModal.propTypes = {
           }).isRequired,
           daysUntilExpiry: PropTypes.number.isRequired,
           fechaFrente: PropTypes.string,
+          relevantDate: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
         })
       ).isRequired,
     })

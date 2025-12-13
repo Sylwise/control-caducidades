@@ -442,12 +442,19 @@ export const useProductManagement = (addToast) => {
       }
 
       // Si no se actualizó ninguna fecha, minDays será Infinity
-      // Si minDays es <= 4, mostramos warning
+      // Si minDays es <= 4, mostramos warning/error
       if (minDays !== Infinity && minDays <= 4) {
-          addToast(
-            `¡El producto caduca en ${minDays} días!`,
-            "warning" // Asumiendo que "warning" es un tipo soportado por tu sistema de toats, si no, usará estilo por defecto o error si "warning" no existe, pero típicamente es naranja.
-          );
+          if (minDays <= 0) {
+             addToast(
+                minDays === 0 ? "¡El producto caduca hoy!" : "¡Producto ya caducado!",
+                "error"
+             );
+          } else {
+             addToast(
+                `¡El producto caduca en ${minDays} días!`,
+                "warning"
+             );
+          }
           // Vibración doble
           if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
       } else {
