@@ -26,7 +26,6 @@ export default defineConfig({
         singleThread: true
       }
     },
-    isolate: false, // Sometimes helps with hanging processes in jsdom environments
     watch: {
         usePolling: true,
         interval: 100,
