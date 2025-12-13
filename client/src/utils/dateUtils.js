@@ -78,3 +78,20 @@ export const isExpiredIncludingToday = (date) => {
   // Returns true if date is today or in the past
   return productDate <= today;
 };
+
+export const formatDate = (dateString) => {
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "Fecha inválida";
+
+    return date.getFullYear() !== new Date().getFullYear()
+      ? `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
+          .toString()
+          .padStart(2, "0")}/${date.getFullYear().toString().slice(-2)}`
+      : `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
+          .toString()
+          .padStart(2, "0")}`;
+  } catch {
+    return "Fecha inválida";
+  }
+};
