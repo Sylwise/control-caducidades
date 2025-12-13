@@ -5,17 +5,7 @@ const { verifyToken, isSupervisor } = require("../middleware/auth");
 
 
 // Middleware de logging para depuración (Solo en desarrollo)
-if (process.env.NODE_ENV !== 'production') {
-  router.use((req, next) => {
-    console.log("\n=== Petición a Catalog Router ===");
-    console.log("Método:", req.method);
-    console.log("URL:", req.originalUrl);
-    console.log("Params:", req.params);
-    console.log("Body:", req.body);
-    console.log("=================================\n");
-    next();
-  });
-}
+// Middleware de logging eliminado para producción
 
 // Rutas públicas (requieren autenticación)
 router.get("/", verifyToken, catalogController.getAllProducts);

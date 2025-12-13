@@ -133,7 +133,7 @@ const UserManagement = ({
     if (!socket) return;
 
     const handleUserUpdate = (data) => {
-      console.log("Recibida actualización de usuario:", data);
+
 
       if (data.type === "create") {
         setUsers((prevUsers) => [
@@ -224,7 +224,6 @@ const UserManagement = ({
 
     try {
       setIsSubmitting(true);
-      console.log("Enviando datos:", formData);
 
       const response = await fetch(`${config.apiUrl}/auth/users`, {
         method: "POST",

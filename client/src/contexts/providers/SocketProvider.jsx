@@ -20,9 +20,7 @@ export const SocketProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   const handleReconnect = useCallback((attemptNumber) => {
-    if (import.meta.env.DEV) {
-      console.log(`Intento de reconexión #${attemptNumber}`);
-    }
+
     setReconnectAttempt(attemptNumber);
   }, []);
 
@@ -64,18 +62,14 @@ export const SocketProvider = ({ children }) => {
     });
 
     socketInstance.on("connect", () => {
-      if (import.meta.env.DEV) {
-        console.log("WebSocket conectado exitosamente");
-      }
+
       setIsConnected(true);
       setError(null);
       setReconnectAttempt(0);
     });
 
     socketInstance.on("disconnect", (reason) => {
-      if (import.meta.env.DEV) {
-        console.log("WebSocket desconectado:", reason);
-      }
+
       setIsConnected(false);
     });
 

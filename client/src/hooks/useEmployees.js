@@ -13,7 +13,6 @@ const useEmployees = () => {
     setError(null);
     try {
       const response = await api.get('/employees');
-      console.log('Employees API response:', response.data);
       if (Array.isArray(response.data)) {
         setEmployees(response.data);
       } else {
@@ -33,7 +32,6 @@ const useEmployees = () => {
     if (!socket) return;
 
     const handleUpdate = (data) => {
-      // console.log('Socket update received:', data);
       loadEmployees();
     };
 
