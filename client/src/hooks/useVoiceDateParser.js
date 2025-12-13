@@ -59,7 +59,7 @@ const useVoiceDateParser = () => {
       .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Quitar acentos
       // FIX: Separar fechas con barras pegadas (ej: "21/02" -> "21 02") explícitamente antes de quitar puntuación
       .replace(/(\d+)\/(\d+)/g, "$1 $2")
-      .replace(/[.,\/]/g, " ") // Quitar puntuación y barras restantes
+      .replace(new RegExp("[.,/]", "g"), " ") // Quitar puntuación y barras restantes
       .trim();
 
     // 2. Limpieza de conectores
