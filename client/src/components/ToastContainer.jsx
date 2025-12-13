@@ -94,7 +94,7 @@ const Toast = ({ toast, onRemove, onUndo }) => {
         px-4 py-3 rounded-2xl
         shadow-2xl
         flex items-center justify-between
-        w-[90vw] sm:w-auto sm:min-w-[340px] max-w-sm
+        w-auto max-w-[90vw] sm:max-w-md
         ${isExiting ? "opacity-0 translate-y-10 scale-95" : "animate-slide-up-scale"}
         font-['Noto Sans'] text-sm
         transform transition-all duration-300 ease-out

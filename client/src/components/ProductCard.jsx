@@ -562,13 +562,17 @@ const ProductCard = memo(({
                     e.stopPropagation();
                     onUpdateClick(product, e);
                   }}
-                  className="flex-1 py-2 text-white rounded-md
-                    bg-[#1d5030] hover:bg-[#1d5030]/90
+                  className={`flex-1 py-2 text-white rounded-md
+                    ${isProductExpired 
+                      ? "bg-red-500 hover:bg-red-600 shadow-md shadow-red-200" 
+                      : "bg-[#1d5030] hover:bg-[#1d5030]/90"
+                    }
                     transition-colors duration-200
                     font-medium text-sm select-none
                     flex items-center justify-center gap-1.5
                     shadow-sm hover:shadow
-                    mr-2"
+                    mr-2
+                  `}
                 >
                   <Edit3 className="w-3.5 h-3.5" />
                   Actualizar Estado
