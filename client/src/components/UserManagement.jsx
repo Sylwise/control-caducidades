@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Users, UserPlus, Trash2, Eye, EyeOff, RefreshCw, WifiOff, Edit, Save, ChevronDown } from "lucide-react";
+import { Users, UserPlus, WifiOff, ChevronDown } from "lucide-react";
 import PropTypes from "prop-types";
 import config from "../config";
 import usePreventScroll from "../hooks/usePreventScroll";
@@ -8,6 +8,9 @@ import { useSocket } from "../hooks/useSocket";
 import OfflineManager from "../services/offlineManager";
 import { useToast } from "../contexts/ToastContext";
 import useHardwareBackButton from "../hooks/useHardwareBackButton";
+import UserList from "./UserManagement/UserList";
+import UserForm from "./UserManagement/UserForm";
+import DeleteConfirmationModal from "./UserManagement/DeleteConfirmationModal";
 
 const UserManagement = ({
   isOpen = false,
@@ -532,182 +535,26 @@ const UserManagement = ({
 
         {/* Formulario de creación (oculto en modo offline) */}
         {showCreateForm && !isOffline && (
-          <form
-            onSubmit={handleCreateUser}
-            className="mb-6 p-4 bg-gray-50 rounded-lg
-              animate-[slideDown_0.3s_ease-out] select-none"
-          >
-            <h3 className="text-lg font-semibold text-[#1d5030] mb-4 flex items-center gap-2 select-none">
-              <Edit className="w-5 h-5" />
-              Crear Nuevo Usuario
-            </h3>
-
-            {/* Username field */}
-            <div className="mb-4">
-              <label
-                htmlFor="username"
-                className="block text-sm font-medium text-gray-700 mb-1 select-none"
-              >
-                Nombre de Usuario
-              </label>
-              <input
-                type="text"
-                id="username"
-                name="username"
-                value={formData.username}
-                onChange={handleInputChange}
-                className={`w-full p-3 border rounded-md min-h-[48px]
-                  ${
-                    formErrors.username
-                      ? "border-red-500 focus:ring-red-500"
-                      : "border-gray-300 focus:ring-[#1d5030]"
-                  }
-                  focus:outline-none focus:ring-2 focus:ring-opacity-50 select-none`}
-                required
-                minLength={3}
-                maxLength={20}
-              />
-              {formErrors.username && (
-                <p className="mt-1 text-sm text-red-500 select-none">{formErrors.username}</p>
-              )}
-            </div>
-
-            {/* Password field */}
-            <div className="mb-4">
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700 mb-1 select-none"
-              >
-                Contraseña
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  className={`w-full p-3 border rounded-md pr-10 min-h-[48px]
-                    ${
-                      formErrors.password
-                        ? "border-red-500 focus:ring-red-500"
-                        : "border-gray-300 focus:ring-[#1d5030]"
-                    }
-                    focus:outline-none focus:ring-2 focus:ring-opacity-50 select-none`}
-                  required
-                  minLength={6}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2
-                    p-1 text-gray-400 hover:text-gray-600 select-none"
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
-                </button>
-              </div>
-              {formErrors.password && (
-                <p className="mt-1 text-sm text-red-500 select-none">{formErrors.password}</p>
-              )}
-            </div>
-
-            {/* Role field - Only show if current user is admin */
-            currentUser?.role === "admin" && (
-              <>
-                <div className="mb-5">
-                  <label className="block text-sm font-medium text-gray-700 mb-2 select-none">
-                    Rol
-                  </label>
-                  <div className="flex gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, role: "encargado" })}
-                      className={`flex-1 min-h-[48px] py-3 px-4 rounded-md flex items-center justify-center font-medium transition-colors ${
-                        formData.role === "encargado"
-                          ? "bg-[#1d5030] text-white"
-                          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                      } select-none`}
-                    >
-                      Encargado
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, role: "supervisor" })}
-                      className={`flex-1 min-h-[48px] py-3 px-4 rounded-md flex items-center justify-center font-medium transition-colors ${
-                        formData.role === "supervisor"
-                          ? "bg-[#1d5030] text-white"
-                          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                      } select-none`}
-                    >
-                      Supervisor
-                    </button>
-                  </div>
-                </div>
-
-                  <div className="mb-5 relative">
-                    <label className="block text-sm font-medium text-gray-700 mb-2 select-none">
-                      Restaurante
-                    </label>
-                    <select
-                      value={formData.restaurante}
-                      onChange={(e) => setFormData({ ...formData, restaurante: e.target.value })}
-                      className="w-full h-12 bg-white border border-gray-300 rounded-lg pl-4 pr-10 text-gray-700 font-medium focus:ring-2 focus:ring-gray-200 focus:border-gray-400 outline-none appearance-none"
-                    >
-                      <option value="">Seleccionar Restaurante</option>
-                      {restaurants.map((r) => (
-                        <option key={r._id} value={r._id}>
-                          {r.nombre}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-[42px] w-5 h-5 text-gray-500 pointer-events-none" />
-                  </div>
-              </>
-            )}
-
-            {/* Form buttons */}
-            <div className="flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => {
+            <UserForm
+                initialData={formData}
+                isEditing={false}
+                isSubmitting={isSubmitting}
+                errors={formErrors}
+                restaurants={restaurants}
+                isAdmin={currentUser?.role === 'admin'}
+                onSubmit={handleCreateUser}
+                onCancel={() => {
                   setShowCreateForm(false);
                   setFormData({
                     username: "",
                     password: "",
                     role: "encargado",
+                    restaurante: "",
                   });
                   setFormErrors({});
                 }}
-                className="px-4 py-3 min-h-[48px] min-w-[100px] text-sm font-medium text-gray-700
-                  bg-gray-100 hover:bg-gray-200
-                  rounded-md transition-colors flex items-center justify-center select-none"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="px-4 py-3 min-h-[48px] min-w-[120px] text-sm font-medium text-white
-                  bg-[#1d5030] hover:bg-[#1d5030]/90
-                  rounded-md transition-colors
-                  disabled:opacity-50 disabled:cursor-not-allowed
-                  flex items-center justify-center gap-2 select-none"
-              >
-                {isSubmitting ? (
-                  <>
-                    <RefreshCw className="w-5 h-5 animate-spin" />
-                    <span>Creando...</span>
-                  </>
-                ) : (
-                  "Crear Usuario"
-                )}
-              </button>
-            </div>
-          </form>
+                onChange={handleInputChange}
+            />
         )}
         
         {/* Filtro de restaurante (solo admin) */}
@@ -730,130 +577,20 @@ const UserManagement = ({
         )}
 
         {/* Lista de usuarios */}
-        {/* Lista de usuarios (oculta en modo offline) */}
+        {/* Lista de usuarios */}
         {!isOffline && (
-          <div className="space-y-3">
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <RefreshCw className="w-6 h-6 text-[#1d5030] animate-spin" />
-              </div>
-            ) : (
-              users
-                .filter((user) => {
-                  if (!selectedRestaurantFilter) return true;
-                  return user.restaurante?._id === selectedRestaurantFilter || user.restaurante === selectedRestaurantFilter;
-                })
-                .map((user) => (
-                <div
-                  key={user._id}
-                  id={`user-${user._id}`}
-                  className={`p-3 bg-white border border-gray-300/50 rounded-lg shadow hover:shadow-md
-                    flex items-center justify-between gap-4
-                    hover:border-gray-300 transition-all
-                    ${selectedUserId === user._id ? "bg-gray-50" : ""} 
-                    ${lastCreatedUserId === user._id ? "animate-highlight bg-[#1d5030]/5" : ""}
-                    select-none`}
-                  onClick={() => setSelectedUserId(selectedUserId === user._id ? null : user._id)}
-                >
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-[#2d3748] truncate select-none">
-                      {user.username}
-                    </h4>
-                    <p className="text-sm text-gray-500 select-none">
-                      {user.role === "admin"
-                        ? "Administrador"
-                        : user.role === "supervisor"
-                        ? "Supervisor"
-                        : "Encargado"}
-                      {user.restaurante?.nombre && (
-                        <span className="ml-2 text-xs bg-gray-100 px-2 py-0.5 rounded-full text-gray-600">
-                          {user.restaurante.nombre}
-                        </span>
-                      )}
-                    </p>
-                  </div>
-
-                  {/* Acciones (solo visibles cuando el usuario está seleccionado y no está en modo offline) */}
-                  {!isOffline && currentUser?._id !== user._id && selectedUserId === user._id && (
-                    <div className="flex items-center gap-2">
-                      {/* Botón de editar */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleStartEditing(user);
-                        }}
-                        className="p-2 min-w-[48px] min-h-[48px] flex items-center justify-center text-[#1d5030] hover:bg-[#1d5030]/10
-                          rounded-lg transition-colors select-none"
-                        aria-label="Editar usuario"
-                      >
-                        <Edit className="w-5 h-5" />
-                      </button>
-                      
-                      {/* Botón de eliminar */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeleteConfirm(user._id);
-                        }}
-                        className="p-2 min-w-[48px] min-h-[48px] flex items-center justify-center text-red-500 hover:bg-red-50
-                          rounded-lg transition-colors select-none"
-                        aria-label="Eliminar usuario"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Confirmación de eliminación */}
-                  {deleteConfirm === user._id && !isOffline && (
-                    <div
-                      className="fixed inset-0 z-50 flex items-center justify-center p-4
-                        bg-black/50 animate-[fadeIn_0.2s_ease-out] select-none"
-                      onClick={() => setDeleteConfirm(null)}
-                    >
-                      <div
-                        className="bg-white p-6 rounded-lg shadow-xl
-                          animate-[slideIn_0.3s_ease-out] select-none"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2 select-none">
-                          ¿Eliminar usuario?
-                        </h3>
-                        <p className="text-gray-500 mb-4 select-none">
-                          Esta acción no se puede deshacer.
-                        </p>
-                        <div className="flex justify-end gap-3">
-                          <button
-                            onClick={() => setDeleteConfirm(null)}
-                            className="px-4 py-3 min-h-[48px] min-w-[100px] text-sm font-medium text-gray-700
-                              bg-gray-100 hover:bg-gray-200
-                              rounded-md transition-colors flex items-center justify-center select-none"
-                          >
-                            Cancelar
-                          </button>
-                          <button
-                            onClick={() => handleDeleteUser(user._id)}
-                            className="px-4 py-3 min-h-[48px] min-w-[100px] text-sm font-medium text-white
-                              bg-red-500 hover:bg-red-600
-                              rounded-md transition-colors flex items-center justify-center select-none"
-                          >
-                            Eliminar
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))
-            )}
-            
-            {/* Mensaje si no hay usuarios para mostrar */}
-            {!loading && users.length === 0 && (
-              <div className="text-center py-8 text-gray-500 select-none">
-                No hay usuarios para mostrar
-              </div>
-            )}
-          </div>
+            <UserList
+                loading={loading}
+                users={users}
+                selectedRestaurantFilter={selectedRestaurantFilter}
+                selectedUserId={selectedUserId}
+                lastCreatedUserId={lastCreatedUserId}
+                currentUser={currentUser}
+                isOffline={isOffline}
+                onUserClick={(id) => setSelectedUserId(selectedUserId === id ? null : id)}
+                onEditClick={handleStartEditing}
+                onDeleteClick={setDeleteConfirm}
+            />
         )}
 
         {/* Modal de Edición */}
@@ -863,183 +600,32 @@ const UserManagement = ({
               bg-black/50 animate-[fadeIn_0.2s_ease-out] select-none"
             onClick={handleCancelEditing}
           >
-            <div
-              className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md
-                animate-[slideIn_0.3s_ease-out] select-none"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 className="text-lg font-semibold text-[#1d5030] mb-4 flex items-center gap-2 select-none">
-                <Edit className="w-5 h-5" />
-                Editar Usuario
-              </h3>
-
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                const userToEdit = users.find(u => u._id === editingUser);
-                if (userToEdit) {
-                  handleSaveUser(userToEdit._id);
-                }
-              }}>
-                {/* Username field */}
-                <div className="mb-4">
-                  <label
-                    htmlFor="edit-username"
-                    className="block text-sm font-medium text-gray-700 mb-1 select-none"
-                  >
-                    Nombre de Usuario
-                  </label>
-                  <input
-                    type="text"
-                    id="edit-username"
-                    name="username"
-                    value={editFormData.username}
-                    onChange={handleEditFormChange}
-                    className={`w-full p-3 border rounded-md min-h-[48px]
-                      ${
-                        formErrors.username
-                          ? "border-red-500 focus:ring-red-500"
-                          : "border-gray-300 focus:ring-[#1d5030]"
-                      }
-                      focus:outline-none focus:ring-2 focus:ring-opacity-50 select-none`}
-                  />
-                  {formErrors.username && (
-                    <p className="mt-1 text-sm text-red-500 select-none">{formErrors.username}</p>
-                  )}
-                </div>
-
-                {/* Password field */}
-                <div className="mb-4">
-                  <label
-                    htmlFor="edit-password"
-                    className="block text-sm font-medium text-gray-700 mb-1 select-none"
-                  >
-                    Nueva Contraseña <span className="text-gray-400 text-xs">(Dejar en blanco para mantener la actual)</span>
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      id="edit-password"
-                      name="password"
-                      value={editFormData.password}
-                      onChange={handleEditFormChange}
-                      className={`w-full p-3 border rounded-md pr-10 min-h-[48px]
-                        ${
-                          formErrors.password
-                            ? "border-red-500 focus:ring-red-500"
-                            : "border-gray-300 focus:ring-[#1d5030]"
-                        }
-                        focus:outline-none focus:ring-2 focus:ring-opacity-50 select-none`}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2
-                        p-1 text-gray-400 hover:text-gray-600 select-none"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="w-5 h-5" />
-                      ) : (
-                        <Eye className="w-5 h-5" />
-                      )}
-                    </button>
-                  </div>
-                  {formErrors.password && (
-                    <p className="mt-1 text-sm text-red-500 select-none">{formErrors.password}</p>
-                  )}
-                </div>
-
-                {/* Role field - Only show if current user is admin */
-                currentUser?.role === "admin" && (
-                  <>
-                    <div className="mb-5">
-                      <label className="block text-sm font-medium text-gray-700 mb-2 select-none">
-                        Rol
-                      </label>
-                      <div className="flex gap-3">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setEditFormData({ ...editFormData, role: "encargado" })
-                          }
-                          className={`flex-1 min-h-[48px] py-3 px-4 rounded-md flex items-center justify-center font-medium transition-colors ${
-                            editFormData.role === "encargado"
-                              ? "bg-[#1d5030] text-white"
-                              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                          } select-none`}
-                        >
-                          Encargado
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setEditFormData({ ...editFormData, role: "supervisor" })
-                          }
-                          className={`flex-1 min-h-[48px] py-3 px-4 rounded-md flex items-center justify-center font-medium transition-colors ${
-                            editFormData.role === "supervisor"
-                              ? "bg-[#1d5030] text-white"
-                              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                          } select-none`}
-                        >
-                          Supervisor
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="mb-5 relative">
-                      <label className="block text-sm font-medium text-gray-700 mb-2 select-none">
-                        Restaurante
-                      </label>
-                      <select
-                        value={editFormData.restaurante}
-                        onChange={(e) => setEditFormData({ ...editFormData, restaurante: e.target.value })}
-                        className="w-full h-12 bg-white border border-gray-300 rounded-lg pl-4 pr-10 text-gray-700 font-medium focus:ring-2 focus:ring-gray-200 focus:border-gray-400 outline-none appearance-none"
-                      >
-                        <option value="">Seleccionar Restaurante</option>
-                        {restaurants.map((r) => (
-                          <option key={r._id} value={r._id}>
-                            {r.nombre}
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown className="absolute right-3 top-[42px] w-5 h-5 text-gray-500 pointer-events-none" />
-                    </div>
-                  </>
-                )}
-
-                {/* Form buttons */}
-                <div className="flex justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={handleCancelEditing}
-                    className="px-4 py-3 min-h-[48px] min-w-[100px] text-sm font-medium text-gray-700
-                      bg-gray-100 hover:bg-gray-200
-                      rounded-md transition-colors flex items-center justify-center select-none"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="px-4 py-3 min-h-[48px] min-w-[120px] text-sm font-medium text-white
-                      bg-[#1d5030] hover:bg-[#1d5030]/90
-                      rounded-md transition-colors
-                      disabled:opacity-50 disabled:cursor-not-allowed
-                      flex items-center justify-center gap-2 select-none"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <RefreshCw className="w-5 h-5 animate-spin" />
-                        <span>Guardando...</span>
-                      </>
-                    ) : (
-                      "Guardar Cambios"
-                    )}
-                  </button>
-                </div>
-              </form>
-            </div>
+            <UserForm
+                initialData={editFormData}
+                isEditing={true}
+                isSubmitting={isSubmitting}
+                errors={formErrors}
+                restaurants={restaurants}
+                isAdmin={currentUser?.role === 'admin'}
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    const userToEdit = users.find(u => u._id === editingUser);
+                    if (userToEdit) {
+                        handleSaveUser(userToEdit._id);
+                    }
+                }}
+                onCancel={handleCancelEditing}
+                onChange={handleEditFormChange}
+            />
           </div>
         )}
+        
+        {/* Confirmación de eliminación */}
+        <DeleteConfirmationModal 
+            isOpen={!!deleteConfirm && !isOffline}
+            onClose={() => setDeleteConfirm(null)}
+            onConfirm={() => handleDeleteUser(deleteConfirm)}
+        />
       </div>
     </ModalContainer>
   );
