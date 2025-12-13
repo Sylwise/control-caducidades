@@ -10,6 +10,43 @@ const mongoSanitize = require("express-mongo-sanitize");
 const logger = require("./logger");
 
 // Cargar variables de entorno según el entorno
+const swaggerJsdoc = require("swagger-jsdoc");
+const swaggerUi = require("swagger-ui-express");
+
+// Configuración de Swagger
+const swaggerOptions = {
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "Control de Caducidades API",
+      version: "1.0.0",
+      description: "API para el control de caducidades de productos",
+    },
+    servers: [
+      {
+        url: "/",
+        description: "Servidor API",
+      },
+      {
+        url: "http://localhost:3000",
+        description: "Servidor de desarrollo local",
+      },
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+        },
+      },
+    },
+  },
+  apis: ["./routes/*.js"], // Archivos donde están las anotaciones
+};
+
+const swaggerSpec = swaggerJsdoc(swaggerOptions);
+
 const envPath = path.join(
   __dirname,
   process.env.NODE_ENV === "production" ? ".env.production" : ".env"
@@ -154,6 +191,12 @@ app.use(limiter);
 
 // Aplicar rate limiter específico para rutas de autenticación
 app.use("/api/auth/login", authLimiter);
+
+// Swagger Documentation (Solo en desarrollo)
+if (process.env.NODE_ENV !== "production") {
+  app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  logger.info("Swagger UI disponible en /api-docs");
+}
 
 // Rutas API
 app.use("/api/catalog", catalogRoutes);
