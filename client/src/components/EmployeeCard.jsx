@@ -138,7 +138,7 @@ const EmployeeCard = ({ employee, onDelete, isSelected, onSelect }) => {
         e.stopPropagation();
         onSelect();
       }}
-      className={`bg-white rounded-xl shadow hover:shadow-md transition-all duration-200 border flex flex-col h-full overflow-hidden group cursor-pointer ${
+      className={`bg-white rounded-xl shadow hover:shadow-md transition-all duration-200 border flex flex-col h-full overflow-hidden group cursor-pointer select-none ${
         isSelected 
           ? 'ring-2 ring-[#1d5030]/50 bg-[#1d5030]/5 border-[#1d5030]/50' 
           : isExpert

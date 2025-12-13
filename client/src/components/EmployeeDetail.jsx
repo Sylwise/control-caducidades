@@ -197,7 +197,7 @@ const EmployeeDetail = () => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3 }}
-      className="min-h-screen bg-gray-50 pb-12"
+      className="min-h-screen bg-gray-50 pb-12 select-none"
     >
       {/* Header */}
       <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm shadow-sm transition-all duration-200">

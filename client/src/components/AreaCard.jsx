@@ -22,7 +22,7 @@ const AreaCard = ({ area, competencies, onToggle, Icon }) => {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all duration-200 hover:shadow-md">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all duration-200 hover:shadow-md select-none">
       {/* Header - Always visible */}
       <div 
         onClick={() => setIsOpen(!isOpen)}
