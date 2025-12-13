@@ -111,3 +111,36 @@ La aplicación estará disponible en `http://localhost:5173`.
 
 ---
 *Desarrollado con un enfoque en escalabilidad, experiencia de usuario y robustez operativa.*
+
+## 🚀 CI/CD Pipelines
+
+Este proyecto utiliza **GitHub Actions** para la integración y despliegue continuo.
+
+### Estado de los Workflows
+![Backend Tests](https://github.com/Sylvarr/control-caducidades/workflows/Backend%20Tests/badge.svg)
+![Frontend Tests](https://github.com/Sylvarr/control-caducidades/workflows/Frontend%20Tests/badge.svg)
+![Deploy](https://github.com/Sylvarr/control-caducidades/workflows/Deploy%20to%20Production/badge.svg)
+
+### Pipelines Configurados
+
+1.  **Backend Tests (`backend-tests.yml`):**
+    *   Ejecuta tests de Jest con cobertura.
+    *   Verifica que la cobertura sea > 50%.
+    *   Se activa en push/PR a `server/**`.
+
+2.  **Frontend Tests (`frontend-tests.yml`):**
+    *   Ejecuta linter y tests de Vitest.
+    *   Verifica que el build de producción (`npm run build`) sea exitoso.
+    *   Se activa en push/PR a `client/**`.
+
+3.  **Deploy to Production (`deploy.yml`):**
+    *   Despliega automáticamente a Railway cuando se hace push a la rama `main`.
+    *   **Nota:** Incluye una ejecución de seguridad de los tests de Backend y Frontend antes de desplegar, para garantizar que el código en `main` es estable (útil si no se tiene Branch Protection activado).
+
+### Configuración de Secrets
+
+Para que el despliegue funcione, configura los siguientes secretos en el repositorio:
+
+*   `RAILWAY_TOKEN`: Token de despliegue de Railway.
+*   `JWT_SECRET`: (Opcional) Para tests de integración si es necesario.
+*   `MONGODB_URI`: (Opcional) URI de Mongo para tests si no se usa memoria.
