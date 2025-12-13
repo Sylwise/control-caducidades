@@ -1,47 +1,103 @@
 const request = require('supertest');
 const express = require('express');
 const authRoutes = require('../routes/authRoutes');
-
-// Mock specific controller methods to avoid DB connection in unit tests
-// For a true integration test, we would connect to a test DB, but let's start with a simple route check
-// If we want to test the full app, we should import app from index.js, but index.js starts the server immediately.
-// Strategy: Create a test app instance for route testing to bypass DB requirement for this initial smoke test.
+const db = require('./db');
+const User = require('../models/User');
+const Restaurant = require('../models/Restaurant');
+const mongoose = require('mongoose');
 
 const app = express();
 app.use(express.json());
+
+// Mock socket.io
+app.set('io', {
+  to: () => ({ emit: () => {} })
+});
+
 app.use('/api/auth', authRoutes);
 
-// Mock the authController methods if they are not mocked by Jest automatically (integration vs unit)
-// For this smoke test, let's verify if the route is registered.
-// Since we don't have a pure "health" endpoint in authRoutes (my previous audit showed login/me/users),
-// I will try to hit the login endpoint with missing credentials to see if validation kicks in.
-
-jest.mock('../controllers/authController', () => ({
-  login: (req, res) => res.status(400).json({ msg: 'Mock Validation Error' }),
-  getCurrentUser: (req, res) => res.status(401).json({ msg: 'Mock Unauth' }),
-  changePassword: jest.fn(),
-  getAllUsers: jest.fn(),
-  createUser: jest.fn(),
-  updateUser: jest.fn(),
-  deleteUser: jest.fn(),
-}));
-
-// Mock middleware
-jest.mock('../middleware/auth', () => ({
-  verifyToken: (req, res, next) => next(),
-  isSupervisor: (req, res, next) => next(),
-}));
-
-describe('Auth Routes Smoke Test', () => {
-  it('POST /login should reach the controller', async () => {
-    const res = await request(app).post('/api/auth/login').send({});
-    // We expect 400 because our mock controller returns it, proving the route is wired up
-    expect(res.statusCode).toEqual(400);
-    expect(res.body).toEqual({ msg: 'Mock Validation Error' });
+// Helper to create a user and restaurant
+const createUser = async (overrides = {}) => {
+  // Create a real restaurant first
+  const restaurant = await Restaurant.create({
+      nombre: 'Test Restaurant',
+      direccion: '123 Test St'
   });
 
-  it('GET /me should be protected (mocked middleware passes, controller returns 401)', async () => {
-    const res = await request(app).get('/api/auth/me');
-    expect(res.statusCode).toEqual(401);
+  const user = await User.create({
+    username: 'TestUser',
+    password: 'password123',
+    role: 'encargado',
+    restaurante: restaurant._id,
+    ...overrides
+  });
+  
+  return user;
+};
+
+beforeAll(async () => await db.connect());
+afterEach(async () => await db.clearDatabase());
+afterAll(async () => await db.closeDatabase());
+
+describe('Auth Routes Integration', () => {
+
+  describe('POST /api/auth/login', () => {
+    it('should login with valid credentials', async () => {
+      await createUser({ username: 'LoginUser', password: 'password123' });
+
+      const res = await request(app).post('/api/auth/login').send({
+        username: 'LoginUser',
+        password: 'password123'
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toHaveProperty('token');
+    });
+
+    it('should reject invalid password', async () => {
+      await createUser({ username: 'WrongPassUser', password: 'password123' });
+
+      const res = await request(app).post('/api/auth/login').send({
+        username: 'WrongPassUser',
+        password: 'wrongpass'
+      });
+
+      expect(res.statusCode).toBe(401); // Or 401
+      expect(res.body).toHaveProperty('error', 'Credenciales inválidas'); // Note: Controller returns "error", test expected "msg" previously
+    });
+    
+    it('should reject non-existent user', async () => {
+        const res = await request(app).post('/api/auth/login').send({
+          username: 'GhostUser',
+          password: 'password123'
+        });
+  
+        expect(res.statusCode).toBe(401); // Controller returns 401 for non-existent
+        expect(res.body).toHaveProperty('error', 'Credenciales inválidas');
+    });
+  });
+
+  describe('GET /api/auth/me', () => {
+    it('should return current user with valid token', async () => {
+      const user = await createUser({ username: 'MeUser' });
+      // Login to get token
+      const loginRes = await request(app).post('/api/auth/login').send({
+        username: user.username,
+        password: 'password123'
+      });
+      const token = loginRes.body.token;
+
+      const res = await request(app)
+        .get('/api/auth/me')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toHaveProperty('username', user.username);
+    });
+
+    it('should return 401 without token', async () => {
+      const res = await request(app).get('/api/auth/me');
+      expect(res.statusCode).toBe(401);
+    });
   });
 });
