@@ -1,0 +1,47 @@
+name: Frontend Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'client/**'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'client/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./client
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Use Node.js 18.x
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18.x
+        cache: 'npm'
+        cache-dependency-path: client/package-lock.json
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run Linter
+      run: npm run lint
+
+    - name: Run Tests
+      # Assuming 'npm test' runs vitest.
+      # Verify if 'npm test' runs in watch mode by default. Vitest usually does.
+      # We need it to run once. 'vitest run' is the command for CI.
+      # Let's check if the user's script calls 'vitest' or 'vitest run'.
+      # package.json says "test": "vitest".
+      # So we should override it or use 'npx vitest run' to be safe.
+      run: npx vitest run
+
+    - name: Build Project
+      run: npm run build

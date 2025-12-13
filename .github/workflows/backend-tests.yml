@@ -1,0 +1,60 @@
+name: Backend Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'server/**'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'server/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./server
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Use Node.js 18.x
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18.x
+        cache: 'npm'
+        cache-dependency-path: server/package-lock.json
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run tests with coverage
+      env:
+        MONGODB_URI: "mongodb://localhost:27017/test-db" 
+        # Note: mongodb-memory-server usually handles the URI automatically in tests if set up correctly
+        # using the internal binary, but providing a dummy one if the app expects it for initial validation is safe.
+        # However, for 'mongodb-memory-server', we often don't need an external service if the tests instantiate the memory server.
+        # But if the user code expects env vars to build the connection string, we might need them.
+        JWT_SECRET: ${{ secrets.JWT_SECRET || 'test_secret' }}
+        PORT: 5000
+      run: npm test -- --coverage
+
+    - name: Check coverage threshold
+      uses: jest-community/jest-coverage-checking-action@v1.0.0
+      # Using a simple script fallback if we don't want to rely on third-party actions for checking coverage json
+      # But the user asked to fail if coverage < 50%. 
+      # Customizable way: check the console output or json summary.
+      # For now, let's use a standard script approach to keep control.
+      # This is cleaner than external actions for simple threshold checks.
+      if: always() 
+      continue-on-error: true # Let the next step decide failure based on precise logic if needed, or just let 'npm test' fail if configured.
+      
+    # Actually, npm test -- --coverage usually just reports. To fail on threshold, we should configure jest.config.js or package.json
+    # Since I cannot easily modify jest config to force exit on coverage failure without user permission to change codebase logic significantly,
+    # I will rely on the command line argument if Jest supports it, or assume the user will check the report.
+    # Jest flag --coverageThreshold can specify it via CLI.
+    - name: Verify Coverage > 50%
+      run: npx jest --coverage --coverageThreshold='{"global":{"lines":50}}'
