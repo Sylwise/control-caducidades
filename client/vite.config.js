@@ -20,12 +20,13 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/setupTests.js',
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-    pool: 'forks',
+    // Simplified thread pool config for CI stability
     poolOptions: {
-      forks: {
-        singleFork: true,
-      },
+      threads: {
+        singleThread: true
+      }
     },
+    isolate: false, // Sometimes helps with hanging processes in jsdom environments
     watch: {
         usePolling: true,
         interval: 100,

@@ -128,7 +128,7 @@ describe('CompactDateDisplay', () => {
         // Actually CompactDateDisplay returns fragments, so we look for the chip div.
         // We can check if any element has class 'bg-red-50'
         
-        // eslint-disable-next-line testing-library/no-node-access
+
         const redChip = container.querySelector('.bg-red-50');
         expect(redChip).toBeInTheDocument();
     });
