@@ -16,28 +16,8 @@ export const SyncProvider = ({ children }) => {
 
         // Log detallado de los cambios pendientes
         if (changes.length > 0) {
-          console.group("🔄 Cambios Pendientes");
-          changes.forEach((change) => {
-            console.log(`Tipo: ${change.type}`);
-            console.log(`ID Producto: ${change.productId}`);
-            
-            // Más detalles para cambios de CREATE_CATALOG
-            if (change.type === "CREATE_CATALOG") {
-              console.log(`Temp ID: ${change.tempId}`);
-              console.log(`Nombre Producto: ${change.data?.nombre || 'N/A'}`);
-            }
-            
-            console.log(`Datos:`, change.data);
-            console.log(
-              `Timestamp: ${new Date(change.timestamp).toLocaleString()}`
-            );
-            console.log("---");
-          });
-          console.groupEnd();
-
           // Si estamos online, intentar sincronizar
           if (navigator.onLine) {
-            console.log("🌐 Online detectado, intentando sincronizar...");
             await OfflineManager.syncChanges();
             // Actualizar conteo después de sincronizar
             const updatedChanges = await IndexedDB.getPendingChanges();

@@ -14,7 +14,7 @@ export const ToastProvider = ({ children }) => {
   }, []);
 
   const addToast = useCallback((message, type = "info", options = {}) => {
-    const id = Date.now();
+    const id = Date.now() + Math.random().toString(36).substr(2, 9);
     const newToast = { 
       id, 
       message, 
@@ -22,7 +22,7 @@ export const ToastProvider = ({ children }) => {
       ...options 
     };
 
-    const MAX_TOASTS = 2;
+    const MAX_TOASTS = 3;
     
     setToasts((currentToasts) => {
       // Keep only the last (MAX_TOASTS - 1) items to make room for the new one
