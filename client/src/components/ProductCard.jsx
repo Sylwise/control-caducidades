@@ -17,6 +17,7 @@ const ProductCard = memo(({
   onUpdateClick,
   onDeleteClick,
   viewMode = 'card',
+  forceStacked = false,
 }) => {
 
   const freshnessLevel = useMemo(() => {
@@ -153,6 +154,7 @@ const ProductCard = memo(({
             freshnessLevel={freshnessLevel}
             isSameDate={isSameDate}
             nextDate={nextDate}
+            forceStacked={forceStacked}
         />
       ) : (
         <ExpandedProductCard
@@ -202,6 +204,7 @@ ProductCard.propTypes = {
   onUpdateClick: PropTypes.func.isRequired,
   onDeleteClick: PropTypes.func.isRequired,
   viewMode: PropTypes.string,
+  forceStacked: PropTypes.bool,
 };
 
 export default ProductCard;

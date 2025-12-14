@@ -13,6 +13,7 @@ const CategorySection = memo(({
   onUpdateClick,
   onDeleteClick,
   viewMode,
+  forceStacked = false,
 }) => {
   if (!products || products.length === 0) return null;
 
@@ -49,6 +50,7 @@ const CategorySection = memo(({
             onUpdateClick={onUpdateClick}
             onDeleteClick={onDeleteClick}
             viewMode={viewMode}
+            forceStacked={forceStacked}
           />
         ))}
       </div>
@@ -68,6 +70,7 @@ CategorySection.propTypes = {
   onUpdateClick: PropTypes.func.isRequired,
   onDeleteClick: PropTypes.func.isRequired,
   viewMode: PropTypes.string,
+  forceStacked: PropTypes.bool,
 };
 
 export default CategorySection;

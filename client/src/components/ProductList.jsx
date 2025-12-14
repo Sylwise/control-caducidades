@@ -250,6 +250,7 @@ const ProductList = () => {
                   onUpdateClick={prepareFormForUpdate}
                   onDeleteClick={handleDeleteClick}
                   viewMode={viewMode}
+                  forceStacked={true}
                 />
               )}
             </div>

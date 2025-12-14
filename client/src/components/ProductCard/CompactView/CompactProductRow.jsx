@@ -14,9 +14,10 @@ const CompactProductRow = ({
   freshnessLevel,
   isSameDate,
   nextDate,
+  forceStacked = false,
 }) => {
   return (
-    <div className="flex flex-wrap md:flex-nowrap items-center w-full gap-y-1 md:gap-4 p-0">
+    <div className={`flex flex-wrap ${!forceStacked ? 'md:flex-nowrap' : ''} items-center w-full gap-y-1 md:gap-4 p-0`}>
       
       {/* 1. SECCIÓN NOMBRE */}
       <div className="order-1 flex items-center gap-3 flex-1 min-w-0">
@@ -26,7 +27,7 @@ const CompactProductRow = ({
       </div>
 
       {/* 2. SECCIÓN BOTONES */}
-      <div className="order-2 md:order-3 flex items-center justify-end gap-2 md:gap-1 flex-shrink-0 ml-2 md:ml-0 min-h-[32px] w-[72px]">
+      <div className={`order-2 ml-2 ${!forceStacked ? 'md:order-3 md:ml-0' : ''} flex items-center justify-end gap-2 md:gap-1 flex-shrink-0 min-h-[32px] w-[72px]`}>
          {!isSelected ? (
             <>
               <ProductStatusIndicator 
@@ -73,7 +74,7 @@ const CompactProductRow = ({
       </div>
 
       {/* 3. SECCIÓN FECHAS */}
-      <div className="order-3 md:order-2 w-full md:w-[280px]">
+      <div className={`order-3 w-full ${!forceStacked ? 'md:order-2 md:w-[280px]' : ''}`}>
         <div className="flex flex-wrap gap-2 text-xs">
            <CompactDateDisplay 
                product={product} 
@@ -95,6 +96,7 @@ CompactProductRow.propTypes = {
   freshnessLevel: PropTypes.number.isRequired,
   isSameDate: PropTypes.bool,
   nextDate: PropTypes.object,
+  forceStacked: PropTypes.bool,
 };
 
 export default CompactProductRow;
