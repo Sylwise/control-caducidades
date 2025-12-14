@@ -95,6 +95,7 @@ const allowedOrigins = [
   "https://control-caducidades-caducidades.up.railway.app",
   "http://localhost:5173",
   "http://localhost:3000",
+  "http://localhost:3001",
   "http://127.0.0.1:5173",
   process.env.RAILWAY_STATIC_URL,
   process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : null

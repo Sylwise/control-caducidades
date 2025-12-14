@@ -21,12 +21,13 @@ const ExpandedProductCard = ({
         <span className="font-['Noto Sans'] font-semibold text-gray-700 text-base flex-1 select-none">
           {product.producto?.nombre}
         </span>
-        <ProductFreshnessBadge freshnessLevel={freshnessLevel} className="ml-2" />
         
-        {/* Indicador de estado (punto) - Siempre renderizado para mantener alineación */}
+        {/* Indicador de estado (punto) */}
         <ProductStatusIndicator 
-          bgColorClass={getStatusColor() || 'invisible'} 
+          bgColorClass={getStatusColor() || 'hidden'} 
         />
+
+        <ProductFreshnessBadge freshnessLevel={freshnessLevel} className="ml-2" />
       </div>
 
       {/* Contenido expandible */}

@@ -32,7 +32,7 @@ const CompactProductRow = ({
               <ProductStatusIndicator 
                   bgColorClass={getStatusColor() || 'hidden'} 
               />
-              <ProductFreshnessBadge freshnessLevel={freshnessLevel} />
+              <ProductFreshnessBadge freshnessLevel={freshnessLevel} className="ml-2" />
             </>
          ) : (
             <>
