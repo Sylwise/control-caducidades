@@ -54,17 +54,66 @@ const useVoiceDateParser = () => {
   const parseVoiceDate = useCallback((transcript) => {
     if (!transcript) return null;
 
-    // 1. Normalización y Limpieza
+    // 0. Preparación: Diccionarios extendidos de normalización
+    const CLEANING_MAP = [
+      { regex: /\b(barra|guion|puntos?)\b/g, replace: ' ' }, // Separadores hablados
+      { regex: /\b(del|de|el|la|los|las|en|al|año)\b/g, replace: ' ' }, // Conectores
+      { regex: /\s+/g, replace: ' ' }
+    ];
+
     let cleanText = transcript.toLowerCase()
       .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Quitar acentos
-      // FIX: Separar fechas con barras pegadas (ej: "21/02" -> "21 02") explícitamente antes de quitar puntuación
-      .replace(/(\d+)\/(\d+)/g, "$1 $2")
-      .replace(new RegExp("[.,/]", "g"), " ") // Quitar puntuación y barras restantes
-      .trim();
+      .replace(/(\d+)\/(\d+)/g, "$1 $2") // Separar fechas pegadas 21/02
+      .replace(/[.,/]/g, " "); // Quitar puntuación
 
-    // 2. Limpieza de conectores
+    // 0.1 Aplicar limpieza de separadores hablados
+    if (cleanText.includes('barra') || cleanText.includes('guion')) {
+        cleanText = cleanText.replace(/\b(barra|guion|punto)\b/g, ' ');
+    }
+    
+    cleanText = cleanText.trim();
+
+    // 1. Detección de Fechas Relativas (Retorno Inmediato)
+    const today = new Date();
+    // Resetear horas para cálculos limpios
+    today.setHours(0,0,0,0);
+
+    const RELATIVE_REGEX = {
+      today: /\b(hoy|ahora)\b/,
+      tomorrow: /\b(manana)\b/, // sin ñ por normalización
+      dayAfterTomorrow: /\b(pasado manana)\b/,
+      nextWeek: /\b(semana (que viene|proxima)|en una semana)\b/
+    };
+
+    if (RELATIVE_REGEX.today.test(cleanText)) {
+      const d = new Date(today);
+      return formatDateResult(d);
+    }
+    if (RELATIVE_REGEX.dayAfterTomorrow.test(cleanText)) {
+      const d = new Date(today);
+      d.setDate(d.getDate() + 2);
+      return formatDateResult(d);
+    }
+    if (RELATIVE_REGEX.tomorrow.test(cleanText)) {
+      const d = new Date(today);
+      d.setDate(d.getDate() + 1);
+      return formatDateResult(d);
+    }
+    if (RELATIVE_REGEX.nextWeek.test(cleanText)) {
+      const d = new Date(today);
+      d.setDate(d.getDate() + 7);
+      return formatDateResult(d);
+    }
+
+    // 2. Lógica Fuzzy (Fin/Principio de mes) - Detección de intenciones
+    let fuzzyMode = null; // 'START', 'MID', 'END'
+    if (/\b(fin|finales) de\b/.test(cleanText)) fuzzyMode = 'END';
+    else if (/\b(principios?|inicios?|primero) de\b/.test(cleanText)) fuzzyMode = 'START';
+    else if (/\b(mediados) de\b/.test(cleanText)) fuzzyMode = 'MID';
+
+    // Limpieza final de texto para extraer entidades base
     cleanText = cleanText
-      .replace(/\b(de|del|el|la|los|las|en|al|año)\b/g, " ")
+      .replace(/\b(de|del|el|la|los|las|en|al|año|fin|finales|principios|inicios|mediados)\b/g, " ")
       .replace(/\s+/g, " ")
       .trim();
 
@@ -73,6 +122,9 @@ const useVoiceDateParser = () => {
     let month = null;
     let year = null; 
 
+    // Mapeo inverso de palabras a números si no está el NUMBER_MAP completo aquí... 
+    // Usamos el del closure.
+    
     const words = cleanText.split(" ");
     
     for (let i = 0; i < words.length; i++) {
@@ -93,15 +145,21 @@ const useVoiceDateParser = () => {
              }
              
              // Asignación secuencial: Día -> Mes -> Año
-             if (!day && num <= 31) {
+             // Nota: Si estamos en fuzzyMode, ignoramos el día explícito si parece un día pequeño y ya tenemos mes, 
+             // pero aquí la lógica es básica. 
+             // Mejor: Si hay fuzzyMode y encontramos un número <= 31, ¿es dia o mes?
+             // Si hay fuzzy mode, generalmente SOLO buscamos Mes (y tal vez año).
+             // Ejemplo "Fin de Enero" -> "Enero".
+             
+             if (!day && num <= 31 && !fuzzyMode) {
                  day = num;
              } 
              // Si ya tenemos día, buscamos mes (1-12)
-             else if (day && !month && num <= 12) {
+             else if ((day || fuzzyMode) && !month && num <= 12) {
                  month = num;
              }
              // Si tenemos día y mes, el siguiente número podría ser el año (ej: 24, 25, 2025)
-             else if (day && month && !year) {
+             else if ((day || fuzzyMode) && month && !year) {
                  // Si es un número pequeño (ej: 26), asumimos 2000 + num
                  year = num < 100 ? 2000 + num : num;
              }
@@ -116,32 +174,47 @@ const useVoiceDateParser = () => {
     }
 
     // 4. Inferencia y Validación
-    if (day && month) {
-        const today = new Date();
-        const currentYear = today.getFullYear();
-        const currentMonth = today.getMonth() + 1;
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth() + 1;
 
-        // Inferencia de año si no se especificó
-        if (!year) {
-            // Lógica inteligente: Si el mes ya pasó, es para el año siguiente
-            if (month < currentMonth) {
-                year = currentYear + 1;
-            } else {
-                year = currentYear;
-            }
+    // Si tenemos mes pero no año, inferimos
+    if (month && !year) {
+        // Lógica inteligente: Si el mes ya pasó, es para el año siguiente
+        // OJO: Si es "finales de enero" y estamos en febrero, es enero del año que viene.
+        if (month < currentMonth) {
+            year = currentYear + 1;
+        } else {
+            year = currentYear;
         }
+    }
 
-        // Formato de salida para CustomDateInput
-        const dayStr = day.toString().padStart(2, '0');
-        const monthStr = month.toString().padStart(2, '0');
-        const yearStr = year.toString();
-        
-        return `${dayStr}${monthStr}${yearStr}`;
+    // Resolver Fuzzy Date
+    if (fuzzyMode && month && year) {
+        if (fuzzyMode === 'START') day = 1;
+        if (fuzzyMode === 'MID') day = 15;
+        if (fuzzyMode === 'END') {
+            // Último día del mes. Mes en JS Date es 0-indexed.
+            // new Date(year, month, 0) da el último día del mes anterior (si month es 1-indexed, month+1 es siguiente, 0 es ultimo dia del mes "month")
+            // Espera, new Date(2025, 1, 0) -> 31 Enero 2025. (Mes 1 = Febrero)
+            day = new Date(year, month, 0).getDate(); 
+        }
+    }
+
+    if (day && month && year) {
+       return formatDateResult(new Date(year, month - 1, day));
     }
 
     return null;
 
   }, []);
+
+  // Helper para devolver formato consistente
+  const formatDateResult = (dateObj) => {
+      const d = dateObj.getDate().toString().padStart(2, '0');
+      const m = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+      const y = dateObj.getFullYear();
+      return `${d}${m}${y}`;
+  };
 
   return { parseVoiceDate };
 };
