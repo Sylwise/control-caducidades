@@ -60,6 +60,15 @@ exports.addProduct = async (req, res) => {
     res.status(201).json(populatedStatus);
   } catch (error) {
     logger.error({ error, body: req.body }, "Error al añadir producto al catálogo");
+    
+    // Explicitly handle duplicate key error (E11000)
+    if (error.code === 11000 || (error.errorLabels && error.errorLabels.includes('TransientTransactionError') === false && error.message.includes('11000'))) {
+        return res.status(400).json({ 
+            message: "Error de duplicado", 
+            error: "Ya existe un producto con ese nombre en este restaurante" 
+        });
+    }
+
     res
       .status(400)
       .json({ message: "Error al añadir producto", error: error.message });

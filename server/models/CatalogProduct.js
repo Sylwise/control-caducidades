@@ -32,6 +32,6 @@ const catalogProductSchema = new mongoose.Schema(
 
 // Índices para optimización multi-tenant
 catalogProductSchema.index({ restaurante: 1 }); // Búsquedas generales
-catalogProductSchema.index({ restaurante: 1, nombre: 1 }); // Ordenamiento y unicidad por nombre dentro del restaurante
+catalogProductSchema.index({ restaurante: 1, nombre: 1 }, { unique: true }); // Ordenamiento y unicidad por nombre dentro del restaurante
 
 module.exports = mongoose.model("CatalogProduct", catalogProductSchema);
