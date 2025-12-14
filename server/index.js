@@ -13,6 +13,7 @@ const rateLimit = require("express-rate-limit");
 const helmet = require("helmet");
 const mongoSanitize = require("express-mongo-sanitize");
 const logger = require("./logger");
+const AppError = require("./utils/AppError");
 
 // Cargar variables de entorno según el entorno
 const swaggerJsdoc = require("swagger-jsdoc");
@@ -223,29 +224,8 @@ if (process.env.NODE_ENV === "production") {
 // Sentry Error Handler (Must be before any other error middleware)
 Sentry.setupExpressErrorHandler(app);
 
-// Manejo de errores global
-app.use((err, req, res, _next) => {
-  logger.error(err.stack);
-
-  if (err.name === "ValidationError") {
-    return res.status(400).json({
-      error: "Error de validación",
-      details: Object.values(err.errors).map((e) => e.message),
-    });
-  }
-
-  if (err.code === 11000) {
-    return res.status(400).json({
-      error: "Error de duplicado",
-      details: "Ya existe un registro con esos datos únicos",
-    });
-  }
-
-  res.status(500).json({
-    error: "Error interno del servidor",
-    details: process.env.NODE_ENV === "development" ? err.message : undefined,
-  });
-});
+// Manejo de errores global (Better Errors + Mongoose Adapters)
+app.use(require("./middleware/errorHandler"));
 
 // Manejo de rutas no encontradas
 app.use((req, res) => {

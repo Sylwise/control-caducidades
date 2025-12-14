@@ -81,8 +81,8 @@ describe('Catalog Routes', () => {
                 .set('Authorization', `Bearer ${token}`);
 
             expect(res.statusCode).toBe(200);
-            expect(res.body.length).toBe(1);
-            expect(res.body[0].nombre).toBe('Fries');
+            expect(res.body.data.length).toBe(1);
+            expect(res.body.data[0].nombre).toBe('Fries');
         });
 
         it('should return 401 if not authenticated', async () => {
@@ -105,7 +105,7 @@ describe('Catalog Routes', () => {
                 });
 
             expect(res.statusCode).toBe(201);
-            expect(res.body.producto.nombre).toBe('New Burger');
+            expect(res.body.data.producto.nombre).toBe('New Burger');
             
             const inDb = await CatalogProduct.findOne({ nombre: 'New Burger' });
             expect(inDb).toBeTruthy();
@@ -140,7 +140,7 @@ describe('Catalog Routes', () => {
                 .delete(`/api/catalog/${product._id}`)
                 .set('Authorization', `Bearer ${token}`);
 
-            expect(res.statusCode).toBe(200);
+            expect(res.statusCode).toBe(204);
             
             const check = await CatalogProduct.findById(product._id);
             expect(check).toBeNull();

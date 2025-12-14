@@ -18,6 +18,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/catalog', catalogRoutes);
 app.use('/api/status', statusRoutes);
 
+// Add global error handler
+app.use(require('../middleware/errorHandler'));
+
 const createSupervisor = async () => {
     const restaurant = await Restaurant.create({ nombre: 'Val Rest', direccion: 'Val St' });
     const user = await User.create({ username: 'ValSuper', password: 'password123', role: 'supervisor', restaurante: restaurant._id });
@@ -91,8 +94,8 @@ describe('Catalog Validation', () => {
                 .set('Authorization', `Bearer ${token}`)
                 .send({ nombre: 'Delete Me', tipo: 'permanente' });
             
-            const productId = createRes.body.producto._id;
-            const statusId = createRes.body._id; // controller returns the status object
+            const productId = createRes.body.data.producto._id;
+            const statusId = createRes.body.data._id; // controller returns the status object
 
             // Verify both exist
             expect(await CatalogProduct.findById(productId)).toBeTruthy();
@@ -103,7 +106,7 @@ describe('Catalog Validation', () => {
                 .delete(`/api/catalog/${productId}`)
                 .set('Authorization', `Bearer ${token}`);
 
-            expect(delRes.statusCode).toBe(200);
+            expect(delRes.statusCode).toBe(204);
 
             // Verify both GONE
             expect(await CatalogProduct.findById(productId)).toBeNull();

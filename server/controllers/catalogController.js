@@ -3,26 +3,26 @@ const ProductStatus = require("../models/Product");
 const logger = require("../logger");
 const { runInTransaction } = require("../utils/transaction");
 
+const AppError = require("../utils/AppError");
+const catchAsync = require("../utils/catchAsync");
+
 // Obtener todos los productos del catálogo
-exports.getAllProducts = async (req, res) => {
-  try {
-    logger.info("Obteniendo todos los productos del catálogo");
-    logger.info("Obteniendo todos los productos del catálogo");
-    const products = await CatalogProduct.find({ restaurante: req.user.restaurante }).sort({ nombre: 1 });
-    logger.info(`Se encontraron ${products.length} productos`);
-    res.json(products);
-  } catch (error) {
-    logger.error({ error }, "Error al obtener productos del catálogo");
-    res.status(500).json({
-      message: "Error al obtener productos",
-      error: error.message,
-    });
-  }
-};
+exports.getAllProducts = catchAsync(async (req, res, next) => {
+  logger.info("Obteniendo todos los productos del catálogo");
+  
+  const products = await CatalogProduct.find({ restaurante: req.user.restaurante }).sort({ nombre: 1 });
+  
+  logger.info(`Se encontraron ${products.length} productos`);
+  
+  res.status(200).json({
+    status: 'success',
+    results: products.length,
+    data: products
+  });
+});
 
 // Añadir nuevo producto al catálogo
-exports.addProduct = async (req, res) => {
-  try {
+exports.addProduct = catchAsync(async (req, res, next) => {
     const result = await runInTransaction(async (session) => {
       const productData = {
         ...req.body,
@@ -57,29 +57,16 @@ exports.addProduct = async (req, res) => {
         logger.error("Socket.io instance not found in request");
     }
 
-    res.status(201).json(populatedStatus);
-  } catch (error) {
-    logger.error({ error, body: req.body }, "Error al añadir producto al catálogo");
-    
-    // Explicitly handle duplicate key error (E11000)
-    if (error.code === 11000 || (error.errorLabels && error.errorLabels.includes('TransientTransactionError') === false && error.message.includes('11000'))) {
-        return res.status(400).json({ 
-            message: "Error de duplicado", 
-            error: "Ya existe un producto con ese nombre en este restaurante" 
-        });
-    }
-
-    res
-      .status(400)
-      .json({ message: "Error al añadir producto", error: error.message });
-  }
-};
+    res.status(201).json({
+        status: 'success',
+        data: populatedStatus
+    });
+});
 
 const mongoose = require("mongoose");
 
 // Eliminar un producto
-exports.deleteProduct = async (req, res) => {
-  try {
+exports.deleteProduct = catchAsync(async (req, res, next) => {
     const { id } = req.params;
 
     await runInTransaction(async (session) => {
@@ -89,7 +76,7 @@ exports.deleteProduct = async (req, res) => {
       );
 
       if (!deletedProduct) {
-        throw new Error("Producto no encontrado");
+        throw new AppError("Producto no encontrado", 404);
       }
 
       await ProductStatus.deleteMany({ producto: id }, { session });
@@ -103,31 +90,19 @@ exports.deleteProduct = async (req, res) => {
       productId: id,
     });
 
-    res.json({ message: "Producto eliminado correctamente" });
-  } catch (error) {
-    logger.error({ error, params: req.params }, "Error al eliminar producto del catálogo");
-    
-    if (error.message === "Producto no encontrado") {
-        return res.status(404).json({ message: "Producto no encontrado" });
-    }
-
-    res
-      .status(400)
-      .json({ message: "Error al eliminar producto", error: error.message });
-  }
-};
+    res.status(204).json({
+        status: 'success',
+        data: null
+    });
+});
 
 // Desactivar/activar un producto
-exports.toggleProductStatus = async (req, res) => {
-  try {
+exports.toggleProductStatus = catchAsync(async (req, res, next) => {
     const { id } = req.params;
     const product = await CatalogProduct.findOne({ _id: id, restaurante: req.user.restaurante });
 
     if (!product) {
-      logger.warn(`Intento de activar/desactivar un producto no encontrado: ${id}`);
-      return res.status(404).json({
-        message: "Producto no encontrado",
-      });
+      return next(new AppError("Producto no encontrado", 404));
     }
 
     product.activo = !product.activo;
@@ -140,19 +115,14 @@ exports.toggleProductStatus = async (req, res) => {
       product: updatedProduct,
     });
 
-    res.json(updatedProduct);
-  } catch (error) {
-    logger.error({ error, params: req.params }, "Error al activar/desactivar producto");
-    res.status(400).json({
-      message: "Error al actualizar producto",
-      error: error.message,
+    res.status(200).json({
+        status: 'success',
+        data: updatedProduct
     });
-  }
-};
+});
 
 // Actualizar un producto del catálogo
-exports.updateProduct = async (req, res) => {
-  try {
+exports.updateProduct = catchAsync(async (req, res, next) => {
     const { id } = req.params;
     const updateData = req.body;
     
@@ -172,8 +142,7 @@ exports.updateProduct = async (req, res) => {
     );
 
     if (!updatedProduct) {
-      logger.warn(`Intento de actualizar un producto no encontrado: ${id}`);
-      return res.status(404).json({ message: "Producto no encontrado" });
+      return next(new AppError("Producto no encontrado", 404));
     }
 
     logger.info(`Producto actualizado en el catálogo: ${updatedProduct.nombre}`);
@@ -184,12 +153,8 @@ exports.updateProduct = async (req, res) => {
       product: updatedProduct,
     });
 
-    res.json(updatedProduct);
-  } catch (error) {
-    logger.error({ error, params: req.params, body: req.body }, "Error al actualizar producto del catálogo");
-    res.status(400).json({
-      message: "Error al actualizar producto",
-      error: error.message,
+    res.status(200).json({
+        status: 'success',
+        data: updatedProduct
     });
-  }
-};
+});

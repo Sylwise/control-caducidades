@@ -12,4 +12,15 @@ Sentry.init({
 
   // Set sampling rate for profiling - this is relative to tracesSampleRate
   profilesSampleRate: 1.0,
+  
+  beforeSend(event, hint) {
+    const error = hint.originalException;
+    
+    // Ignore operational errors (4xx) like Validation, Duplicate Key, Not Found
+    if (error && error.statusCode && error.statusCode < 500) {
+      return null;
+    }
+    
+    return event;
+  },
 });
