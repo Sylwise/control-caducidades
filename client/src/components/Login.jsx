@@ -183,8 +183,8 @@ const Login = () => {
             </label>
           </div>
 
-          <button
-            type="submit"
+            <button
+              type="submit"
             disabled={isLoading}
             className="w-full bg-[#1d5030] text-white py-2 px-4 rounded-lg
               hover:bg-[#1d5030]/90 transition-colors duration-200

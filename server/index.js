@@ -1,5 +1,10 @@
+// Import with `import * as Sentry from "@sentry/node"` if you are using ESM
+require("./instrument");
+const Sentry = require("@sentry/node");
 const express = require("express");
 const mongoose = require("mongoose");
+// ... imports continue
+
 const cors = require("cors");
 const path = require("path");
 const http = require("http");
@@ -122,7 +127,7 @@ const corsOptions = {
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "Pragma", "Cache-Control"],
+  allowedHeaders: ["Content-Type", "Authorization", "Pragma", "Cache-Control", "sentry-trace", "baggage"],
   maxAge: 86400, // 24 horas
 };
 
@@ -214,6 +219,9 @@ if (process.env.NODE_ENV === "production") {
     }
   });
 }
+
+// Sentry Error Handler (Must be before any other error middleware)
+Sentry.setupExpressErrorHandler(app);
 
 // Manejo de errores global
 app.use((err, req, res, _next) => {
