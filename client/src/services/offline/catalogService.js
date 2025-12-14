@@ -27,7 +27,10 @@ class CatalogService {
       });
 
       if (this.isOnline && !this.isOfflineMode) {
-        const serverData = await api.http.getAllCatalogProducts();
+        const response = await api.http.getAllCatalogProducts();
+        // Support both new { data: [...] } and old [...] formats
+        const serverData = response.data || response;
+        
         await this.saveCatalogToLocalStorage(serverData);
         return serverData;
       }
@@ -49,7 +52,9 @@ class CatalogService {
       OfflineDebugger.log("CREATE_CATALOG_PRODUCT", { data: productData });
 
       if (this.isOnline && !this.isOfflineMode) {
-        const result = await api.http.createCatalogProduct(productData);
+        const response = await api.http.createCatalogProduct(productData);
+        const result = response.data || response;
+        
         // Guardar el producto del catálogo, no el estado completo
         await IndexedDB.saveCatalogProduct(result.producto);
         
@@ -100,7 +105,9 @@ class CatalogService {
       OfflineDebugger.log("UPDATE_CATALOG_PRODUCT", { productId, data });
 
       if (this.isOnline && !this.isOfflineMode) {
-        const result = await api.http.updateCatalogProduct(productId, data);
+        const response = await api.http.updateCatalogProduct(productId, data);
+        const result = response.data || response;
+        
         await IndexedDB.saveCatalogProduct(result);
 
         // Emitir evento local para actualizar la UI inmediatamente
@@ -152,7 +159,9 @@ class CatalogService {
       OfflineDebugger.log("DELETE_CATALOG_PRODUCT", { productId });
 
       if (this.isOnline && !this.isOfflineMode) {
-        const result = await api.http.deleteCatalogProduct(productId);
+        const response = await api.http.deleteCatalogProduct(productId);
+        const result = response.data || response;
+        
         await IndexedDB.deleteCatalogProduct(productId);
 
         // Emitir evento local para actualizar la UI inmediatamente

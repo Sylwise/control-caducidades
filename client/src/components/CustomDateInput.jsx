@@ -404,30 +404,37 @@ const CustomDateInput = ({
         recognitionRef.current.stop(); 
     }
 
-    // Logic "On Release" (TouchEnd/MouseUp)
-    // Check if we have a full valid date in the input
-    // Use ref to avoid state closure looseness
-    const currentVal = valueRef.current;
-    
-    if (currentVal.length === 10) {
-        const [day, month, year] = currentVal.split("/").map(Number);
-        if (isValidDate(day, month, year) && isDateInRange(day, month, year)) {
-             // SUCCESS: Double Vibrate + Green Feedback + Close
-             if (navigator.vibrate) navigator.vibrate([50, 50]);
-             setIsSuccess(true);
-             setTimeout(() => {
-                 setIsSuccess(false);
-                 validateAndUpdate(currentVal);
-             }, 500);
-        } else {
-            // Invalid params but has text? Shake?
-             // Maybe explicit error
-             // validateAndUpdate handles errors but it closes modal? No, inside it sets error.
-             validateAndUpdate(currentVal); 
-        }
+    // Logic moved to useEffect to handle race conditions where result arrives after release
+  }, []);
+
+  // Handle voice result commit on session end
+  // Solves race condition where onresult arrives after handleStopListening
+  useEffect(() => {
+    // If we just stopped listening (transition true -> false)
+    if (!isListening && recognitionRef.current) {
+         // Reset ref to indicate session is fully over
+         recognitionRef.current = null;
+         
+         const currentVal = valueRef.current;
+         if (currentVal.length === 10) {
+             const [day, month, year] = currentVal.split("/").map(Number);
+             if (isValidDate(day, month, year) && isDateInRange(day, month, year)) {
+                  // SUCCESS: Double Vibrate + Green Feedback + Close
+                  if (navigator.vibrate) navigator.vibrate([50, 50]);
+                  setIsSuccess(true);
+                  setTimeout(() => {
+                      setIsSuccess(false);
+                      // Only close if it's still the same valid value
+                      if (valueRef.current === currentVal) {
+                          validateAndUpdate(currentVal);
+                      }
+                  }, 500);
+             } else {
+                 validateAndUpdate(currentVal); 
+             }
+         }
     }
-    // If empty or partial, do nothing (keep open)
-  }, [isValidDate, isDateInRange, validateAndUpdate]);
+  }, [isListening, isValidDate, isDateInRange, validateAndUpdate]);
 
   // Configuración de botones memorizada
   const keypadButtons = useMemo(() => [

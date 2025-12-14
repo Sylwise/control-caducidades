@@ -71,8 +71,10 @@ const handleApiError = async (response) => {
   try {
     if (contentType && contentType.includes("application/json")) {
       const errorData = await response.json();
+      // Better Errors Standard: Uses .message (string)
+      // Legacy or Dev mode: .error might be an object
       errorMessage =
-        errorData.error || errorData.message || "Error en la petición";
+        errorData.message || (typeof errorData.error === 'string' ? errorData.error : JSON.stringify(errorData.error)) || "Error en la petición";
     } else {
       errorMessage = "Error en la petición";
     }

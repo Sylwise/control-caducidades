@@ -45,7 +45,8 @@ const Login = () => {
 
 
       if (!response.ok) {
-        throw new Error(data.error || "Error al iniciar sesión");
+        // Backend 'Better Errors' uses data.message. Legacy uses data.error.
+        throw new Error(data.message || data.error || "Error al iniciar sesión");
       }
 
       // Guardar token

@@ -145,7 +145,7 @@ const Toast = ({ toast, onRemove, onUndo }) => {
 
 Toast.propTypes = {
   toast: PropTypes.shape({
-    id: PropTypes.number.isRequired,
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
     message: PropTypes.string.isRequired,
     type: PropTypes.oneOf(["success", "error", "warning", "info"]).isRequired,
     productId: PropTypes.string,
@@ -175,7 +175,7 @@ const ToastContainer = ({ toasts, removeToast, onUndo }) => {
 ToastContainer.propTypes = {
   toasts: PropTypes.arrayOf(
     PropTypes.shape({
-      id: PropTypes.number.isRequired,
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
       message: PropTypes.string.isRequired,
       type: PropTypes.oneOf(["success", "error", "warning", "info"]).isRequired,
       productId: PropTypes.string,
