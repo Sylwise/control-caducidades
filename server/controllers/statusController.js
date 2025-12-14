@@ -98,6 +98,10 @@ exports.updateStatus = async (req, res) => {
       // cajaUnica y hayUnicaCajaActual ya NO se leen del body, se calculan
     } = req.body;
 
+    if (cajasAlmacen !== undefined && cajasAlmacen < 0) {
+      return res.status(400).json({ message: "El stock no puede ser negativo" });
+    }
+
     // 1. Preparamos los datos básicos que vienen del usuario
     const incomingData = {
       fechaFrente,

@@ -107,6 +107,23 @@ describe('Status Routes (Caducidades)', () => {
             expect(res.body.cajasAlmacen).toBe(5);
         });
 
+        it('should reject negative stock values', async () => {
+            const res = await request(app)
+                .put(`/api/status/${product._id}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    cajasAlmacen: -5
+                });
+
+            // Assuming API should validate this. 
+            // If it currently doesn't, this test might FAIL and reveal a bug (which is good).
+            // Or if design allows negative (returns), we adjust.
+            // Ideally it should be 400 Bad Request.
+            // If the current backend is loose, we might need to fix code or accept it.
+            // For now, let's EXPECT 400.
+            expect(res.statusCode).toBe(400); 
+        });
+
         it('should validate status calculation logic', async () => {
             // Testing business logic "frente-cambia" if date is old
             const oldDate = new Date();

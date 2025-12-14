@@ -145,5 +145,25 @@ describe('Catalog Routes', () => {
             const check = await CatalogProduct.findById(product._id);
             expect(check).toBeNull();
         });
+
+        it('should deny delete if employee', async () => {
+             const { token, user } = await createEmployee();
+             // Create product directly in DB (since employee cannot create via API)
+             const product = await CatalogProduct.create({
+                 nombre: 'To Keep',
+                 restaurante: user.restaurante
+             });
+
+             const res = await request(app)
+                 .delete(`/api/catalog/${product._id}`)
+                 .set('Authorization', `Bearer ${token}`);
+
+             // Expect 403 Forbidden (or 401)
+             expect([401, 403]).toContain(res.statusCode);
+             
+             // Verify it still exists
+             const check = await CatalogProduct.findById(product._id);
+             expect(check).toBeTruthy();
+        });
     });
 });
