@@ -4,38 +4,38 @@
 
 La aplicación permite a múltiples restaurantes operar de forma independiente dentro de la misma infraestructura, garantizando la privacidad y el aislamiento total de sus datos. Está construida con una arquitectura **"Offline-First"**, permitiendo una operatividad continua incluso en condiciones de red inestables.
 
-## 🚀 Funcionalidades Clave
+## Funcionalidades Clave
 
-### 🍎 Control de Caducidades Inteligente
+### Control de Caducidades Inteligente
 El núcleo del sistema es un algoritmo de estado que clasifica los productos automáticamente según sus fechas de caducidad:
 *   **Estados Dinámicos:** "Abierto-Agota", "Frente-Cambia", etc., calculados en tiempo real.
 *   **Gestión de Lotes:** Control de fechas para productos en "Frente" (exhibición) y "Almacén".
 *   **Alertas Preventivas:** Sistema de aviso de caducidad con hasta 15 días de antelación para permitir una gestión proactiva y evitar el desperdicio.
 
-### 🎓 Gestión de Formación y Competencias
+### Gestión de Formación y Competencias
 Módulo dedicado al seguimiento del desarrollo profesional de los empleados:
 *   **Matriz de Competencias:** Seguimiento de habilidades por Área y Tarea.
 *   **Certificación Digital:** Los encargados y supervisores pueden "firmar" y validar competencias completadas.
 *   **Dashboard de Progreso:** Visualización clara del estado de formación de cada empleado.
 
-### ⚡ Sincronización en Tiempo Real (Socket.IO)
+### Sincronización en Tiempo Real (Socket.IO)
 *   **Comunicación Bidireccional:** Los cambios en el inventario o en la formación se reflejan instantáneamente en todos los dispositivos conectados del mismo restaurante.
 *   **Salas Privadas:** Eventos segmentados por `restaurantId` para asegurar la privacidad entre inquilinos.
 
-### 📡 Modo Offline y Optimistic UI
+### Modo Offline y Optimistic UI
 Diseñado para entornos con conectividad intermitente:
 *   **Actualizaciones Optimistas:** La interfaz responde inmediatamente a las acciones del usuario antes de confirmar con el servidor.
 *   **Persistencia Local:** Uso estratégico de `localStorage` y "Blacklists" locales para mantener la coherencia de datos (como productos eliminados) mientras se está desconectado.
 *   **Sincronización Automática:** Re-conexión y sincronización transparente al recuperar la red.
 
-### 🏢 Arquitectura Multi-Tenant
+### Arquitectura Multi-Tenant
 *   **Aislamiento de Datos:** Cada restaurante es un universo lógico separado.
 *   **RBAC Jerárquico:**
     1.  **Administrador Global:** Gestión de la plataforma y restaurantes.
     2.  **Supervisor:** Gestión de catálogo y empleados de su restaurante.
     3.  **Encargado:** Operativa diaria (fechas y cantidades).
 
-## 🛠️ Stack Tecnológico
+## Stack Tecnológico
 
 ### Frontend (Cliente)
 *   **React 18:** Librería UI basada en componentes.
@@ -53,7 +53,7 @@ Diseñado para entornos con conectividad intermitente:
 *   **BcryptJS:** Hashing de contraseñas.
 *   **Winston/Pino:** Logging estructurado para producción.
 
-## 📂 Estructura del Proyecto
+## Estructura del Proyecto
 
 ```
 control-caducidades/
@@ -74,7 +74,7 @@ control-caducidades/
 └── ...
 ```
 
-## ⚙️ Instalación y Configuración
+## Instalación y Configuración
 
 ### Prerrequisitos
 *   Node.js (v18 o superior)
@@ -97,6 +97,8 @@ Iniciar servidor:
 npm run dev
 ```
 
+> **Nota:** `server/.env.production` está versionado pero no contiene secretos reales — usa placeholders (`${JWT_SECRET}`, `${MONGO_URL}`). Las variables reales (`JWT_SECRET`, `MONGODB_URI`, etc.) se inyectan como variables de entorno en Railway en el momento del despliegue.
+
 ### 2. Configurar el Cliente
 ```bash
 cd client
@@ -110,9 +112,14 @@ npm run dev
 La aplicación estará disponible en `http://localhost:5173`.
 
 ---
-*Desarrollado con un enfoque en escalabilidad, experiencia de usuario y robustez operativa.*
 
-## 🚀 CI/CD Pipelines
+## Autoría
+
+Producto y especificación propios. Implementación realizada por Claude Code.
+
+---
+
+## CI/CD Pipelines
 
 Este proyecto utiliza **GitHub Actions** para la integración y despliegue continuo.
 
