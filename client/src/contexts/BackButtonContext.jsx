@@ -17,9 +17,9 @@ export const BackButtonProvider = ({ children }) => {
   const shouldIgnorePopStateRef = useRef(false);
   const scrollPositionRef = useRef(0);
 
-  const removeHandler = useCallback((id) => {
+  /* const removeHandler = useCallback((id) => {
     setStack(prev => prev.filter(item => item.id !== id));
-  }, []);
+  }, []); */
 
   const register = useCallback((id, handler, priority = 10) => {
     // Check if we already have this ID registered to prevent duplicates
@@ -88,7 +88,7 @@ export const BackButtonProvider = ({ children }) => {
   }, [stack]);
 
   useEffect(() => {
-    const handlePopState = (event) => {
+    const handlePopState = () => {
       // If we triggered this popstate manually (in unregister), ignore it.
       if (shouldIgnorePopStateRef.current) {
         shouldIgnorePopStateRef.current = false;

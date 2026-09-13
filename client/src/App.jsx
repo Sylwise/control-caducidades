@@ -16,6 +16,8 @@ import { SyncProvider } from "./contexts/providers/SyncProvider";
 import { DeletedProductsProvider } from "./contexts/DeletedProductsContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import { BackButtonProvider } from "./contexts/BackButtonContext";
+import { TaskProvider } from "./contexts/TaskContext";
+import TasksPage from "./components/tasks/TasksPage";
 
 const PrivateRoute = ({ children }) => {
   const token =
@@ -40,25 +42,28 @@ const App = () => {
           <SyncProvider>
             <DeletedProductsProvider>
               <BackButtonProvider>
-                <Router>
-                <Routes>
-                  <Route path="/login" element={<Login />} />
-                  
-                  <Route
-                    path="/"
-                    element={
-                      <PrivateRoute>
-                        <MainLayout />
-                      </PrivateRoute>
-                    }
-                  >
-                    <Route index element={<Navigate to="/inventory" replace />} />
-                    <Route path="inventory" element={<ProductList />} />
-                    <Route path="training" element={<TrainingDashboard />} />
-                    <Route path="training/:employeeId" element={<EmployeeDetail />} />
-                  </Route>
-                </Routes>
-                </Router>
+                <TaskProvider>
+                  <Router>
+                  <Routes>
+                    <Route path="/login" element={<Login />} />
+
+                    <Route
+                      path="/"
+                      element={
+                        <PrivateRoute>
+                          <MainLayout />
+                        </PrivateRoute>
+                      }
+                    >
+                      <Route index element={<Navigate to="/inventory" replace />} />
+                      <Route path="inventory" element={<ProductList />} />
+                      <Route path="tasks" element={<TasksPage />} />
+                      <Route path="training" element={<TrainingDashboard />} />
+                      <Route path="training/:employeeId" element={<EmployeeDetail />} />
+                    </Route>
+                  </Routes>
+                  </Router>
+                </TaskProvider>
               </BackButtonProvider>
             </DeletedProductsProvider>
           </SyncProvider>

@@ -1,12 +1,13 @@
 import OfflineDebugger from "../utils/debugger";
 
 const DB_NAME = "control-caducidades";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 const STORES = {
   PRODUCTS: "products",
   PENDING_CHANGES: "pendingChanges",
   CATALOG: "catalog",
+  TASKS: "tasks",
 };
 
 class IndexedDBService {
@@ -76,6 +77,16 @@ class IndexedDBService {
           });
           catalogStore.createIndex("nombre", "nombre");
           catalogStore.createIndex("updatedAt", "updatedAt");
+        }
+
+        // Store para tareas
+        if (!db.objectStoreNames.contains(STORES.TASKS)) {
+          const taskStore = db.createObjectStore(STORES.TASKS, {
+            keyPath: "_id",
+          });
+          taskStore.createIndex("status", "status");
+          taskStore.createIndex("dueDate", "dueDate");
+          taskStore.createIndex("updatedAt", "updatedAt");
         }
       };
     });
@@ -232,6 +243,43 @@ class IndexedDBService {
     const store = await this.getStore(STORES.CATALOG, "readwrite");
     return new Promise((resolve, reject) => {
       const request = store.delete(productId);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  // Métodos para Tareas
+  async getTasks() {
+    const store = await this.getStore(STORES.TASKS);
+    return new Promise((resolve, reject) => {
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getTask(taskId) {
+    const store = await this.getStore(STORES.TASKS);
+    return new Promise((resolve, reject) => {
+      const request = store.get(taskId);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async saveTask(task) {
+    const store = await this.getStore(STORES.TASKS, "readwrite");
+    return new Promise((resolve, reject) => {
+      const request = store.put(task);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async deleteTask(taskId) {
+    const store = await this.getStore(STORES.TASKS, "readwrite");
+    return new Promise((resolve, reject) => {
+      const request = store.delete(taskId);
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });

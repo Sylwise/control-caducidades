@@ -81,6 +81,7 @@ const statusRoutes = require("./routes/statusRoutes");
 const authRoutes = require("./routes/authRoutes");
 const restaurantRoutes = require("./routes/restaurantRoutes");
 const employeeRoutes = require("./routes/employeeRoutes");
+const taskRoutes = require("./routes/tasks");
 
 const app = express();
 
@@ -211,6 +212,7 @@ app.use("/api/status", statusRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/restaurants", restaurantRoutes);
 app.use("/api/employees", employeeRoutes);
+app.use("/api/tasks", taskRoutes);
 
 // En producción, todas las rutas no-API sirven el index.html
 if (process.env.NODE_ENV === "production") {
@@ -266,10 +268,15 @@ const connectWithRetry = async () => {
   }
 };
 
-connectWithRetry();
-
 const PORT = process.env.PORT || 5000;
 
-server.listen(PORT, () => {
-  logger.info(`Servidor corriendo en puerto ${PORT}`);
-});
+if (require.main === module) {
+  (async () => {
+    await connectWithRetry();
+    server.listen(PORT, () => {
+      logger.info(`Servidor corriendo en puerto ${PORT}`);
+    });
+  })();
+}
+
+module.exports = app;

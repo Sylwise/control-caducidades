@@ -198,6 +198,88 @@ const httpOperations = {
 
     return await response.json();
   },
+
+  // Task Operations
+  getTasks: async (params) => {
+    const queryString = new URLSearchParams(params).toString();
+    const response = await fetchWithNoCache(`${API_BASE_URL}/tasks?${queryString}`, {
+      headers: getHeaders(),
+    });
+
+    if (!response.ok) {
+      await handleApiError(response);
+    }
+
+    return await response.json();
+  },
+
+  createTask: async (data) => {
+    const response = await fetchWithNoCache(`${API_BASE_URL}/tasks`, {
+      method: "POST",
+      headers: getHeaders(true),
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      await handleApiError(response);
+    }
+
+    return await response.json();
+  },
+
+  updateTask: async (taskId, data) => {
+    const response = await fetchWithNoCache(`${API_BASE_URL}/tasks/${taskId}`, {
+      method: "PUT",
+      headers: getHeaders(true),
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      await handleApiError(response);
+    }
+
+    return await response.json();
+  },
+
+  deleteTask: async (taskId) => {
+    const response = await fetchWithNoCache(`${API_BASE_URL}/tasks/${taskId}`, {
+      method: "DELETE",
+      headers: getHeaders(),
+    });
+
+    if (!response.ok) {
+      await handleApiError(response);
+    }
+
+    return await response.json();
+  },
+
+  completeTask: async (taskId) => {
+    const response = await fetchWithNoCache(`${API_BASE_URL}/tasks/${taskId}/complete`, {
+      method: "POST",
+      headers: getHeaders(),
+    });
+
+    if (!response.ok) {
+      await handleApiError(response);
+    }
+
+    return await response.json();
+  },
+
+  addTaskComment: async (taskId, data) => {
+    const response = await fetchWithNoCache(`${API_BASE_URL}/tasks/${taskId}/comments`, {
+      method: "POST",
+      headers: getHeaders(true),
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      await handleApiError(response);
+    }
+
+    return await response.json();
+  },
 };
 
 // Métodos para el catálogo
