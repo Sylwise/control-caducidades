@@ -16,6 +16,7 @@ vi.mock("../../contexts/TaskContext", () => ({
         completeTask: vi.fn(),
         deleteTask: vi.fn(),
         tasks: [],
+        isOnline: true,
     }),
 }));
 // Import actual AuthContext (it's safe to use the real context definition)
@@ -26,6 +27,7 @@ const mockTask = {
     _id: "task-1",
     title: "Test Task",
     description: "Description of test task",
+    type: "incidencia",
     priority: "urgent",
     status: "pending",
     dueDate: new Date().toISOString(),
@@ -51,6 +53,7 @@ describe("TaskCard Component", () => {
         expect(screen.getByText("Test Task")).toBeInTheDocument();
         expect(screen.getByText("Description of test task")).toBeInTheDocument();
         expect(screen.getByText("Urgente")).toBeInTheDocument();
+        expect(screen.getByText("Incidencia")).toBeInTheDocument();
     });
 
     it("renders completed task correctly", () => {

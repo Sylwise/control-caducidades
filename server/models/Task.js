@@ -40,6 +40,12 @@ const taskSchema = new mongoose.Schema(
       enum: ["urgent", "high", "medium", "low"],
       required: true,
     },
+    type: {
+      type: String,
+      enum: ["aviso", "incidencia", "averia", "tarea"],
+      default: "tarea",
+      required: true,
+    },
     status: {
       type: String,
       enum: ["pending", "completed"],

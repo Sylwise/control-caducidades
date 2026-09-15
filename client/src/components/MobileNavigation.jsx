@@ -2,6 +2,7 @@
 import { Package, GraduationCap, LogOut, ClipboardList, Store, Users } from "lucide-react";
 import PropTypes from "prop-types";
 import { useEffect, useState } from "react";
+import FeatureManager from "../config/features";
 
 const MobileNavigation = ({ 
   isOpen, 
@@ -16,6 +17,7 @@ const MobileNavigation = ({
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const isTrainingEnabled = FeatureManager.isEnabled("TRAINING_MODULE");
 
   // Handle animation logic
   useEffect(() => {
@@ -97,7 +99,7 @@ const MobileNavigation = ({
             Tareas
           </button>
 
-          {['admin', 'supervisor', 'encargado'].includes(user?.role) && (
+          {isTrainingEnabled && ['admin', 'supervisor', 'encargado'].includes(user?.role) && (
              <button
               onClick={() => { onModuleChange('training'); onClose(); }}
               className={`

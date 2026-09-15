@@ -1,13 +1,20 @@
 import OfflineDebugger from "../utils/debugger";
 
 const DB_NAME = "control-caducidades";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
+const LEGACY_TASK_STORE = "tasks";
+const LEGACY_TASK_CHANGES = new Set([
+  "CREATE_TASK",
+  "UPDATE_TASK",
+  "COMPLETE_TASK",
+  "DELETE_TASK",
+  "ADD_COMMENT",
+]);
 
 const STORES = {
   PRODUCTS: "products",
   PENDING_CHANGES: "pendingChanges",
   CATALOG: "catalog",
-  TASKS: "tasks",
 };
 
 class IndexedDBService {
@@ -79,15 +86,19 @@ class IndexedDBService {
           catalogStore.createIndex("updatedAt", "updatedAt");
         }
 
-        // Store para tareas
-        if (!db.objectStoreNames.contains(STORES.TASKS)) {
-          const taskStore = db.createObjectStore(STORES.TASKS, {
-            keyPath: "_id",
-          });
-          taskStore.createIndex("status", "status");
-          taskStore.createIndex("dueDate", "dueDate");
-          taskStore.createIndex("updatedAt", "updatedAt");
+        // Tareas es online-only desde v3: elimina caché y operaciones diferidas antiguas.
+        if (db.objectStoreNames.contains(LEGACY_TASK_STORE)) {
+          db.deleteObjectStore(LEGACY_TASK_STORE);
         }
+
+        const pendingStore = event.target.transaction.objectStore(STORES.PENDING_CHANGES);
+        const cursorRequest = pendingStore.openCursor();
+        cursorRequest.onsuccess = () => {
+          const cursor = cursorRequest.result;
+          if (!cursor) return;
+          if (LEGACY_TASK_CHANGES.has(cursor.value.type)) cursor.delete();
+          cursor.continue();
+        };
       };
     });
 
@@ -243,43 +254,6 @@ class IndexedDBService {
     const store = await this.getStore(STORES.CATALOG, "readwrite");
     return new Promise((resolve, reject) => {
       const request = store.delete(productId);
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    });
-  }
-
-  // Métodos para Tareas
-  async getTasks() {
-    const store = await this.getStore(STORES.TASKS);
-    return new Promise((resolve, reject) => {
-      const request = store.getAll();
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-  }
-
-  async getTask(taskId) {
-    const store = await this.getStore(STORES.TASKS);
-    return new Promise((resolve, reject) => {
-      const request = store.get(taskId);
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-  }
-
-  async saveTask(task) {
-    const store = await this.getStore(STORES.TASKS, "readwrite");
-    return new Promise((resolve, reject) => {
-      const request = store.put(task);
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-  }
-
-  async deleteTask(taskId) {
-    const store = await this.getStore(STORES.TASKS, "readwrite");
-    return new Promise((resolve, reject) => {
-      const request = store.delete(taskId);
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });

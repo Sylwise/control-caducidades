@@ -1,6 +1,7 @@
 import { Package, ClipboardList, GraduationCap, Menu, X, LogOut, CloudOff, Store, Users, LayoutDashboard } from "lucide-react";
 
 import { useSyncContext } from "../../hooks/useSyncContext";
+import FeatureManager from "../../config/features";
 
 const Navbar = ({
   user,
@@ -17,6 +18,7 @@ const Navbar = ({
   onExpiringClick,
 }) => {
   const { pendingChanges } = useSyncContext();
+  const isTrainingEnabled = FeatureManager.isEnabled("TRAINING_MODULE");
 
   return (
     <nav className="bg-white border-b border-gray-200 relative md:sticky top-0 z-50 h-16 shadow-sm">
@@ -46,7 +48,7 @@ const Navbar = ({
               isActive={activeModule === 'tasks'} 
               onClick={() => onModuleChange('tasks')} 
             />
-            {['admin', 'supervisor', 'encargado'].includes(user?.role) && (
+            {isTrainingEnabled && ['admin', 'supervisor', 'encargado'].includes(user?.role) && (
               <NavButton 
                 label="Formación" 
                 icon={GraduationCap} 

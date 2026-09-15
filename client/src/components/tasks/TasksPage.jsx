@@ -12,7 +12,7 @@ import TaskList from "./TaskList";
 import TaskStats from "./TaskStats";
 
 const TasksPage = () => {
-    const { tasks, fetchTasks, createTask, deleteTask, error } = useTasks();
+    const { tasks, fetchTasks, createTask, deleteTask, error, isOnline } = useTasks();
     const { user } = useContext(AuthContext);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [selectedTaskId, setSelectedTaskId] = useState(null);
@@ -43,10 +43,20 @@ const TasksPage = () => {
     // Hook for scrolling to new tasks
     const { scrollToProductId } = useProductScroll(null, 'data-task-id');
 
-    // Fetch tasks on mount
+    // Tasks are online-only. Reload from the server when connectivity returns.
     useEffect(() => {
-        fetchTasks();
-    }, [fetchTasks]);
+        if (isOnline) {
+            fetchTasks();
+        }
+    }, [fetchTasks, isOnline]);
+
+    useEffect(() => {
+        if (!isOnline) {
+            setIsCreateModalOpen(false);
+            setSelectedTaskId(null);
+            setTaskToDelete(null);
+        }
+    }, [isOnline]);
 
     const handleCreateTask = async (taskData) => {
         try {
@@ -55,8 +65,6 @@ const TasksPage = () => {
             
             // Scroll to new task and highlight it
             if (newTask?._id) {
-                // If filter is active and hides the new task, maybe we should reset it?
-                // For now user just asked for scroll.
                 scrollToProductId(newTask._id);
             }
         } catch (err) {
@@ -97,8 +105,9 @@ const TasksPage = () => {
                 
                 {(user?.role === 'admin' || user?.role === 'supervisor') && (
                     <button
-                        onClick={() => setIsCreateModalOpen(true)}
-                        className="flex items-center gap-2 bg-[#1d5030] text-white px-4 py-2.5 rounded-lg font-medium shadow-md hover:bg-[#1d5030]/90 active:scale-95 transition-all mt-4 sm:mt-0"
+                      onClick={() => setIsCreateModalOpen(true)}
+                        disabled={!isOnline}
+                        className="flex items-center gap-2 bg-[#1d5030] text-white px-4 py-2.5 rounded-lg font-medium shadow-md hover:bg-[#1d5030]/90 active:scale-95 transition-all mt-4 sm:mt-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
                     >
                         <Plus className="w-5 h-5" />
                         Nueva Tarea
@@ -106,11 +115,22 @@ const TasksPage = () => {
                 )}
             </div>
 
-            {/* Stats Overview (Mobile: Chips/Filters, Desktop: Cards) */}
-            <TaskStats 
-                currentFilter={filterStatus}
-                onFilterChange={setFilterStatus}
-            />
+            {!isOnline && (
+                <div
+                    role="status"
+                    className="mb-6 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 font-medium text-amber-900"
+                >
+                    Sin conexión. Tareas no está disponible
+                </div>
+            )}
+
+            {isOnline && (
+                <>
+                    {/* Stats Overview (Mobile: Chips/Filters, Desktop: Cards) */}
+                    <TaskStats
+                        currentFilter={filterStatus}
+                        onFilterChange={setFilterStatus}
+                    />
 
             {/* Filters & Search */}
             <div className="bg-white p-4 rounded-xl shadow border border-gray-200 mb-6 flex flex-col sm:flex-row gap-4">
@@ -144,25 +164,28 @@ const TasksPage = () => {
                 </div>
             </div>
 
-            {/* Task List */}
-            {error && (
-                <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-4 flex items-center gap-2">
-                    <span>Error al cargar tareas: {error}</span>
-                </div>
-            )}
+                    {/* Task List */}
+                    {error && (
+                        <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-4 flex items-center gap-2">
+                            <span>Error al cargar tareas: {error}</span>
+                        </div>
+                    )}
 
-            <TaskList 
-                statusFilter={filterStatus} 
-                searchQuery={searchQuery}
-                onTaskClick={(task) => setSelectedTaskId(task._id)}
-                onDeleteRequest={handleDeleteRequest}
-            />
+                    <TaskList
+                        statusFilter={filterStatus}
+                        searchQuery={searchQuery}
+                        onTaskClick={(task) => setSelectedTaskId(task._id)}
+                        onDeleteRequest={handleDeleteRequest}
+                    />
+                </>
+            )}
 
             {/* Modals */}
             <TaskCreationModal
                 isOpen={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
                 onSubmit={handleCreateTask}
+                isOnline={isOnline}
             />
 
             <TaskDetailModal

@@ -1,6 +1,6 @@
 
 /// <reference types="vitest" />
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { vi, describe, it, expect } from "vitest";
 import TaskCreationModal from "./TaskCreationModal";
 import { MemoryRouter } from "react-router-dom";
@@ -49,7 +49,7 @@ const renderModal = (props) => {
         <MemoryRouter>
             <BackButtonProvider>
                 <ToastProvider>
-                    <TaskCreationModal {...props} />
+                    <TaskCreationModal isOnline={true} {...props} />
                 </ToastProvider>
             </BackButtonProvider>
         </MemoryRouter>
@@ -81,6 +81,7 @@ describe("TaskCreationModal", () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        mockOnSubmit.mockResolvedValue(undefined);
     });
 
     it("renders correctly when open", () => {
@@ -107,7 +108,7 @@ describe("TaskCreationModal", () => {
         renderModal({ isOpen: true, onClose: mockOnClose, onSubmit: mockOnSubmit });
 
         // Fill Title
-        const titleInput = screen.getByPlaceholderText("Ej: Limpiar freidora");
+        const titleInput = screen.getByPlaceholderText("Ej: Revisar cámara frigorífica");
         fireEvent.change(titleInput, { target: { value: "New Task" } });
 
         // Fill Date
@@ -120,10 +121,37 @@ describe("TaskCreationModal", () => {
         const submitBtn = screen.getByText("Crear Tarea");
         fireEvent.click(submitBtn);
 
-        expect(mockOnSubmit).toHaveBeenCalledWith(expect.objectContaining({
-            title: "New Task",
-            priority: "medium",
-            dueDate: expect.any(Date)
-        }));
+        await waitFor(() => {
+            expect(mockOnSubmit).toHaveBeenCalledWith(expect.objectContaining({
+                title: "New Task",
+                type: "tarea",
+                priority: "medium",
+                dueDate: expect.any(Date)
+            }));
+        });
+    });
+
+    it("submits the selected task type", async () => {
+        renderModal({ isOpen: true, onClose: mockOnClose, onSubmit: mockOnSubmit });
+
+        fireEvent.change(screen.getByPlaceholderText("Ej: Revisar cámara frigorífica"), {
+            target: { value: "Avisar al equipo" },
+        });
+        fireEvent.change(screen.getByLabelText("Tipo"), { target: { value: "aviso" } });
+        fireEvent.change(screen.getByTestId("date-input"), {
+            target: { value: new Date(Date.now() + 86400000).toISOString() },
+        });
+        fireEvent.click(screen.getByText("Crear Tarea"));
+
+        await waitFor(() => {
+            expect(mockOnSubmit).toHaveBeenCalledWith(expect.objectContaining({ type: "aviso" }));
+        });
+    });
+
+    it("disables creation while offline", () => {
+        renderModal({ isOpen: true, onClose: mockOnClose, onSubmit: mockOnSubmit, isOnline: false });
+
+        expect(screen.getByText("Crear Tarea")).toBeDisabled();
+        expect(screen.getByLabelText("Tipo")).toBeDisabled();
     });
 });

@@ -11,6 +11,7 @@ import { useModalManagement } from "../hooks/useModalManagement";
 import { useProductManagement } from "../hooks/useProductManagement";
 import { useExpiringProducts } from "../hooks/useExpiringProducts";
 import { useToast } from "../contexts/ToastContext";
+import FeatureManager from "../config/features";
 
 const MainLayout = () => {
   const navigate = useNavigate();
@@ -19,7 +20,8 @@ const MainLayout = () => {
   const { addToast } = useToast();
 
   // Determine active module based on current path
-  const activeModule = location.pathname.includes("training")
+  const isTrainingEnabled = FeatureManager.isEnabled("TRAINING_MODULE");
+  const activeModule = isTrainingEnabled && location.pathname.includes("training")
     ? "training"
     : location.pathname.includes("tasks")
     ? "tasks"
@@ -63,7 +65,7 @@ const MainLayout = () => {
   };
 
   const handleModuleChange = (module) => {
-    if (module === "training") {
+    if (module === "training" && isTrainingEnabled) {
       navigate("/training", { replace: true });
     } else if (module === "tasks") {
       navigate("/tasks", { replace: true });

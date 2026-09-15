@@ -1,16 +1,10 @@
 const Task = require("../models/Task");
 const User = require("../models/User");
-const { validationResult } = require("express-validator");
 const logger = require("../logger");
 
-exports.createTask = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-
+exports.createTask = async (req, res, next) => {
   try {
-    const { title, description, dueDate, priority } = req.body;
+    const { title, description, dueDate, priority, type } = req.body;
     
     // Create new task associated with the restaurant of the creator
     const newTask = new Task({
@@ -18,6 +12,7 @@ exports.createTask = async (req, res) => {
       description,
       dueDate,
       priority,
+      type,
       restaurant: req.user.restaurante,
       createdBy: req.user.id,
     });
@@ -27,7 +22,7 @@ exports.createTask = async (req, res) => {
     // Populate creator info for immediate UI update
     await savedTask.populate("createdBy", "username name");
 
-    // Real-time notification could be emitted here via socket
+    // Notify clients connected to the creator's restaurant room.
     const io = req.app.get("io");
     if (io) {
       io.to(req.user.restaurante.toString()).emit("task:created", savedTask);
@@ -36,11 +31,11 @@ exports.createTask = async (req, res) => {
     res.status(201).json(savedTask);
   } catch (error) {
     logger.error("Error creating task:", error);
-    res.status(500).json({ error: "Server Error" });
+    next(error);
   }
 };
 
-exports.getTasks = async (req, res) => {
+exports.getTasks = async (req, res, next) => {
   try {
     const { status, priority, limit = 50 } = req.query;
     const filter = { restaurant: req.user.restaurante };
@@ -53,23 +48,18 @@ exports.getTasks = async (req, res) => {
       .populate("completedBy", "username name")
       .populate("comments.user", "username name")
       .sort({ dueDate: 1, priority: -1 }) // Sort by due date asc, then priority desc
-      .limit(parseInt(limit));
+      .limit(limit);
 
     res.json(tasks);
   } catch (error) {
     logger.error("Error fetching tasks:", error);
-    res.status(500).json({ error: "Server Error" });
+    next(error);
   }
 };
 
-exports.updateTask = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-
+exports.updateTask = async (req, res, next) => {
   try {
-    const { title, description, dueDate, priority } = req.body;
+    const { title, description, dueDate, priority, type } = req.body;
     
     // Find task and ensure it belongs to user's restaurant
     let task = await Task.findOne({
@@ -81,15 +71,12 @@ exports.updateTask = async (req, res) => {
       return res.status(404).json({ error: "Task not found" });
     }
 
-    // Only creator or supervisors can edit
-    // (Middleware already checked for supervisor if this route is protected, 
-    // but we can add granular check here if needed. 
-    // For now assuming route level protection or loose permission)
-    
+    // Role authorization is enforced by the route middleware.
     task.title = title || task.title;
     task.description = description !== undefined ? description : task.description;
     task.dueDate = dueDate || task.dueDate;
     task.priority = priority || task.priority;
+    task.type = type || task.type;
 
     await task.save();
 
@@ -101,11 +88,11 @@ exports.updateTask = async (req, res) => {
     res.json(task);
   } catch (error) {
     logger.error("Error updating task:", error);
-    res.status(500).json({ error: "Server Error" });
+    next(error);
   }
 };
 
-exports.deleteTask = async (req, res) => {
+exports.deleteTask = async (req, res, next) => {
   try {
     const task = await Task.findOne({
       _id: req.params.id,
@@ -134,11 +121,11 @@ exports.deleteTask = async (req, res) => {
     res.json({ message: "Task removed" });
   } catch (error) {
     logger.error("Error deleting task:", error);
-    res.status(500).json({ error: "Server Error" });
+    next(error);
   }
 };
 
-exports.completeTask = async (req, res) => {
+exports.completeTask = async (req, res, next) => {
   try {
     let task = await Task.findOne({
       _id: req.params.id,
@@ -170,16 +157,11 @@ exports.completeTask = async (req, res) => {
     res.json(task);
   } catch (error) {
     logger.error("Error completing task:", error);
-    res.status(500).json({ error: "Server Error" });
+    next(error);
   }
 };
 
-exports.addComment = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-
+exports.addComment = async (req, res, next) => {
   try {
     const task = await Task.findOne({
       _id: req.params.id,
@@ -214,11 +196,11 @@ exports.addComment = async (req, res) => {
     res.json(addedComment);
   } catch (error) {
     logger.error("Error adding comment:", error);
-    res.status(500).json({ error: "Server Error" });
+    next(error);
   }
 };
 
-exports.getStats = async (req, res) => {
+exports.getStats = async (req, res, next) => {
   try {
     const restaurantId = req.user.restaurante;
     
@@ -244,6 +226,6 @@ exports.getStats = async (req, res) => {
     res.json(formattedStats);
   } catch (error) {
     logger.error("Error fetching task stats:", error);
-    res.status(500).json({ error: "Server Error" });
+    next(error);
   }
 };

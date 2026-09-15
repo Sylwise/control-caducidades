@@ -3,7 +3,6 @@ import OfflineDebugger from "../utils/debugger";
 import IndexedDB from "./indexedDB";
 import catalogService from "./offline/catalogService";
 import statusService from "./offline/statusService";
-import taskHandler from "./offline/handlers/taskHandler";
 
 class OfflineManager {
   static instance = null;
@@ -142,19 +141,9 @@ class OfflineManager {
       );
       await this._syncCreateCatalogChanges(createChanges, idMapping);
 
-      // 2. Procesar cambios de TAREAS (delegados al handler)
-      const taskChanges = changes.filter((change) =>
-        change.type.includes("TASK") || change.type === "ADD_COMMENT"
-      );
-
-      for (const change of taskChanges) {
-         await taskHandler.sync(change, idMapping);
-         await IndexedDB.removePendingChange(change.id);
-      }
-
-      // 3. Procesar el resto de cambios (Productos/Stock)
+      // 2. Procesar el resto de cambios (Productos/Stock)
       const remainingChanges = changes.filter(
-        (change) => change.type !== "CREATE_CATALOG" && !change.type.includes("TASK") && change.type !== "ADD_COMMENT"
+        (change) => change.type !== "CREATE_CATALOG"
       );
       await this._syncStandardChanges(remainingChanges, idMapping);
 

@@ -182,7 +182,7 @@ const ProductList = () => {
       error={error}
       onRetry={loadAllProducts}
     >
-      <div className="max-w-md md:max-w-xl mx-auto">
+      <div className="max-w-md md:max-w-xl mx-auto pt-4">
         <ToastContainer
           toasts={toasts}
           removeToast={removeToast}

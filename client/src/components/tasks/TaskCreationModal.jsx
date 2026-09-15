@@ -5,15 +5,18 @@ import { Plus, RefreshCw, AlertCircle, Type, AlignLeft, Calendar as CalendarIcon
 import ModalContainer from "../ModalContainer";
 import CustomDateInput from "../CustomDateInput";
 import useHardwareBackButton from "../../hooks/useHardwareBackButton";
+import { TASK_TYPES } from "../../constants/taskConstants";
 
 const TaskCreationModal = ({
   isOpen,
   onClose,
   onSubmit, // async function returning the task
+  isOnline,
 }) => {
   const [form, setForm] = useState({
     title: "",
     description: "",
+    type: "tarea",
     priority: "medium",
     dueDate: "",
   });
@@ -27,6 +30,7 @@ const TaskCreationModal = ({
       setForm({
         title: "",
         description: "",
+        type: "tarea",
         priority: "medium",
         dueDate: "",
       });
@@ -67,6 +71,10 @@ const TaskCreationModal = ({
   };
 
   const handleSubmit = async () => {
+    if (!isOnline) {
+      setErrors({ general: "Sin conexión. Tareas no está disponible" });
+      return;
+    }
     if (!validate()) return;
     
     setIsSubmitting(true);
@@ -110,7 +118,8 @@ const TaskCreationModal = ({
                         name="title"
                         value={form.title}
                         onChange={handleChange}
-                        placeholder="Ej: Limpiar freidora"
+                        placeholder="Ej: Revisar cámara frigorífica"
+                        disabled={!isOnline}
                         className={`
                             w-full px-4 py-2.5 rounded-lg border 
                             ${errors.title ? 'border-red-500 focus:ring-red-200' : 'border-gray-200 focus:ring-[#1d5030]/20 focus:border-[#1d5030]'}
@@ -134,10 +143,31 @@ const TaskCreationModal = ({
                         name="description"
                         value={form.description}
                         onChange={handleChange}
+                        disabled={!isOnline}
                         placeholder="Detalles adicionales..."
                         rows={3}
                         className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#1d5030]/20 focus:border-[#1d5030] focus:outline-none transition-all duration-200 resize-none"
                     />
+                 </div>
+
+                 <div className="space-y-1.5">
+                    <label htmlFor="task-type" className="text-sm font-medium text-gray-700">
+                        Tipo
+                    </label>
+                    <select
+                        id="task-type"
+                        name="type"
+                        value={form.type}
+                        onChange={handleChange}
+                        disabled={!isOnline}
+                        className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#1d5030]/20 focus:border-[#1d5030] focus:outline-none transition-all duration-200 bg-white disabled:bg-gray-100"
+                    >
+                        {TASK_TYPES.map((taskType) => (
+                            <option key={taskType.value} value={taskType.value}>
+                                {taskType.label}
+                            </option>
+                        ))}
+                    </select>
                  </div>
 
                  {/* Valid date and Priority Row */}
@@ -153,6 +183,7 @@ const TaskCreationModal = ({
                                 name="priority"
                                 value={form.priority}
                                 onChange={handleChange}
+                                disabled={!isOnline}
                                 className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#1d5030]/20 focus:border-[#1d5030] focus:outline-none transition-all duration-200 appearance-none bg-white"
                             >
                                 <option value="low">Baja</option>
@@ -177,6 +208,7 @@ const TaskCreationModal = ({
                             label="Fecha Límite"
                             value={form.dueDate}
                             onChange={handleDateChange}
+                            disabled={!isOnline}
                             placeholder="Seleccionar"
                             data-date-input="create-task-dueDate"
                         />
@@ -205,7 +237,7 @@ const TaskCreationModal = ({
                 </button>
                 <button
                   onClick={handleSubmit}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !isOnline}
                   className="px-5 py-2.5 text-sm font-medium text-white bg-[#1d5030] hover:bg-[#1d5030]/90 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   {isSubmitting ? (
@@ -227,6 +259,7 @@ TaskCreationModal.propTypes = {
   isOpen: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
+  isOnline: PropTypes.bool.isRequired,
 };
 
 export default TaskCreationModal;

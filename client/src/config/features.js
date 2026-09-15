@@ -2,6 +2,7 @@ export const FEATURES = {
   OFFLINE_MODE: true,
   OFFLINE_SYNC: true,
   LOCAL_CLASSIFICATION: true,
+  TRAINING_MODULE: false,
 };
 
 class FeatureManager {

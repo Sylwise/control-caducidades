@@ -7,6 +7,7 @@ import { useTasks } from "../../contexts/TaskContext";
 import { useToast } from "../../contexts/ToastContext";
 import AuthContext from "../../contexts/AuthContext";
 import { useState, useContext } from "react";
+import { getTaskType } from "../../constants/taskConstants";
 
 const getPriorityColor = (priority) => {
     switch (priority) {
@@ -30,7 +31,7 @@ const getPriorityLabel = (priority) => {
 
 const TaskCard = ({ task, onClick, onDeleteRequest, 'data-task-id': dataTaskId }) => {
     const { user } = useContext(AuthContext);
-    const { completeTask } = useTasks();
+    const { completeTask, isOnline } = useTasks();
     const { addToast } = useToast();
     const [isCompleting, setIsCompleting] = useState(false);
 
@@ -49,6 +50,7 @@ const TaskCard = ({ task, onClick, onDeleteRequest, 'data-task-id': dataTaskId }
     };
 
     const isPending = task.status === 'pending';
+    const taskType = getTaskType(task.type);
     const dueDate = new Date(task.dueDate);
     const isOverdue = isPending && dueDate < new Date() && dueDate.toDateString() !== new Date().toDateString();
 
@@ -63,12 +65,14 @@ const TaskCard = ({ task, onClick, onDeleteRequest, 'data-task-id': dataTaskId }
              {/* Strikethrough for completed removed - replaced with text decoration */}
 
             <div className="flex justify-between items-start mb-3">
-                <span className={`
-                    px-2.5 py-0.5 rounded-full text-xs font-medium border
-                    ${getPriorityColor(task.priority)}
-                `}>
-                    {getPriorityLabel(task.priority)}
-                </span>
+                <div className="flex flex-wrap gap-2">
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${taskType.className}`}>
+                        {taskType.label}
+                    </span>
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${getPriorityColor(task.priority)}`}>
+                        {getPriorityLabel(task.priority)}
+                    </span>
+                </div>
 
                 {/* Delete Icon - Only for Admin/Supervisor */}
                 {(user?.role === 'admin' || user?.role === 'supervisor') && onDeleteRequest && (
@@ -77,6 +81,7 @@ const TaskCard = ({ task, onClick, onDeleteRequest, 'data-task-id': dataTaskId }
                             e.stopPropagation();
                             onDeleteRequest(task);
                         }}
+                        disabled={!isOnline}
                         className="p-1.5 hover:bg-red-50 text-gray-300 hover:text-red-500 rounded-lg transition-colors"
                         title="Eliminar tarea"
                     >
@@ -107,7 +112,7 @@ const TaskCard = ({ task, onClick, onDeleteRequest, 'data-task-id': dataTaskId }
                 {isPending ? (
                     <button
                         onClick={handleComplete}
-                        disabled={isCompleting}
+                        disabled={isCompleting || !isOnline}
                         className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-[#1d5030] hover:text-white text-gray-600 rounded-lg text-sm font-medium transition-colors"
                     >
                         {isCompleting ? <Clock className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
@@ -121,7 +126,7 @@ const TaskCard = ({ task, onClick, onDeleteRequest, 'data-task-id': dataTaskId }
                 )}
             </div>
             
-            {/* Comments Badge (Future) */}
+            {/* Comments count */}
             {task.comments?.length > 0 && (
                 <div className="absolute -bottom-2 right-4 bg-white border px-1.5 py-0.5 rounded-full shadow-sm flex items-center gap-1 text-xs text-blue-600">
                     <MessageCircle className="w-3 h-3" /> {task.comments.length}
@@ -136,6 +141,7 @@ TaskCard.propTypes = {
         _id: PropTypes.string.isRequired,
         title: PropTypes.string.isRequired,
         description: PropTypes.string,
+        type: PropTypes.string,
         priority: PropTypes.string,
         status: PropTypes.string,
         dueDate: PropTypes.string.isRequired,

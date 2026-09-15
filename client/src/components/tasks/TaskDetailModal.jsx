@@ -11,6 +11,7 @@ import useHardwareBackButton from "../../hooks/useHardwareBackButton";
 import { useTasks } from "../../contexts/TaskContext";
 import { useToast } from "../../contexts/ToastContext";
 import AuthContext from "../../contexts/AuthContext";
+import { getTaskType } from "../../constants/taskConstants";
 
 const getPriorityLabel = (priority) => {
     switch (priority) {
@@ -74,7 +75,7 @@ const TaskDetailModal = ({
     task,
     currentUserId,
 }) => {
-    const { addComment, completeTask, deleteTask } = useTasks();
+    const { addComment, completeTask, deleteTask, isOnline } = useTasks();
     const { addToast } = useToast();
     const { user } = useContext(AuthContext);
     const currentUserRole = user?.role;
@@ -161,6 +162,7 @@ const TaskDetailModal = ({
     };
 
     const priorityInfo = getPriorityLabel(task.priority);
+    const taskType = getTaskType(task.type);
     const isCompleted = task.status === 'completed';
 
     const title = (
@@ -183,6 +185,9 @@ const TaskDetailModal = ({
                         <div className="bg-white p-5 border-b border-gray-100">
                             {/* Status & Priority Badges */}
                             <div className="flex flex-wrap gap-2 mb-4">
+                                <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${taskType.className}`}>
+                                    {taskType.label}
+                                </span>
                                 <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${priorityInfo.color} flex items-center gap-1`}>
                                     <Flag className="w-3 h-3" /> {priorityInfo.label}
                                 </span>
@@ -253,6 +258,7 @@ const TaskDetailModal = ({
                             <textarea
                                 value={newComment}
                                 onChange={(e) => setNewComment(e.target.value)}
+                                disabled={!isOnline}
                                 placeholder="Escribe un comentario..."
                                 rows={1}
                                 className="flex-1 px-4 py-3 bg-gray-50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1d5030]/20 focus:bg-white transition-all resize-none overflow-hidden"
@@ -266,7 +272,7 @@ const TaskDetailModal = ({
                             />
                             <button
                                 onClick={handleSendComment}
-                                disabled={!newComment.trim() || isSubmittingComment}
+                                disabled={!isOnline || !newComment.trim() || isSubmittingComment}
                                 className="p-3 bg-[#1d5030] text-white rounded-xl hover:bg-[#1d5030]/90 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                             >
                                 {isSubmittingComment ? <Clock className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
@@ -278,7 +284,7 @@ const TaskDetailModal = ({
                         {!isCompleted && (
                             <button 
                                 onClick={handleComplete}
-                                disabled={isActionLoading}
+                                disabled={isActionLoading || !isOnline}
                                 className="flex-1 flex items-center justify-center gap-2 bg-[#1d5030] text-white hover:bg-[#1d5030]/90 px-4 py-3 rounded-xl font-medium transition-all active:scale-95 shadow-sm"
                             >
                                 <CheckCircle2 className="w-5 h-5" /> 
@@ -289,7 +295,7 @@ const TaskDetailModal = ({
                         {(currentUserRole === 'admin' || currentUserRole === 'supervisor') && (
                             <button 
                                 onClick={handleDeleteClick}
-                                disabled={isActionLoading}
+                                disabled={isActionLoading || !isOnline}
                                 className={`
                                     flex items-center justify-center gap-2 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 rounded-xl font-medium transition-all active:scale-95 shadow-sm
                                     ${!isCompleted ? 'p-3 aspect-square' : 'flex-1 py-3 px-4'}
