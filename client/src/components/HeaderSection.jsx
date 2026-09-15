@@ -1,5 +1,6 @@
 import { LogOut, Users, Package, CloudOff, Store, GraduationCap, Plus } from "lucide-react";
 import PropTypes from "prop-types";
+import FeatureManager from "../config/features";
 import { useSyncContext } from "../hooks/useSyncContext";
 
 const HeaderSection = ({
@@ -16,6 +17,7 @@ const HeaderSection = ({
   onAddEmployeeClick,
   showAddEmployeeButton,
 }) => {
+  const isTrainingEnabled = FeatureManager.isEnabled("TRAINING_MODULE");
   const { pendingChanges } = useSyncContext();
 
   return (
@@ -103,7 +105,7 @@ const HeaderSection = ({
           Caducidades
         </button>
 
-        {['admin', 'supervisor', 'encargado'].includes(user?.role) && (
+        {isTrainingEnabled && ['admin', 'supervisor', 'encargado'].includes(user?.role) && (
           <button
             onClick={() => onModuleChange('training')}
             className={`

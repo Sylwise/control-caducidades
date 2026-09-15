@@ -1,4 +1,3 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 import { AlertTriangle, Trash2 } from 'lucide-react';
 import ModalContainer from './ModalContainer';
@@ -17,8 +16,8 @@ const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, i
       onClose={onClose}
       title={modalTitle}
     >
-      <div className="p-6">
-        <p className="text-gray-600 mb-2">
+      <div className="p-6 select-none">
+        <p className="text-gray-600 mb-6">
           {message || '¿Estás seguro de que quieres eliminar este elemento?'}
         </p>
         {itemName && (
@@ -26,9 +25,6 @@ const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, i
             {itemName}
           </p>
         )}
-        <p className="text-sm text-gray-500 mb-6">
-          Esta acción no se puede deshacer.
-        </p>
 
         <div className="flex justify-end gap-3">
           <button

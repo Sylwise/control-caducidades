@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
 import { createPortal } from "react-dom";
 import PropTypes from "prop-types";
 import { X, Calendar, AlertCircle, Mic, Trash2, AudioLines, Check } from "lucide-react";
-import usePreventScroll from "../hooks/usePreventScroll";
+
 import useVoiceDateParser from "../hooks/useVoiceDateParser";
 import useHardwareBackButton from "../hooks/useHardwareBackButton";
 import useOnlineStatus from "../hooks/useOnlineStatus";
@@ -54,6 +54,7 @@ const CustomDateInput = ({
   label,
   value,
   onChange,
+  placeholder,
   disabled = false,
   onRemove,
   showRemoveWhenEmpty = false,
@@ -494,7 +495,7 @@ const CustomDateInput = ({
           `}
         >
           <Calendar className="w-4.5 h-4.5 text-[#1d5030]" />
-          {value ? <span>{inputValue}</span> : <span className="text-gray-500">Seleccionar {label}</span>}
+          {value ? <span>{inputValue}</span> : <span className="text-gray-500">{placeholder || `Seleccionar ${label}`}</span>}
         </button>
         {onRemove && ((value && !disabled) || (!value && showRemoveWhenEmpty)) && (
           <button

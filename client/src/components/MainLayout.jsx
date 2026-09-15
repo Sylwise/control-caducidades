@@ -1,7 +1,8 @@
 import { useState, useEffect, useContext } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import AuthContext from "../contexts/AuthContext";
-import HeaderSection from "./HeaderSection";
+import Navbar from "./layout/Navbar";
+import MobileNavigation from "./MobileNavigation";
 import UserManagement from "./UserManagement";
 import CatalogManagement from "./CatalogManagement";
 import RestaurantManagement from "./RestaurantManagement";
@@ -10,6 +11,7 @@ import { useModalManagement } from "../hooks/useModalManagement";
 import { useProductManagement } from "../hooks/useProductManagement";
 import { useExpiringProducts } from "../hooks/useExpiringProducts";
 import { useToast } from "../contexts/ToastContext";
+import FeatureManager from "../config/features";
 
 const MainLayout = () => {
   const navigate = useNavigate();
@@ -18,8 +20,11 @@ const MainLayout = () => {
   const { addToast } = useToast();
 
   // Determine active module based on current path
-  const activeModule = location.pathname.includes("training")
+  const isTrainingEnabled = FeatureManager.isEnabled("TRAINING_MODULE");
+  const activeModule = isTrainingEnabled && location.pathname.includes("training")
     ? "training"
+    : location.pathname.includes("tasks")
+    ? "tasks"
     : "inventory";
 
   // Modal Management
@@ -36,6 +41,7 @@ const MainLayout = () => {
 
   const [isRestaurantManagementOpen, setIsRestaurantManagementOpen] = useState(false);
   const [isCreateEmployeeModalOpen, setIsCreateEmployeeModalOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Product Management (for Header Stats and Expiring Modal)
   const { products, loadAllProducts } = useProductManagement((message, type) =>
@@ -59,8 +65,10 @@ const MainLayout = () => {
   };
 
   const handleModuleChange = (module) => {
-    if (module === "training") {
+    if (module === "training" && isTrainingEnabled) {
       navigate("/training", { replace: true });
+    } else if (module === "tasks") {
+      navigate("/tasks", { replace: true });
     } else {
       navigate("/inventory", { replace: true });
     }
@@ -76,43 +84,54 @@ const MainLayout = () => {
 
   return (
     <div className="min-h-screen bg-[#f8f8f8]">
-      <div className="max-w-7xl mx-auto bg-white min-h-screen shadow-sm">
-        <div className="p-4">
-          
-          <HeaderSection
-            user={user}
-            expiringCount={calculateExpiringProducts()}
-            hasExpiredProducts={hasExpiredProducts}
-            onLogout={handleLogout}
-            onUserManagementClick={() => setIsUserManagementOpen(true)}
-            onCatalogManagementClick={() => setShowCatalogManagement(true)}
-            onExpiringClick={() => setIsExpiringModalOpen(true)}
-            onRestaurantManagementClick={() => setIsRestaurantManagementOpen(true)}
-            activeModule={activeModule}
-            onModuleChange={handleModuleChange}
-            showAddEmployeeButton={false}
-            onAddEmployeeClick={() => {
-              if (location.pathname !== '/training') {
-                navigate('/training');
-              }
-              setIsCreateEmployeeModalOpen(true);
-            }}
-          />
 
-          <main>
-            <Outlet context={{ 
-              loadAllProducts,
-              isCreateEmployeeModalOpen,
-              setIsCreateEmployeeModalOpen,
-              // Estado de modales globales para ocultar FAB
-              isUserManagementOpen,
-              showCatalogManagement,
-              isRestaurantManagementOpen,
-              isExpiringModalOpen
-            }} />
-          </main>
-        </div>
+      {/* Top Navbar (Universal) */}
+      <Navbar
+        user={user}
+        onLogout={handleLogout}
+        activeModule={activeModule}
+        onModuleChange={handleModuleChange}
+        isMobileMenuOpen={isMobileMenuOpen}
+        setIsMobileMenuOpen={setIsMobileMenuOpen}
+        onRestaurantManagementClick={() => setIsRestaurantManagementOpen(true)}
+        onCatalogManagementClick={() => setShowCatalogManagement(true)}
+        onUserManagementClick={() => setIsUserManagementOpen(true)}
+        expiringCount={calculateExpiringProducts()}
+        hasExpiredProducts={hasExpiredProducts}
+        onExpiringClick={() => setIsExpiringModalOpen(true)}
+      />
+
+      <div className="max-w-7xl mx-auto min-h-[calc(100vh-64px)] shadow-sm bg-white">
+        <main>
+          <Outlet context={{
+            loadAllProducts,
+            isCreateEmployeeModalOpen,
+            setIsCreateEmployeeModalOpen,
+            // Estado de modales globales para ocultar FAB
+            isUserManagementOpen,
+            showCatalogManagement,
+            isRestaurantManagementOpen,
+            isExpiringModalOpen,
+            user,
+            expiringCount: calculateExpiringProducts(),
+            hasExpiredProducts,
+            onExpiringClick: () => setIsExpiringModalOpen(true)
+          }} />
+        </main>
       </div>
+
+      {/* Mobile Navigation Drawer */}
+      <MobileNavigation
+        isOpen={isMobileMenuOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
+        activeModule={activeModule}
+        onModuleChange={handleModuleChange}
+        user={user}
+        onLogout={handleLogout}
+        onUserManagementClick={() => setIsUserManagementOpen(true)}
+        onCatalogManagementClick={() => setShowCatalogManagement(true)}
+        onRestaurantManagementClick={() => setIsRestaurantManagementOpen(true)}
+      />
 
       {/* Global Modals */}
       <UserManagement

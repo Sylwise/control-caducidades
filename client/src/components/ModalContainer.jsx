@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import PropTypes from "prop-types";
+import { createPortal } from "react-dom";
 
 const ModalContainer = ({
   isOpen,
@@ -12,10 +13,10 @@ const ModalContainer = ({
 }) => {
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div
       className={`
-        fixed inset-0 z-50 flex items-center justify-center p-4
+        fixed inset-0 z-[70] flex items-center justify-center p-4
         ${isClosing ? "animate-fade-out" : "animate-fade-in"}
       `}
       onClick={onClose}
@@ -25,7 +26,7 @@ const ModalContainer = ({
       <div
         className={`
           relative w-full max-w-md
-          bg-white rounded-lg shadow-xl
+          bg-white rounded-2xl shadow-xl overflow-hidden
           min-h-[200px] max-h-[90vh]
           flex flex-col z-10
           ${isClosing ? "animate-slide-up" : "animate-slide-down"}
@@ -35,7 +36,7 @@ const ModalContainer = ({
         onClick={(e) => e.stopPropagation()}
       >
         {showHeader && (
-          <div className="flex-none sticky top-0 z-10 bg-white rounded-t-lg border-b border-gray-200">
+          <div className="flex-none sticky top-0 z-10 bg-white rounded-t-2xl border-b border-gray-200">
             <div className="px-4 py-3 flex items-center justify-between">
               <h2 className="text-lg font-bold text-[#1d5030] select-none">{title}</h2>
               <button
@@ -51,7 +52,8 @@ const ModalContainer = ({
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

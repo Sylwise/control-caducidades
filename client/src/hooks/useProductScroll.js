@@ -37,13 +37,16 @@ export const useProductScroll = (selectedProduct, attributeName = 'data-product-
     };
 
     tryScroll();
-  }, []);
+  }, [attributeName]);
 
   // Efecto para hacer scroll cuando cambia el producto seleccionado
   useEffect(() => {
-    if (selectedProduct?.producto?._id) {
+    // Prefer unique Status ID (_id), fallback to Product Definition ID
+    const targetId = selectedProduct?._id || selectedProduct?.producto?._id;
+
+    if (targetId) {
       // SOLO hacer scroll si hay un producto seleccionado (ABRIR)
-      scrollToProductId(selectedProduct.producto._id);
+      scrollToProductId(targetId);
     }
   }, [selectedProduct, scrollToProductId]);
 

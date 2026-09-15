@@ -1,7 +1,15 @@
 import OfflineDebugger from "../utils/debugger";
 
 const DB_NAME = "control-caducidades";
-const DB_VERSION = 1;
+const DB_VERSION = 3;
+const LEGACY_TASK_STORE = "tasks";
+const LEGACY_TASK_CHANGES = new Set([
+  "CREATE_TASK",
+  "UPDATE_TASK",
+  "COMPLETE_TASK",
+  "DELETE_TASK",
+  "ADD_COMMENT",
+]);
 
 const STORES = {
   PRODUCTS: "products",
@@ -77,6 +85,20 @@ class IndexedDBService {
           catalogStore.createIndex("nombre", "nombre");
           catalogStore.createIndex("updatedAt", "updatedAt");
         }
+
+        // Tareas es online-only desde v3: elimina caché y operaciones diferidas antiguas.
+        if (db.objectStoreNames.contains(LEGACY_TASK_STORE)) {
+          db.deleteObjectStore(LEGACY_TASK_STORE);
+        }
+
+        const pendingStore = event.target.transaction.objectStore(STORES.PENDING_CHANGES);
+        const cursorRequest = pendingStore.openCursor();
+        cursorRequest.onsuccess = () => {
+          const cursor = cursorRequest.result;
+          if (!cursor) return;
+          if (LEGACY_TASK_CHANGES.has(cursor.value.type)) cursor.delete();
+          cursor.continue();
+        };
       };
     });
 

@@ -141,7 +141,7 @@ class OfflineManager {
       );
       await this._syncCreateCatalogChanges(createChanges, idMapping);
 
-      // 2. Procesar el resto de cambios
+      // 2. Procesar el resto de cambios (Productos/Stock)
       const remainingChanges = changes.filter(
         (change) => change.type !== "CREATE_CATALOG"
       );
