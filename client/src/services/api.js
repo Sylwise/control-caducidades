@@ -92,6 +92,22 @@ const handleApiError = async (response) => {
   throw new Error(errorMessage);
 };
 
+// Task-only transport preserves HTTP status for lifecycle conflicts.
+// Caducidades continues using its existing transport/offline architecture.
+const taskRequest = async (path = "", method = "GET", data) => {
+  const response = await fetchWithNoCache(`${API_BASE_URL}/tasks${path}`, {
+    method, headers: getHeaders(data !== undefined),
+    ...(data !== undefined ? { body: JSON.stringify(data) } : {}),
+  });
+  const payload = await response.json();
+  if (!response.ok) {
+    const error = new Error(payload.error || payload.message || payload.errors?.map((e) => e.msg).join(". ") || "Error en Tareas");
+    error.status = response.status;
+    throw error;
+  }
+  return payload;
+};
+
 // Implementación de las operaciones HTTP directas
 const httpOperations = {
   getAllProductStatus: async () => {
@@ -200,86 +216,13 @@ const httpOperations = {
   },
 
   // Task Operations
-  getTasks: async (params) => {
-    const queryString = new URLSearchParams(params).toString();
-    const response = await fetchWithNoCache(`${API_BASE_URL}/tasks?${queryString}`, {
-      headers: getHeaders(),
-    });
-
-    if (!response.ok) {
-      await handleApiError(response);
-    }
-
-    return await response.json();
-  },
-
-  createTask: async (data) => {
-    const response = await fetchWithNoCache(`${API_BASE_URL}/tasks`, {
-      method: "POST",
-      headers: getHeaders(true),
-      body: JSON.stringify(data),
-    });
-
-    if (!response.ok) {
-      await handleApiError(response);
-    }
-
-    return await response.json();
-  },
-
-  updateTask: async (taskId, data) => {
-    const response = await fetchWithNoCache(`${API_BASE_URL}/tasks/${taskId}`, {
-      method: "PUT",
-      headers: getHeaders(true),
-      body: JSON.stringify(data),
-    });
-
-    if (!response.ok) {
-      await handleApiError(response);
-    }
-
-    return await response.json();
-  },
-
-  deleteTask: async (taskId) => {
-    const response = await fetchWithNoCache(`${API_BASE_URL}/tasks/${taskId}`, {
-      method: "DELETE",
-      headers: getHeaders(),
-    });
-
-    if (!response.ok) {
-      await handleApiError(response);
-    }
-
-    return await response.json();
-  },
-
-  completeTask: async (taskId) => {
-    const response = await fetchWithNoCache(`${API_BASE_URL}/tasks/${taskId}/complete`, {
-      method: "POST",
-      headers: getHeaders(),
-    });
-
-    if (!response.ok) {
-      await handleApiError(response);
-    }
-
-    return await response.json();
-  },
-
-  addTaskComment: async (taskId, data) => {
-    const response = await fetchWithNoCache(`${API_BASE_URL}/tasks/${taskId}/comments`, {
-      method: "POST",
-      headers: getHeaders(true),
-      body: JSON.stringify(data),
-    });
-
-    if (!response.ok) {
-      await handleApiError(response);
-    }
-
-    return await response.json();
-  },
+  getTasks: (params = {}) => taskRequest(`?${new URLSearchParams(params)}`),
+  createTask: (data) => taskRequest("", "POST", data),
+  updateTask: (id, data) => taskRequest(`/${id}`, "PUT", data),
+  completeTask: (id) => taskRequest(`/${id}/complete`, "POST"),
+  cancelTask: (id, reason) => taskRequest(`/${id}/cancel`, "POST", { reason }),
+  reopenTask: (id, reason) => taskRequest(`/${id}/reopen`, "POST", { reason }),
+  addTaskComment: (id, data) => taskRequest(`/${id}/comments`, "POST", data),
 };
 
 // Métodos para el catálogo

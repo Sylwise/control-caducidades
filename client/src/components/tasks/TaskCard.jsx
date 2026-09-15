@@ -2,12 +2,12 @@
 import PropTypes from "prop-types";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Calendar, CheckCircle2, Clock, Trash2, MessageCircle } from "lucide-react";
+import { Calendar, CheckCircle2, Clock, MessageCircle } from "lucide-react";
 import { useTasks } from "../../contexts/TaskContext";
 import { useToast } from "../../contexts/ToastContext";
 import AuthContext from "../../contexts/AuthContext";
 import { useState, useContext } from "react";
-import { getTaskType } from "../../constants/taskConstants";
+import { getTaskType, TASK_STATES, getTaskPermissions } from "../../constants/taskConstants";
 
 const getPriorityColor = (priority) => {
     switch (priority) {
@@ -29,7 +29,7 @@ const getPriorityLabel = (priority) => {
     }
 };
 
-const TaskCard = ({ task, onClick, onDeleteRequest, 'data-task-id': dataTaskId }) => {
+const TaskCard = ({ task, onClick, 'data-task-id': dataTaskId }) => {
     const { user } = useContext(AuthContext);
     const { completeTask, isOnline } = useTasks();
     const { addToast } = useToast();
@@ -43,7 +43,7 @@ const TaskCard = ({ task, onClick, onDeleteRequest, 'data-task-id': dataTaskId }
             addToast("Tarea completada", "success");
         } catch (error) {
             console.error(error);
-            addToast("Error al completar tarea", "error");
+            addToast(error.message || "Error al completar tarea", "error");
         } finally {
             setIsCompleting(false);
         }
@@ -51,6 +51,8 @@ const TaskCard = ({ task, onClick, onDeleteRequest, 'data-task-id': dataTaskId }
 
     const isPending = task.status === 'pending';
     const taskType = getTaskType(task.type);
+    const permissions = getTaskPermissions(user?.role, task.status);
+    const state = TASK_STATES[task.status] || TASK_STATES.pending;
     const dueDate = new Date(task.dueDate);
     const isOverdue = isPending && dueDate < new Date() && dueDate.toDateString() !== new Date().toDateString();
 
@@ -74,20 +76,6 @@ const TaskCard = ({ task, onClick, onDeleteRequest, 'data-task-id': dataTaskId }
                     </span>
                 </div>
 
-                {/* Delete Icon - Only for Admin/Supervisor */}
-                {(user?.role === 'admin' || user?.role === 'supervisor') && onDeleteRequest && (
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onDeleteRequest(task);
-                        }}
-                        disabled={!isOnline}
-                        className="p-1.5 hover:bg-red-50 text-gray-300 hover:text-red-500 rounded-lg transition-colors"
-                        title="Eliminar tarea"
-                    >
-                        <Trash2 className="w-4 h-4" />
-                    </button>
-                )}
             </div>
 
             <h3 className={`font-semibold text-gray-800 mb-2 line-clamp-2 ${task.status === 'completed' ? 'text-gray-500 line-through decoration-gray-400 decoration-2' : ''}`}>
@@ -109,7 +97,7 @@ const TaskCard = ({ task, onClick, onDeleteRequest, 'data-task-id': dataTaskId }
                     {isOverdue && <span className="text-xs bg-red-100 text-red-600 px-1.5 rounded">Vencida</span>}
                 </div>
 
-                {isPending ? (
+                {permissions.complete ? (
                     <button
                         onClick={handleComplete}
                         disabled={isCompleting || !isOnline}
@@ -119,9 +107,9 @@ const TaskCard = ({ task, onClick, onDeleteRequest, 'data-task-id': dataTaskId }
                         {isCompleting ? "..." : "Completar"}
                     </button>
                 ) : (
-                    <div className="flex items-center gap-1.5 text-green-600 text-sm font-medium">
-                        <CheckCircle2 className="w-4 h-4" />
-                        Completada
+                    <div className={`flex items-center gap-1.5 text-sm font-medium px-2 py-1 rounded-lg ${state.className}`}>
+                        {task.status === "completed" && <CheckCircle2 className="w-4 h-4" />}
+                        {state.label}
                     </div>
                 )}
             </div>
@@ -148,7 +136,6 @@ TaskCard.propTypes = {
         comments: PropTypes.array
     }).isRequired,
     onClick: PropTypes.func,
-    onDeleteRequest: PropTypes.func,
 };
 
 export default TaskCard;

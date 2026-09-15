@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { CheckCircle2, Clock, AlertTriangle, ListTodo } from "lucide-react";
+import { CheckCircle2, Clock, AlertTriangle, ListTodo, Ban } from "lucide-react";
 import { useTasks } from "../../contexts/TaskContext";
 import PropTypes from "prop-types";
 
@@ -31,6 +31,7 @@ const TaskStats = ({ currentFilter, onFilterChange }) => {
         total: 0,
         pending: 0,
         completed: 0,
+        cancelled: 0,
         overdue: 0
     });
 
@@ -42,7 +43,9 @@ const TaskStats = ({ currentFilter, onFilterChange }) => {
             acc.total++;
             if (task.status === 'completed') {
                 acc.completed++;
-            } else {
+            } else if (task.status === 'cancelled') {
+                acc.cancelled++;
+            } else if (task.status === 'pending') {
                 acc.pending++;
                 const dueDate = new Date(task.dueDate);
                 if (dueDate < today) {
@@ -50,7 +53,7 @@ const TaskStats = ({ currentFilter, onFilterChange }) => {
                 }
             }
             return acc;
-        }, { total: 0, pending: 0, completed: 0, overdue: 0 });
+        }, { total: 0, pending: 0, completed: 0, cancelled: 0, overdue: 0 });
 
         setStats(newStats);
     }, [tasks]);
@@ -80,6 +83,11 @@ const TaskStats = ({ currentFilter, onFilterChange }) => {
             color: 'bg-green-50 text-green-700 border-green-200',
             activeColor: 'bg-green-100 text-green-800 border-green-300'
         },
+        {
+            id: 'cancelled', label: 'Canceladas', value: stats.cancelled, icon: Ban,
+            color: 'bg-gray-50 text-gray-600 border-gray-200',
+            activeColor: 'bg-gray-100 text-gray-800 border-gray-300'
+        },
         { 
             id: 'overdue', 
             label: 'Vencidas', 
@@ -92,7 +100,7 @@ const TaskStats = ({ currentFilter, onFilterChange }) => {
 
     return (
         <>
-            {/* Mobile: 2x2 Grid Filter Chips */}
+            {/* Mobile: Grid Filter Chips */}
             <div className="grid grid-cols-2 sm:hidden gap-3 mb-6">
                 {statConfig.map((stat) => {
                     const isActive = currentFilter === stat.id;
@@ -125,7 +133,7 @@ const TaskStats = ({ currentFilter, onFilterChange }) => {
             </div>
 
             {/* Desktop: Grid Cards */}
-            <div className="hidden sm:grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="hidden sm:grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
                 {statConfig.map((stat) => (
                     <StatCard 
                         key={stat.id}

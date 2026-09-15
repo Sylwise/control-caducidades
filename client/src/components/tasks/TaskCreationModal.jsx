@@ -12,6 +12,7 @@ const TaskCreationModal = ({
   onClose,
   onSubmit, // async function returning the task
   isOnline,
+  initialTask,
 }) => {
   const [form, setForm] = useState({
     title: "",
@@ -28,16 +29,16 @@ const TaskCreationModal = ({
   useEffect(() => {
     if (isOpen) {
       setForm({
-        title: "",
-        description: "",
-        type: "tarea",
-        priority: "medium",
-        dueDate: "",
+        title: initialTask?.title || "",
+        description: initialTask?.description || "",
+        type: initialTask?.type || "tarea",
+        priority: initialTask?.priority || "medium",
+        dueDate: initialTask?.dueDate ? initialTask.dueDate.slice(0, 10) : "",
       });
       setErrors({});
       setIsSubmitting(false);
     }
-  }, [isOpen]);
+  }, [isOpen, initialTask]);
 
   // Hardware Back Button (Priority 20, same as UpdateModal)
   useHardwareBackButton(isOpen, onClose, 20, 'create-task-modal');
@@ -60,9 +61,10 @@ const TaskCreationModal = ({
 
   const validate = () => {
     const newErrors = {};
-    if (!form.title.trim()) {
-      newErrors.title = "El título es obligatorio";
+    if (form.title.trim().length < 3 || form.title.trim().length > 100) {
+      newErrors.title = "El título debe tener entre 3 y 100 caracteres";
     }
+    if (form.description.length > 500) newErrors.description = "Máximo 500 caracteres";
     if (!form.dueDate) {
       newErrors.dueDate = "La fecha límite es obligatoria";
     }
@@ -84,7 +86,7 @@ const TaskCreationModal = ({
     } catch (err) {
       console.error("Error creating task:", err);
       // Assume onSubmit handles toast errors or we set a general error here
-      setErrors(prev => ({ ...prev, general: "Error al crear la tarea. Inténtalo de nuevo." }));
+      setErrors(prev => ({ ...prev, general: err.message || "No se pudo guardar la tarea" }));
     } finally {
       setIsSubmitting(false);
     }
@@ -94,7 +96,7 @@ const TaskCreationModal = ({
     <div className="text-[#2d3748]">
       <div className="flex items-center gap-2">
          <Plus className="w-5 h-5 text-[#1d5030]" />
-         <span className="font-semibold text-[#1d5030]">Nueva Tarea</span>
+         <span className="font-semibold text-[#1d5030]">{initialTask ? "Editar Tarea" : "Nueva Tarea"}</span>
       </div>
     </div>
   );
@@ -120,6 +122,7 @@ const TaskCreationModal = ({
                         onChange={handleChange}
                         placeholder="Ej: Revisar cámara frigorífica"
                         disabled={!isOnline}
+                        maxLength={100}
                         className={`
                             w-full px-4 py-2.5 rounded-lg border 
                             ${errors.title ? 'border-red-500 focus:ring-red-200' : 'border-gray-200 focus:ring-[#1d5030]/20 focus:border-[#1d5030]'}
@@ -144,10 +147,12 @@ const TaskCreationModal = ({
                         value={form.description}
                         onChange={handleChange}
                         disabled={!isOnline}
+                        maxLength={500}
                         placeholder="Detalles adicionales..."
                         rows={3}
                         className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#1d5030]/20 focus:border-[#1d5030] focus:outline-none transition-all duration-200 resize-none"
                     />
+                    {errors.description && <p className="text-xs text-red-500">{errors.description}</p>}
                  </div>
 
                  <div className="space-y-1.5">
@@ -209,6 +214,7 @@ const TaskCreationModal = ({
                             value={form.dueDate}
                             onChange={handleDateChange}
                             disabled={!isOnline}
+                            minDate={initialTask?.dueDate && new Date(initialTask.dueDate) < new Date() ? initialTask.dueDate : undefined}
                             placeholder="Seleccionar"
                             data-date-input="create-task-dueDate"
                         />
@@ -246,7 +252,7 @@ const TaskCreationModal = ({
                       Guardando...
                     </>
                   ) : (
-                    "Crear Tarea"
+                    initialTask ? "Guardar cambios" : "Crear Tarea"
                   )}
                 </button>
              </div>
@@ -260,6 +266,7 @@ TaskCreationModal.propTypes = {
   onClose: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
   isOnline: PropTypes.bool.isRequired,
+  initialTask: PropTypes.object,
 };
 
 export default TaskCreationModal;

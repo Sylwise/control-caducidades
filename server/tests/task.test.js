@@ -52,6 +52,131 @@ afterEach(async () => db.clearDatabase());
 afterAll(async () => db.closeDatabase());
 
 describe("Task API", () => {
+  const scenario = async (role = "supervisor", status = "pending") => {
+    const restaurant = await createRestaurant("Lifecycle restaurant");
+    const manager = await createUserAndLogin({ username: "manager", role, restaurant });
+    const operator = await createUserAndLogin({ username: "operator", role: "encargado", restaurant });
+    const task = await Task.create({
+      ...validTask(), status, restaurant: restaurant._id, createdBy: manager.user._id,
+      activity: [{ type: "created", user: manager.user._id, at: new Date() }],
+    });
+    return { restaurant, manager, operator, task };
+  };
+
+  test("two concurrent completions preserve the winner and return 409 to the loser", async () => {
+    const { restaurant, operator, task } = await scenario();
+    const second = await createUserAndLogin({ username: "secondOperator", role: "encargado", restaurant });
+    const tokens = [operator.token, second.token];
+    const responses = await Promise.all(tokens.map((token) =>
+      request(app).post(`/api/tasks/${task._id}/complete`).set(auth(token))));
+    expect(responses.map((r) => r.statusCode).sort()).toEqual([200, 409]);
+    const winner = responses.find((r) => r.statusCode === 200);
+    const persisted = await Task.findById(task._id);
+    expect(persisted.completedBy.toString()).toBe(winner.body.completedBy._id);
+    expect(persisted.completedAt.toISOString()).toBe(winner.body.completedAt);
+    expect(persisted.activity.filter((e) => e.type === "completed")).toHaveLength(1);
+    const retry = await request(app).post(`/api/tasks/${task._id}/complete`).set(auth(second.token));
+    expect(retry.statusCode).toBe(409);
+    const afterRetry = await Task.findById(task._id);
+    expect(afterRetry.completedBy.toString()).toBe(winner.body.completedBy._id);
+    expect(afterRetry.completedAt.toISOString()).toBe(winner.body.completedAt);
+  });
+
+  test.each(["admin", "supervisor"])("%s cancels with reason and reopens completed/cancelled tasks", async (role) => {
+    const { manager, operator, task } = await scenario(role);
+    const path = `/api/tasks/${task._id}`;
+    expect((await request(app).post(`${path}/complete`).set(auth(operator.token))).statusCode).toBe(200);
+    const reopen = await request(app).post(`${path}/reopen`).set(auth(manager.token)).send({ reason: "Sigue averiada" });
+    expect(reopen.statusCode).toBe(200);
+    expect(reopen.body.status).toBe("pending");
+    expect(reopen.body.completedBy).toBeNull();
+    expect(reopen.body.completedAt).toBeNull();
+    const cancel = await request(app).post(`${path}/cancel`).set(auth(manager.token)).send({ reason: "Duplicada" });
+    expect(cancel.statusCode).toBe(200);
+    expect(cancel.body.status).toBe("cancelled");
+    expect(cancel.body.activity.at(-1)).toMatchObject({ type: "cancelled", reason: "Duplicada", user: { _id: manager.user._id.toString() } });
+    expect(new Date(cancel.body.activity.at(-1).at).toString()).not.toBe("Invalid Date");
+    expect((await request(app).post(`${path}/complete`).set(auth(operator.token))).statusCode).toBe(409);
+    expect((await request(app).post(`${path}/reopen`).set(auth(manager.token)).send({ reason: "Revisión adicional" })).statusCode).toBe(200);
+    expect((await request(app).post(`${path}/cancel`).set(auth(manager.token)).send({ reason: "Duplicada de nuevo" })).statusCode).toBe(200);
+    const persisted = await Task.findById(task._id);
+    expect(persisted.activity.map((e) => e.type)).toEqual(["created", "completed", "reopened", "cancelled", "reopened", "cancelled"]);
+    expect(persisted.activity.filter((e) => e.type === "cancelled").map((e) => e.reason)).toEqual(["Duplicada", "Duplicada de nuevo"]);
+  });
+
+  test.each(["cancel", "reopen"])("encargado cannot %s", async (action) => {
+    const { operator, task } = await scenario("supervisor", action === "reopen" ? "completed" : "pending");
+    const response = await request(app).post(`/api/tasks/${task._id}/${action}`).set(auth(operator.token)).send({ reason: "No permitido" });
+    expect(response.statusCode).toBe(403);
+    expect((await Task.findById(task._id)).activity).toHaveLength(1);
+  });
+
+  test.each(["admin", "supervisor"])("%s edits only pending tasks", async (role) => {
+    const { manager, operator, task } = await scenario(role);
+    const path = `/api/tasks/${task._id}`;
+    const denied = await request(app).put(path).set(auth(operator.token)).send({ title: "Cambio no permitido" });
+    expect(denied.statusCode).toBe(403);
+    const edited = await request(app).put(path).set(auth(manager.token)).send({ title: "Cambio permitido", type: "averia", description: "" });
+    expect(edited.statusCode).toBe(200);
+    expect(edited.body).toMatchObject({ title: "Cambio permitido", type: "averia", description: "" });
+    expect(edited.body.createdBy._id).toBe(manager.user._id.toString());
+    await request(app).post(`${path}/complete`).set(auth(operator.token));
+    expect((await request(app).put(path).set(auth(manager.token)).send({ title: "Cambio cerrado" })).statusCode).toBe(409);
+    await request(app).post(`${path}/reopen`).set(auth(manager.token)).send({ reason: "Volver a revisar" });
+    await request(app).post(`${path}/cancel`).set(auth(manager.token)).send({ reason: "Duplicada" });
+    expect((await request(app).put(path).set(auth(manager.token)).send({ title: "Cambio cancelado" })).statusCode).toBe(409);
+    expect((await Task.findById(task._id)).title).toBe("Cambio permitido");
+  });
+
+  test("pending cannot reopen, closed cannot cancel, DELETE never removes a task", async () => {
+    const { manager, task } = await scenario();
+    const path = `/api/tasks/${task._id}`;
+    expect((await request(app).post(`${path}/reopen`).set(auth(manager.token)).send({ reason: "Ya pendiente" })).statusCode).toBe(409);
+    expect((await request(app).delete(path).set(auth(manager.token))).statusCode).toBe(404);
+    await request(app).post(`${path}/cancel`).set(auth(manager.token)).send({ reason: "Duplicada" });
+    expect((await request(app).post(`${path}/cancel`).set(auth(manager.token)).send({ reason: "Otra vez" })).statusCode).toBe(409);
+    expect(await Task.exists({ _id: task._id })).toBeTruthy();
+    const list = await request(app).get("/api/tasks?status=cancelled").set(auth(manager.token));
+    expect(list.statusCode).toBe(200);
+    expect(list.body.map((t) => t._id)).toEqual([task._id.toString()]);
+    const stats = await request(app).get("/api/tasks/stats/metrics").set(auth(manager.token));
+    expect(stats.body).toEqual({ total: 1, pending: 0, completed: 0, cancelled: 1 });
+  });
+
+  test.each([undefined, "   ", "x".repeat(301)])("invalid transition reasons return 400", async (reason) => {
+    const { manager, task } = await scenario();
+    for (const action of ["cancel", "reopen"]) {
+      expect((await request(app).post(`/api/tasks/${task._id}/${action}`).set(auth(manager.token)).send({ reason })).statusCode).toBe(400);
+    }
+    expect((await Task.findById(task._id)).activity).toHaveLength(1);
+  });
+
+  test("legacy completion history survives reopen and cancel", async () => {
+    const { manager, operator, task } = await scenario();
+    const completedAt = new Date();
+    await Task.collection.updateOne({ _id: task._id }, {
+      $unset: { activity: "" }, $set: { status: "completed", completedBy: operator.user._id, completedAt },
+    });
+    const path = `/api/tasks/${task._id}`;
+    const reopened = await request(app).post(`${path}/reopen`).set(auth(manager.token)).send({ reason: "Nueva revisión" });
+    expect(reopened.statusCode).toBe(200);
+    expect(reopened.body.activity.map((e) => e.type)).toEqual(["created", "completed", "reopened"]);
+    expect(reopened.body.activity[1].user._id).toBe(operator.user._id.toString());
+    expect(reopened.body.activity[1].at).toBe(completedAt.toISOString());
+    await request(app).post(`${path}/cancel`).set(auth(manager.token)).send({ reason: "Duplicada" });
+    expect((await Task.findById(task._id)).activity.map((e) => e.type)).toEqual(["created", "completed", "reopened", "cancelled"]);
+  });
+
+  test("concurrent comments each return their own persisted comment", async () => {
+    const { manager, operator, task } = await scenario();
+    const results = await Promise.all([manager, operator].map(({ token }, i) =>
+      request(app).post(`/api/tasks/${task._id}/comments`).set(auth(token)).send({ text: `Comentario ${i}` })));
+    results.forEach((response, i) => {
+      expect(response.statusCode).toBe(200);
+      expect(response.body.text).toBe(`Comentario ${i}`);
+    });
+    expect((await Task.findById(task._id)).comments).toHaveLength(2);
+  });
   test.each(["supervisor", "admin"])(
     "%s can create a task with a type",
     async (role) => {
@@ -74,6 +199,9 @@ describe("Task API", () => {
 
       const persisted = await Task.findById(response.body._id);
       expect(persisted.type).toBe("averia");
+      expect(persisted.activity).toHaveLength(1);
+      expect(persisted.activity[0].type).toBe("created");
+      expect(persisted.activity[0].user.toString()).toBe(user._id.toString());
       expect(persisted.restaurant.toString()).toBe(restaurant._id.toString());
     }
   );
@@ -134,6 +262,9 @@ describe("Task API", () => {
       restaurant: restaurantB._id,
       createdBy: supervisor._id,
     });
+    const { token: operatorToken } = await createUserAndLogin({
+      username: "tenantOperator", role: "encargado", restaurant: restaurantA,
+    });
 
     const updateResponse = await request(app)
       .put(`/api/tasks/${foreignTask._id}`)
@@ -141,7 +272,7 @@ describe("Task API", () => {
       .send({ title: "Modified task" });
     const completeResponse = await request(app)
       .post(`/api/tasks/${foreignTask._id}/complete`)
-      .set(auth(token));
+      .set(auth(operatorToken));
     const commentResponse = await request(app)
       .post(`/api/tasks/${foreignTask._id}/comments`)
       .set(auth(token))
@@ -149,11 +280,17 @@ describe("Task API", () => {
     const deleteResponse = await request(app)
       .delete(`/api/tasks/${foreignTask._id}`)
       .set(auth(token));
+    const cancelResponse = await request(app).post(`/api/tasks/${foreignTask._id}/cancel`)
+      .set(auth(token)).send({ reason: "Duplicada" });
+    const reopenResponse = await request(app).post(`/api/tasks/${foreignTask._id}/reopen`)
+      .set(auth(token)).send({ reason: "Revisión" });
 
     expect(updateResponse.statusCode).toBe(404);
     expect(completeResponse.statusCode).toBe(404);
     expect(commentResponse.statusCode).toBe(404);
     expect(deleteResponse.statusCode).toBe(404);
+    expect(cancelResponse.statusCode).toBe(404);
+    expect(reopenResponse.statusCode).toBe(404);
     const persisted = await Task.findById(foreignTask._id);
     expect(persisted.title).toBe("Foreign task");
     expect(persisted.status).toBe("pending");

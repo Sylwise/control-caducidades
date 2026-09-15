@@ -5,7 +5,7 @@ import TaskCard from "./TaskCard";
 import { useMemo } from "react";
 import { Loader2, ClipboardList } from "lucide-react";
 
-const TaskList = ({ statusFilter, searchQuery, onTaskClick, onDeleteRequest }) => {
+const TaskList = ({ statusFilter, searchQuery, onTaskClick }) => {
     const { tasks, loading } = useTasks();
 
     const filteredTasks = useMemo(() => {
@@ -15,7 +15,7 @@ const TaskList = ({ statusFilter, searchQuery, onTaskClick, onDeleteRequest }) =
                  const today = new Date();
                  today.setHours(0,0,0,0);
                  const dueDate = new Date(task.dueDate);
-                 if (dueDate >= today || task.status === 'completed') return false;
+                 if (dueDate >= today || task.status !== 'pending') return false;
             } else if (statusFilter !== 'all' && task.status !== statusFilter) {
                 return false;
             }
@@ -32,7 +32,8 @@ const TaskList = ({ statusFilter, searchQuery, onTaskClick, onDeleteRequest }) =
         })
         .sort((a, b) => {
             // Sort by status (pending first) then by dueDate (sooner first)
-            if (a.status !== b.status) return a.status === 'pending' ? -1 : 1;
+            const order = { pending: 0, completed: 1, cancelled: 2 };
+            if (a.status !== b.status) return order[a.status] - order[b.status];
             return new Date(a.dueDate) - new Date(b.dueDate);
         });
     }, [tasks, statusFilter, searchQuery]);
@@ -64,7 +65,6 @@ const TaskList = ({ statusFilter, searchQuery, onTaskClick, onDeleteRequest }) =
                     task={task} 
                     data-task-id={task._id}
                     onClick={() => onTaskClick && onTaskClick(task)}
-                    onDeleteRequest={onDeleteRequest}
                 />
             ))}
         </div>
@@ -75,7 +75,6 @@ TaskList.propTypes = {
     statusFilter: PropTypes.string.isRequired,
     searchQuery: PropTypes.string.isRequired,
     onTaskClick: PropTypes.func,
-    onDeleteRequest: PropTypes.func,
 };
 
 export default TaskList;

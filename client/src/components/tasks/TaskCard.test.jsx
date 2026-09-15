@@ -14,7 +14,6 @@ vi.mock("../../hooks/useSocket", () => ({
 vi.mock("../../contexts/TaskContext", () => ({
     useTasks: () => ({
         completeTask: vi.fn(),
-        deleteTask: vi.fn(),
         tasks: [],
         isOnline: true,
     }),
@@ -37,7 +36,7 @@ const mockTask = {
 const renderWithProviders = (ui) => {
     return render(
         <BrowserRouter>
-            <AuthContext.Provider value={{ user: { _id: 'user-1', name: 'Test User' } }}>
+            <AuthContext.Provider value={{ user: { _id: 'user-1', name: 'Test User', role: 'encargado' } }}>
                 <ToastProvider>
                     {ui}
                 </ToastProvider>
@@ -69,6 +68,13 @@ describe("TaskCard Component", () => {
 
         fireEvent.click(screen.getByText("Test Task"));
         expect(handleClick).toHaveBeenCalledTimes(1);
+    });
+
+    it("shows cancelled without a completion action", () => {
+        renderWithProviders(<TaskCard task={{ ...mockTask, status: "cancelled" }} />);
+        expect(screen.getByText("Cancelada")).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Completar" })).not.toBeInTheDocument();
+        expect(screen.queryByTitle("Eliminar tarea")).not.toBeInTheDocument();
     });
 
     // Note: Testing Complete/Delete button interactions would require mocking TaskContext content more deeply

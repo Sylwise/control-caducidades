@@ -24,7 +24,7 @@ vi.mock("../CustomDateInput", () => ({
     default: ({ value, onChange }) => (
         <input 
             data-testid="date-input" 
-            value={value ? value.toISOString() : ""} 
+            value={value ? new Date(value).toISOString() : ""}
             onChange={(e) => onChange(new Date(e.target.value))} 
         />
     )
@@ -153,5 +153,17 @@ describe("TaskCreationModal", () => {
 
         expect(screen.getByText("Crear Tarea")).toBeDisabled();
         expect(screen.getByLabelText("Tipo")).toBeDisabled();
+    });
+
+    it("initializes pending task editing and saves changed data", async () => {
+        renderModal({ isOpen: true, onClose: mockOnClose, onSubmit: mockOnSubmit,
+            initialTask: { _id: "edit-1", title: "Revisar cámara", description: "Fuga", type: "averia", priority: "urgent", dueDate: "2026-10-01T00:00:00.000Z" } });
+        expect(screen.getByText("Editar Tarea")).toBeInTheDocument();
+        expect(screen.getByLabelText("Tipo")).toHaveValue("averia");
+        const input = screen.getByPlaceholderText("Ej: Revisar cámara frigorífica");
+        expect(input).toHaveValue("Revisar cámara");
+        fireEvent.change(input, { target: { value: "Revisar cámara hoy" } });
+        fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+        await waitFor(() => expect(mockOnSubmit).toHaveBeenCalledWith(expect.objectContaining({ title: "Revisar cámara hoy", type: "averia" })));
     });
 });

@@ -3,7 +3,6 @@ import { useState, useEffect, useContext } from "react";
 import { Plus, Filter, Search } from "lucide-react";
 import { useTasks } from "../../contexts/TaskContext";
 import AuthContext from "../../contexts/AuthContext";
-import DeleteConfirmationModal from "../DeleteConfirmationModal";
 import { useToast } from "../../contexts/ToastContext";
 import { useProductScroll } from "../../hooks/useProductScroll";
 import TaskCreationModal from "./TaskCreationModal";
@@ -12,51 +11,39 @@ import TaskList from "./TaskList";
 import TaskStats from "./TaskStats";
 
 const TasksPage = () => {
-    const { tasks, fetchTasks, createTask, deleteTask, error, isOnline } = useTasks();
+    const { tasks, createTask, updateTask, error, isOnline } = useTasks();
     const { user } = useContext(AuthContext);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [editingTask, setEditingTask] = useState(null);
     const [selectedTaskId, setSelectedTaskId] = useState(null);
     const [filterStatus, setFilterStatus] = useState("all");
     const [searchQuery, setSearchQuery] = useState("");
     const { addToast } = useToast();
 
-    const [taskToDelete, setTaskToDelete] = useState(null);
-
-    const handleDeleteRequest = (task) => {
-        setTaskToDelete(task);
-    };
-
-    const handleConfirmDelete = async () => {
-        if (!taskToDelete) return;
-
-        try {
-             await deleteTask(taskToDelete._id);
-             addToast("Tarea eliminada correctamente", "success");
-        } catch (err) {
-             console.error(err);
-             addToast("Error al eliminar la tarea", "error");
-        } finally {
-             setTaskToDelete(null);
-        }
-    };
-
     // Hook for scrolling to new tasks
     const { scrollToProductId } = useProductScroll(null, 'data-task-id');
-
-    // Tasks are online-only. Reload from the server when connectivity returns.
-    useEffect(() => {
-        if (isOnline) {
-            fetchTasks();
-        }
-    }, [fetchTasks, isOnline]);
 
     useEffect(() => {
         if (!isOnline) {
             setIsCreateModalOpen(false);
             setSelectedTaskId(null);
-            setTaskToDelete(null);
+            setEditingTask(null);
         }
     }, [isOnline]);
+
+    const handleEdit = (task) => {
+        setSelectedTaskId(null);
+        setEditingTask(task);
+    };
+    const handleSaveEdit = async (data) => {
+        try {
+            await updateTask(editingTask._id, data);
+            addToast("Tarea actualizada", "success");
+        } catch (err) {
+            addToast(err.message || "Error al editar", "error");
+            throw err;
+        }
+    };
 
     const handleCreateTask = async (taskData) => {
         try {
@@ -147,7 +134,7 @@ const TasksPage = () => {
                 
                 <div className="hidden sm:flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 hide-scrollbar">
                     <Filter className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                    {['all', 'pending', 'completed'].map(status => (
+                    {['all', 'pending', 'completed', 'cancelled'].map(status => (
                         <button
                             key={status}
                             onClick={() => setFilterStatus(status)}
@@ -158,7 +145,7 @@ const TasksPage = () => {
                                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-transparent'}
                             `}
                         >
-                            {status === 'all' ? 'Todas' : status === 'pending' ? 'Pendientes' : 'Completadas'}
+                            {status === 'all' ? 'Todas' : status === 'pending' ? 'Pendientes' : status === 'completed' ? 'Completadas' : 'Canceladas'}
                         </button>
                     ))}
                 </div>
@@ -175,7 +162,6 @@ const TasksPage = () => {
                         statusFilter={filterStatus}
                         searchQuery={searchQuery}
                         onTaskClick={(task) => setSelectedTaskId(task._id)}
-                        onDeleteRequest={handleDeleteRequest}
                     />
                 </>
             )}
@@ -188,20 +174,19 @@ const TasksPage = () => {
                 isOnline={isOnline}
             />
 
+            <TaskCreationModal
+                isOpen={!!editingTask}
+                initialTask={editingTask}
+                onClose={() => setEditingTask(null)}
+                onSubmit={handleSaveEdit}
+                isOnline={isOnline}
+            />
+
             <TaskDetailModal
                 isOpen={!!selectedTaskId}
                 onClose={() => setSelectedTaskId(null)}
                 task={tasks.find(t => t._id === selectedTaskId)}
-                currentUserId={user?.id || user?._id}
-            />
-
-            <DeleteConfirmationModal
-                isOpen={!!taskToDelete}
-                onClose={() => setTaskToDelete(null)}
-                onConfirm={handleConfirmDelete}
-                title="Eliminar Tarea"
-                message="¿Estás seguro de que deseas eliminar esta tarea permanentemente?"
-                itemName={taskToDelete?.title}
+                onEdit={handleEdit}
             />
         </div>
     );

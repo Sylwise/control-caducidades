@@ -1,5 +1,12 @@
 const mongoose = require("mongoose");
 
+const activitySchema = new mongoose.Schema({
+  type: { type: String, enum: ["created", "completed", "cancelled", "reopened"], required: true },
+  user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  at: { type: Date, required: true, default: Date.now },
+  reason: { type: String, trim: true, maxlength: 300 },
+});
+
 const commentSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
@@ -48,7 +55,7 @@ const taskSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "completed"],
+      enum: ["pending", "completed", "cancelled"],
       default: "pending",
     },
     createdBy: {
@@ -71,6 +78,7 @@ const taskSchema = new mongoose.Schema(
       default: null,
     },
     comments: [commentSchema],
+    activity: { type: [activitySchema], default: [] },
   },
   {
     timestamps: true,

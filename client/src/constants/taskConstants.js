@@ -20,3 +20,19 @@ export const getTaskType = (type) => {
     className: TYPE_STYLES[normalizedType],
   };
 };
+
+export const TASK_STATES = {
+  pending: { label: "Pendiente", className: "bg-gray-100 text-gray-600 border-gray-200" },
+  completed: { label: "Completada", className: "bg-green-50 text-green-700 border-green-200" },
+  cancelled: { label: "Cancelada", className: "bg-red-50 text-red-700 border-red-200" },
+};
+
+export const getTaskPermissions = (role, status) => {
+  const manager = role === "admin" || role === "supervisor";
+  return {
+    edit: manager && status === "pending",
+    cancel: manager && status === "pending",
+    reopen: manager && ["completed", "cancelled"].includes(status),
+    complete: role === "encargado" && status === "pending",
+  };
+};

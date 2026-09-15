@@ -47,7 +47,7 @@ router.post(
 router.get(
   "/",
   [
-    query("status").optional().isIn(["pending", "completed"]),
+    query("status").optional().isIn(["pending", "completed", "cancelled"]),
     query("priority").optional().isIn(TASK_PRIORITIES),
     query("limit").optional().isInt({ min: 1, max: 200 }).toInt(),
     validateRequest,
@@ -73,21 +73,21 @@ router.put(
   taskController.updateTask
 );
 
-// @route   DELETE api/tasks/:id
-// @desc    Delete a task
-// @access  Supervisor/Admin
-router.delete(
-  "/:id",
-  [auth.isSupervisor, taskIdValidation(), validateRequest],
-  taskController.deleteTask
-);
+// No physical deletion endpoint: cancellation retains operational traceability.
+const reasonValidation = () => body("reason").isString().trim().isLength({ min: 1, max: 300 });
+router.post("/:id/cancel", [auth.isSupervisor, taskIdValidation(), reasonValidation(), validateRequest], taskController.cancelTask);
+router.post("/:id/reopen", [auth.isSupervisor, taskIdValidation(), reasonValidation(), validateRequest], taskController.reopenTask);
 
 // @route   POST api/tasks/:id/complete
 // @desc    Mark a task as completed
 // @access  Private
 router.post(
   "/:id/complete",
-  [taskIdValidation(), validateRequest],
+  [
+    (req, res, next) => req.user.role === "encargado"
+      ? next() : res.status(403).json({ error: "Solo un encargado puede completar tareas" }),
+    taskIdValidation(), validateRequest,
+  ],
   taskController.completeTask
 );
 

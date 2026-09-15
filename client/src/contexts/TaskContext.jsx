@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import PropTypes from "prop-types";
 import { http } from "../services/api";
 import useOnlineStatus from "../hooks/useOnlineStatus";
@@ -7,30 +7,17 @@ import { useToast } from "./ToastContext";
 import AuthContext from "./AuthContext";
 
 export const TaskContext = createContext();
-
 export const useTasks = () => {
   const context = useContext(TaskContext);
-  if (!context) {
-    throw new Error("useTasks must be used within a TaskProvider");
-  }
+  if (!context) throw new Error("useTasks must be used within a TaskProvider");
   return context;
 };
-
-const sameId = (left, right) =>
-  left != null && right != null && left.toString() === right.toString();
-
-const upsertTask = (tasks, task) => {
-  const index = tasks.findIndex((current) => sameId(current._id, task._id));
-  if (index === -1) return [...tasks, task];
-  return tasks.map((current, currentIndex) => currentIndex === index ? task : current);
-};
-
+const sameId = (a, b) => a != null && b != null && a.toString() === b.toString();
+const upsert = (tasks, task) => tasks.some((t) => sameId(t._id, task._id))
+  ? tasks.map((t) => sameId(t._id, task._id) ? task : t) : [...tasks, task];
 const appendComment = (task, comment) => {
   const comments = task.comments || [];
-  if (comment._id && comments.some((current) => sameId(current._id, comment._id))) {
-    return task;
-  }
-  return { ...task, comments: [...comments, comment] };
+  return comments.some((c) => sameId(c._id, comment._id)) ? task : { ...task, comments: [...comments, comment] };
 };
 
 export const TaskProvider = ({ children }) => {
@@ -41,185 +28,131 @@ export const TaskProvider = ({ children }) => {
   const { user } = useContext(AuthContext);
   const { socket } = useSocket();
   const { addToast } = useToast();
+  const userId = user?._id || user?.id;
+  const restaurantId = user?.restaurante?._id || user?.restaurante;
+  const sessionKey = `${userId || ""}:${restaurantId || ""}`;
+  const session = useRef(sessionKey);
+  // Invalidate immediately on session changes, including requests still in flight.
+  session.current = sessionKey;
+  const requestSequence = useRef(0);
+  const eventRevision = useRef(0);
 
-  const requireOnline = useCallback(() => {
-    if (!isOnline || !navigator.onLine) {
-      throw new Error("Sin conexión. Tareas no está disponible");
-    }
-  }, [isOnline]);
-
-  const fetchTasks = useCallback(async (filters = {}) => {
-    if (!isOnline) {
-      setTasks([]);
-      setError(null);
-      setLoading(false);
-      return [];
-    }
-
+  const fetchTasks = useCallback(async function loadTasks(filters = {}) {
+    if (!navigator.onLine || !userId) return [];
+    const key = sessionKey;
+    const sequence = ++requestSequence.current;
+    const revision = eventRevision.current;
     setLoading(true);
     try {
       const data = await http.getTasks(filters);
+      if (!navigator.onLine || session.current !== key || sequence !== requestSequence.current) return [];
+      // A socket/mutation occurred during the snapshot. Fetch a fresh snapshot
+      // instead of overwriting newer activity/comments with the older response.
+      if (revision !== eventRevision.current) return await loadTasks(filters);
       setTasks(data);
       setError(null);
       return data;
     } catch (requestError) {
-      setTasks([]);
-      setError(requestError.message);
+      if (navigator.onLine && session.current === key && sequence === requestSequence.current) {
+        setTasks([]);
+        setError(requestError.message);
+      }
       return [];
     } finally {
-      setLoading(false);
+      if (sequence === requestSequence.current) setLoading(false);
     }
-  }, [isOnline]);
+  }, [sessionKey, userId]);
 
-  const createTask = async (taskData) => {
-    requireOnline();
+  const mutateTask = async (operation) => {
+    if (!isOnline || !navigator.onLine) throw new Error("Sin conexión. Tareas no está disponible");
+    const key = sessionKey;
     try {
-      const newTask = await http.createTask(taskData);
-      setTasks((previous) => upsertTask(previous, newTask));
-      setError(null);
-      return newTask;
+      const task = await operation();
+      if (navigator.onLine && session.current === key) {
+        eventRevision.current++;
+        setTasks((previous) => upsert(previous, task));
+        setError(null);
+      }
+      return task;
     } catch (requestError) {
-      setError(requestError.message);
-      throw requestError;
-    }
-  };
-
-  const updateTask = async (taskId, data) => {
-    requireOnline();
-    try {
-      const updatedTask = await http.updateTask(taskId, data);
-      setTasks((previous) => upsertTask(previous, updatedTask));
-      setError(null);
-      return updatedTask;
-    } catch (requestError) {
-      setError(requestError.message);
-      throw requestError;
-    }
-  };
-
-  const completeTask = async (taskId) => {
-    requireOnline();
-    try {
-      const completedTask = await http.completeTask(taskId);
-      setTasks((previous) => upsertTask(previous, completedTask));
-      setError(null);
-      return completedTask;
-    } catch (requestError) {
-      setError(requestError.message);
-      throw requestError;
-    }
-  };
-
-  const deleteTask = async (taskId) => {
-    requireOnline();
-    try {
-      await http.deleteTask(taskId);
-      setTasks((previous) => previous.filter((task) => !sameId(task._id, taskId)));
-      setError(null);
-    } catch (requestError) {
-      setError(requestError.message);
+      if (requestError.status === 409 && session.current === key) await fetchTasks();
+      if (session.current === key && navigator.onLine) setError(requestError.message);
       throw requestError;
     }
   };
 
   const addComment = async (taskId, text) => {
-    requireOnline();
-    try {
-      const comment = await http.addTaskComment(taskId, { text });
-      setTasks((previous) => previous.map((task) =>
-        sameId(task._id, taskId) ? appendComment(task, comment) : task
-      ));
-      setError(null);
-      return comment;
-    } catch (requestError) {
-      setError(requestError.message);
-      throw requestError;
+    if (!isOnline || !navigator.onLine) throw new Error("Sin conexión. Tareas no está disponible");
+    const key = sessionKey;
+    const comment = await http.addTaskComment(taskId, { text });
+    if (navigator.onLine && session.current === key) {
+      eventRevision.current++;
+      setTasks((previous) => previous.map((task) => sameId(task._id, taskId) ? appendComment(task, comment) : task));
     }
+    return comment;
   };
 
   useEffect(() => {
-    if (!isOnline) {
-      setTasks([]);
-      setError(null);
-    }
-  }, [isOnline]);
+    requestSequence.current++;
+    setTasks([]);
+    setError(null);
+    setLoading(false);
+    if (isOnline && userId) fetchTasks();
+  }, [isOnline, userId, fetchTasks]);
 
   useEffect(() => {
-    if (!socket || !isOnline) return undefined;
+    const reload = () => { if (navigator.onLine) fetchTasks(); };
+    // Explicit listener also handles online events when the hook already says online.
+    window.addEventListener("online", reload);
+    return () => window.removeEventListener("online", reload);
+  }, [fetchTasks]);
 
-    const handleTaskCreated = (newTask) => {
-      setTasks((previous) => upsertTask(previous, newTask));
-      const currentUserId = user?._id || user?.id;
-      const createdById = newTask.createdBy?._id || newTask.createdBy;
-      if (!sameId(createdById, currentUserId)) {
-        addToast(`Nueva tarea: ${newTask.title}`, "info");
-      }
+  useEffect(() => {
+    if (!socket || !isOnline || !userId) return undefined;
+    const acceptTask = (task) => {
+      if (!navigator.onLine) return;
+      eventRevision.current++;
+      setTasks((previous) => upsert(previous, task));
     };
-
-    const handleTaskUpdated = (updatedTask) => {
-      setTasks((previous) => upsertTask(previous, updatedTask));
+    const created = (task) => {
+      acceptTask(task);
+      if (!sameId(task.createdBy?._id || task.createdBy, userId)) addToast(`Nueva tarea: ${task.title}`, "info");
     };
-
-    const handleTaskCompleted = (completedTask) => {
-      setTasks((previous) => upsertTask(previous, completedTask));
-      const currentUserId = user?._id || user?.id;
-      const completedById = completedTask.completedBy?._id || completedTask.completedBy;
-      if (!sameId(completedById, currentUserId)) {
-        addToast(`Tarea completada: ${completedTask.title}`, "success");
-      }
+    const completed = (task) => {
+      acceptTask(task);
+      if (!sameId(task.completedBy?._id || task.completedBy, userId)) addToast(`Tarea completada: ${task.title}`, "success");
     };
-
-    const handleTaskDeleted = (data) => {
-      const taskId = data.taskId || data;
-      setTasks((previous) => previous.filter((task) => !sameId(task._id, taskId)));
-
-      const currentUserId = user?._id || user?.id;
-      if (data.actor && !sameId(data.actor, currentUserId)) {
-        addToast(`${data.actorName || "Otro usuario"} ha eliminado una tarea`, "error");
-      }
+    const commented = ({ taskId, comment }) => {
+      if (!navigator.onLine) return;
+      eventRevision.current++;
+      setTasks((previous) => previous.map((task) => sameId(task._id, taskId) ? appendComment(task, comment) : task));
     };
-
-    const handleTaskCommented = ({ taskId, comment }) => {
-      setTasks((previous) => previous.map((task) =>
-        sameId(task._id, taskId) ? appendComment(task, comment) : task
-      ));
+    const reload = () => { if (navigator.onLine) fetchTasks(); };
+    const handlers = {
+      connect: reload,
+      "task:created": created,
+      "task:updated": acceptTask,
+      "task:completed": completed,
+      "task:cancelled": acceptTask,
+      "task:reopened": acceptTask,
+      "task:commented": commented,
     };
-
-    socket.on("task:created", handleTaskCreated);
-    socket.on("task:updated", handleTaskUpdated);
-    socket.on("task:completed", handleTaskCompleted);
-    socket.on("task:deleted", handleTaskDeleted);
-    socket.on("task:commented", handleTaskCommented);
-
-    return () => {
-      socket.off("task:created", handleTaskCreated);
-      socket.off("task:updated", handleTaskUpdated);
-      socket.off("task:completed", handleTaskCompleted);
-      socket.off("task:deleted", handleTaskDeleted);
-      socket.off("task:commented", handleTaskCommented);
-    };
-  }, [socket, isOnline, addToast, user]);
+    Object.entries(handlers).forEach(([name, handler]) => socket.on(name, handler));
+    return () => Object.entries(handlers).forEach(([name, handler]) => socket.off(name, handler));
+  }, [socket, isOnline, userId, addToast, fetchTasks]);
 
   return (
-    <TaskContext.Provider
-      value={{
-        tasks,
-        loading,
-        error,
-        isOnline,
-        fetchTasks,
-        createTask,
-        updateTask,
-        completeTask,
-        deleteTask,
-        addComment,
-      }}
-    >
+    <TaskContext.Provider value={{
+      tasks, loading, error, isOnline, fetchTasks,
+      createTask: (data) => mutateTask(() => http.createTask(data)),
+      updateTask: (id, data) => mutateTask(() => http.updateTask(id, data)),
+      completeTask: (id) => mutateTask(() => http.completeTask(id)),
+      cancelTask: (id, reason) => mutateTask(() => http.cancelTask(id, reason)),
+      reopenTask: (id, reason) => mutateTask(() => http.reopenTask(id, reason)),
+      addComment,
+    }}>
       {children}
     </TaskContext.Provider>
   );
 };
-
-TaskProvider.propTypes = {
-  children: PropTypes.node.isRequired,
-};
+TaskProvider.propTypes = { children: PropTypes.node.isRequired };
